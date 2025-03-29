@@ -1,4 +1,6 @@
-# K8s Platform Go
+# Kube Tide
+
+![Kube Tide Logo](docs/images/logo.png)
 
 A Kubernetes multi-cluster management platform based on Go and React, providing an intuitive web interface to simplify Kubernetes resource management and operations.
 
