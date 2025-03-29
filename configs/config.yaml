@@ -1,0 +1,23 @@
+server:
+  port: 8080
+  host: 127.0.0.1
+
+logging:
+  # log level: debug, info, warn, error, dpanic, panic, fatal
+  level: info
+  
+  # File logging configuration
+  file:
+    enabled: true
+    path: "./logs/app.log"
+    error_path: "./logs/error.log"
+  
+  # File logging configuration
+  rotate:
+    enabled: true
+    max_size: 100      # file size in MB
+    max_age: 30        # maximum days to retain old log files
+    max_backups: 10    # maximum number of old log files to retain
+    compress: true     # whether to compress old log files
+    local_time: true   # use local time to name backup files
+    rotation_time: daily # rotation time interval: daily, hourly

@@ -1,0 +1,33 @@
+# 二进制文件
+kube-tide
+dist/
+
+# IDE 文件
+.idea/
+.vscode/
+*.swp
+*.swo
+# 测试文件
+*.test
+*.out
+coverage.html
+
+# 依赖
+vendor/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 环境文件
+.env
+*.env
+
+# 日志文件
+logs/
+**/*.log
+
+# 临时文件
+tmp/
+temp/
+node_modules/
