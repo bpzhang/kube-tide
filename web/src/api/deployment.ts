@@ -380,3 +380,26 @@ export interface DeploymentEventsResponse {
 export const getDeploymentEvents = (clusterName: string, namespace: string, deploymentName: string) => {
   return api.get<DeploymentEventsResponse>(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/events`);
 };
+
+export interface AllDeploymentEventsResponse {
+  code: number;
+  message: string;
+  data: {
+    events: {
+      deployment: any[];
+      replicaSet: any[];
+      pod: any[];
+    };
+  };
+}
+
+/**
+ * 获取Deployment及其关联资源（ReplicaSet和Pod）的所有事件
+ * @param clusterName 集群名称
+ * @param namespace 命名空间
+ * @param deploymentName Deployment名称
+ * @returns 所有相关事件响应
+ */
+export const getAllDeploymentEvents = (clusterName: string, namespace: string, deploymentName: string) => {
+  return api.get<AllDeploymentEventsResponse>(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/all-events`);
+};

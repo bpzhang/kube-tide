@@ -236,8 +236,8 @@ func (h *DeploymentHandler) CreateDeployment(c *gin.Context) {
 	})
 }
 
-// GetDeploymentEvents 获取Deployment相关的事件
-func (h *DeploymentHandler) GetDeploymentEvents(c *gin.Context) {
+// GetAllRelatedEvents 获取Deployment以及其关联的ReplicaSet和Pod的所有事件
+func (h *DeploymentHandler) GetAllRelatedEvents(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	deploymentName := c.Param("deployment")
@@ -255,13 +255,13 @@ func (h *DeploymentHandler) GetDeploymentEvents(c *gin.Context) {
 		return
 	}
 
-	events, err := h.service.GetDeploymentEvents(context.Background(), clusterName, namespace, deploymentName)
+	eventMap, err := h.service.GetAllDeploymentEvents(context.Background(), clusterName, namespace, deploymentName)
 	if err != nil {
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"events": events,
+		"events": eventMap,
 	})
 }

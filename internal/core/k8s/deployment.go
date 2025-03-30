@@ -205,6 +205,143 @@ func (s *DeploymentService) GetDeploymentEvents(ctx context.Context, clusterName
 	return events.Items, nil
 }
 
+// GetDeploymentPodEvents 获取Deployment关联的所有Pod的事件
+func (s *DeploymentService) GetDeploymentPodEvents(ctx context.Context, clusterName, namespace, deploymentName string) ([]corev1.Event, error) {
+	client, err := s.clientManager.GetClient(clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	// 查询与Deployment关联的所有Pod
+	// 使用Deployment的selector来过滤Pod
+	deployment, err := client.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("获取Deployment失败: %w", err)
+	}
+
+	// 获取Deployment的选择器
+	selector, err := metav1.LabelSelectorAsSelector(deployment.Spec.Selector)
+	if err != nil {
+		return nil, fmt.Errorf("解析标签选择器失败: %w", err)
+	}
+
+	// 查询符合选择器的Pod
+	pods, err := client.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: selector.String(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("查询Pod列表失败: %w", err)
+	}
+
+	var allEvents []corev1.Event
+
+	// 获取每个Pod的事件
+	for _, pod := range pods.Items {
+		fieldSelector := fmt.Sprintf("involvedObject.name=%s,involvedObject.namespace=%s,involvedObject.kind=Pod",
+			pod.Name, namespace)
+
+		events, err := client.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
+			FieldSelector: fieldSelector,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("获取Pod %s 的事件列表失败: %w", pod.Name, err)
+		}
+
+		allEvents = append(allEvents, events.Items...)
+	}
+
+	// 按照最后时间戳降序排序，确保最新事件在前
+	sort.Slice(allEvents, func(i, j int) bool {
+		return allEvents[i].LastTimestamp.After(allEvents[j].LastTimestamp.Time)
+	})
+
+	return allEvents, nil
+}
+
+// GetAllDeploymentEvents 获取Deployment及其关联的ReplicaSet和Pod的所有事件
+func (s *DeploymentService) GetAllDeploymentEvents(ctx context.Context, clusterName, namespace, deploymentName string) (map[string][]corev1.Event, error) {
+	// 获取Deployment自身事件
+	deploymentEvents, err := s.GetDeploymentEvents(ctx, clusterName, namespace, deploymentName)
+	if err != nil {
+		return nil, fmt.Errorf("获取Deployment事件失败: %w", err)
+	}
+
+	// 获取相关ReplicaSet事件
+	replicaSetEvents, err := s.GetReplicaSetEvents(ctx, clusterName, namespace, deploymentName)
+	if err != nil {
+		return nil, fmt.Errorf("获取ReplicaSet事件失败: %w", err)
+	}
+
+	// 获取相关Pod事件
+	podEvents, err := s.GetDeploymentPodEvents(ctx, clusterName, namespace, deploymentName)
+	if err != nil {
+		return nil, fmt.Errorf("获取Pod事件失败: %w", err)
+	}
+
+	// 将所有事件分类返回
+	result := map[string][]corev1.Event{
+		"deployment": deploymentEvents,
+		"replicaSet": replicaSetEvents,
+		"pod":        podEvents,
+	}
+
+	return result, nil
+}
+
+// GetReplicaSetEvents 获取ReplicaSet相关的事件
+func (s *DeploymentService) GetReplicaSetEvents(ctx context.Context, clusterName, namespace, deploymentName string) ([]corev1.Event, error) {
+	client, err := s.clientManager.GetClient(clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	// 查询与Deployment关联的所有ReplicaSets
+	labelSelector := fmt.Sprintf("app=%s", deploymentName)
+	rsList, err := client.AppsV1().ReplicaSets(namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("获取ReplicaSet列表失败: %w", err)
+	}
+
+	var allEvents []corev1.Event
+
+	// 获取每个ReplicaSet的事件
+	for _, rs := range rsList.Items {
+		// 检查ReplicaSet是否属于该Deployment（通过所有者引用）
+		if isOwnedByDeployment(rs.OwnerReferences, deploymentName) {
+			fieldSelector := fmt.Sprintf("involvedObject.name=%s,involvedObject.namespace=%s,involvedObject.kind=ReplicaSet",
+				rs.Name, namespace)
+
+			events, err := client.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
+				FieldSelector: fieldSelector,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("获取ReplicaSet %s 的事件列表失败: %w", rs.Name, err)
+			}
+
+			allEvents = append(allEvents, events.Items...)
+		}
+	}
+
+	// 按照最后时间戳降序排序，确保最新事件在前
+	sort.Slice(allEvents, func(i, j int) bool {
+		return allEvents[i].LastTimestamp.After(allEvents[j].LastTimestamp.Time)
+	})
+
+	return allEvents, nil
+}
+
+// 检查资源是否被指定的Deployment拥有
+func isOwnedByDeployment(ownerRefs []metav1.OwnerReference, deploymentName string) bool {
+	for _, owner := range ownerRefs {
+		if owner.Kind == "Deployment" && owner.Name == deploymentName {
+			return true
+		}
+	}
+	return false
+}
+
 // convertDeploymentList 将K8s API的Deployment列表转换为自定义格式
 func (ds *DeploymentService) convertDeploymentList(deployments []appsv1.Deployment) []DeploymentInfo {
 	result := make([]DeploymentInfo, 0, len(deployments))
