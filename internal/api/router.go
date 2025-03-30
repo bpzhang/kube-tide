@@ -18,6 +18,7 @@ type App struct {
 	NodePoolHandler    *NodePoolHandler
 	HealthHandler      *HealthCheckHandler
 	PodTerminalHandler *PodTerminalHandler
+	NamespaceHandler   *NamespaceHandler // 添加命名空间处理器
 }
 
 // InitRouter 初始化路由
@@ -66,8 +67,9 @@ func InitRouter(app *App) *gin.Engine {
 		v1.GET("/clusters/:cluster", app.ClusterHandler.GetClusterDetails)
 		// 集群监控指标
 		v1.GET("/clusters/:cluster/metrics", app.ClusterHandler.GetClusterMetrics)
-		// 集群namespaces
-		v1.GET("/clusters/:cluster/namespaces", app.ClusterHandler.ListNamespaces)
+
+		// 命名空间管理 - 使用专门的NamespaceHandler
+		v1.GET("/clusters/:cluster/namespaces", app.NamespaceHandler.ListNamespaces)
 
 		// 节点池管理
 		v1.GET("/clusters/:cluster/nodepools", app.NodePoolHandler.ListNodePools)

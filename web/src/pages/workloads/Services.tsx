@@ -4,11 +4,13 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { 
   getServicesByNamespace, 
   createService, 
-  deleteService 
+  deleteService,
+  updateService 
 } from '../../api/service';
 import { getClusterList } from '../../api/cluster';
 import CreateServiceModal from '../../components/k8s/service/CreateServiceModal';
 import { EditServiceModal } from '../../components/k8s/service/EditServiceModal';
+import NamespaceSelector from '../../components/k8s/common/NamespaceSelector';
 
 const { Option } = Select;
 
@@ -63,61 +65,81 @@ const Services: React.FC = () => {
   useEffect(() => {
     if (selectedCluster) {
       fetchServices();
-      // 每30秒刷新一次
-      const timer = setInterval(fetchServices, 30000);
-      return () => clearInterval(timer);
     }
   }, [selectedCluster, namespace]);
+
+  const handleDeleteService = async (name: string) => {
+    try {
+      await deleteService(selectedCluster, namespace, name);
+      message.success('服务删除成功');
+      fetchServices();
+    } catch (err) {
+      message.error('服务删除失败');
+    }
+  };
 
   const handleCreateService = async (values: any) => {
     try {
       await createService(selectedCluster, namespace, values);
       message.success('服务创建成功');
+      setCreateModalVisible(false);
       fetchServices();
-    } catch (error) {
-      message.error('创建服务失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    } catch (err) {
+      message.error('服务创建失败');
     }
   };
 
-  const handleDeleteService = async (service: any) => {
+  const handleUpdateService = async (values: any) => {
+    if (!currentService) return;
+    
     try {
-      await deleteService(selectedCluster, service.metadata.namespace, service.metadata.name);
-      message.success('服务删除成功');
+      await updateService(selectedCluster, namespace, currentService.metadata.name, values);
+      message.success('服务更新成功');
+      setEditModalVisible(false);
       fetchServices();
-    } catch (error) {
-      message.error('删除服务失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    } catch (err) {
+      message.error('服务更新失败');
     }
+  };
+
+  const showEditModal = (service: any) => {
+    setCurrentService(service);
+    setEditModalVisible(true);
   };
 
   const columns = [
     {
       title: '名称',
-      dataIndex: 'metadata',
+      dataIndex: ['metadata', 'name'],
       key: 'name',
-      render: (metadata: any) => metadata.name,
     },
     {
       title: '命名空间',
-      dataIndex: 'metadata',
+      dataIndex: ['metadata', 'namespace'],
       key: 'namespace',
-      render: (metadata: any) => metadata.namespace,
     },
     {
       title: '类型',
-      dataIndex: 'spec',
+      dataIndex: ['spec', 'type'],
       key: 'type',
-      render: (spec: any) => <Tag color="blue">{spec.type}</Tag>,
+      render: (type: string) => {
+        let color = 'blue';
+        if (type === 'ClusterIP') color = 'green';
+        else if (type === 'NodePort') color = 'geekblue';
+        else if (type === 'LoadBalancer') color = 'purple';
+        
+        return <Tag color={color}>{type}</Tag>;
+      },
     },
     {
-      title: 'Cluster IP',
-      dataIndex: 'spec',
+      title: '集群IP',
+      dataIndex: ['spec', 'clusterIP'],
       key: 'clusterIP',
-      render: (spec: any) => spec.clusterIP,
     },
     {
       title: '外部IP',
-      dataIndex: 'spec',
-      key: 'externalIPs',
+      dataIndex: ['spec'],
+      key: 'externalIP',
       render: (spec: any) => (spec.externalIPs || []).join(', ') || '-',
     },
     {
@@ -147,40 +169,29 @@ const Services: React.FC = () => {
         return (
           <div>
             {Object.entries(spec.selector).map(([key, value]: [string, any], index: number) => (
-              <Tag color="green" key={index}>
-                {key}: {value}
-              </Tag>
+              <Tag color="blue" key={index}>{`${key}: ${value}`}</Tag>
             ))}
           </div>
         );
       },
     },
     {
-      title: '创建时间',
-      dataIndex: 'metadata',
-      key: 'creationTimestamp',
-      render: (metadata: any) => new Date(metadata.creationTimestamp).toLocaleString(),
-    },
-    {
       title: '操作',
       key: 'action',
-      render: (_: any, record: any) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setCurrentService(record);
-              setEditModalVisible(true);
-            }}
+      render: (text: string, record: any) => (
+        <Space size="middle">
+          <Button 
+            type="link" 
+            icon={<EditOutlined />} 
+            onClick={() => showEditModal(record)}
           >
             编辑
           </Button>
           <Popconfirm
-            title="确定要删除此服务吗？"
-            onConfirm={() => handleDeleteService(record)}
-            okText="确定"
-            cancelText="取消"
+            title="确定要删除此服务吗?"
+            onConfirm={() => handleDeleteService(record.metadata.name)}
+            okText="是"
+            cancelText="否"
           >
             <Button type="link" danger icon={<DeleteOutlined />}>
               删除
@@ -208,14 +219,11 @@ const Services: React.FC = () => {
             ))}
           </Select>
           <span>命名空间:</span>
-          <Select 
-            value={namespace} 
+          <NamespaceSelector
+            clusterName={selectedCluster}
+            value={namespace}
             onChange={setNamespace}
-            style={{ width: 200 }}
-          >
-            <Option value="default">default</Option>
-            <Option value="kube-system">kube-system</Option>
-          </Select>
+          />
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -238,16 +246,23 @@ const Services: React.FC = () => {
         visible={createModalVisible}
         onClose={() => setCreateModalVisible(false)}
         onSubmit={handleCreateService}
+        clusterName={selectedCluster}
         namespace={namespace}
       />
 
-      <EditServiceModal
-        visible={editModalVisible}
-        onClose={() => setEditModalVisible(false)}
-        service={currentService}
-        clusterName={selectedCluster}
-        onSuccess={fetchServices}
-      />
+      {currentService && (
+        <EditServiceModal
+          visible={editModalVisible}
+          onClose={() => {
+            setEditModalVisible(false);
+            setCurrentService(null);
+          }}
+          onSubmit={handleUpdateService}
+          service={currentService}
+          clusterName={selectedCluster}
+          namespace={namespace}
+        />
+      )}
     </Card>
   );
 };

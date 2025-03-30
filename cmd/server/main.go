@@ -51,6 +51,7 @@ func main() {
 	podService := k8s.NewPodService(clientManager)
 	deploymentService := k8s.NewDeploymentService(clientManager)
 	serviceManager := k8s.NewServiceManager(clientManager)
+	namespaceService := k8s.NewNamespaceService(clientManager) // 初始化命名空间服务
 
 	// create API handlers
 	nodeHandler := api.NewNodeHandler(nodeService)
@@ -61,6 +62,7 @@ func main() {
 	clusterHandler := api.NewClusterHandler(clientManager)
 	healthHandler := api.NewHealthCheckHandler()
 	podTerminalHandler := api.NewPodTerminalHandler(podService)
+	namespaceHandler := api.NewNamespaceHandler(namespaceService) // 初始化命名空间处理器
 
 	// Create an app instance and initialize the route
 	app := &api.App{
@@ -72,6 +74,7 @@ func main() {
 		NodePoolHandler:    nodePoolHandler,
 		HealthHandler:      healthHandler,
 		PodTerminalHandler: podTerminalHandler,
+		NamespaceHandler:   namespaceHandler, // 添加到App实例
 	}
 
 	// Initialize the router defined in router.go

@@ -169,28 +169,3 @@ func (h *ClusterHandler) GetClusterMetrics(c *gin.Context) {
 		"metrics": metrics,
 	})
 }
-
-// ListNamespaces 获取集群命名空间列表
-func (h *ClusterHandler) ListNamespaces(c *gin.Context) {
-	clusterName := c.Param("cluster")
-	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
-		return
-	}
-
-	client, err := h.clientManager.GetClient(clusterName)
-	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	namespaces, err := client.CoreV1().Namespaces().List(c, metav1.ListOptions{})
-	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, fmt.Sprintf("获取命名空间列表失败: %v", err))
-		return
-	}
-
-	ResponseSuccess(c, gin.H{
-		"namespaces": namespaces.Items,
-	})
-}

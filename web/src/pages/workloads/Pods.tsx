@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Select, Space, Card, message, Spin } from 'antd';
 import { getPodsByNamespace } from '../../api/pod';
-import { getClusterList, getClusterNamespaces } from '../../api/cluster';
+import { getClusterList } from '../../api/cluster';
 import PodList from '../../components/k8s/pod/PodList';
+import NamespaceSelector from '../../components/k8s/common/NamespaceSelector';
 
 const { Option } = Select;
 
@@ -10,7 +11,6 @@ const Pods: React.FC = () => {
   const [selectedCluster, setSelectedCluster] = useState<string>('');
   const [clusters, setClusters] = useState<string[]>([]);
   const [namespace, setNamespace] = useState<string>('default');
-  const [namespaces, setNamespaces] = useState<string[]>(['default', 'kube-system']);
   const [pods, setPods] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isChangeParams, setIsChangeParams] = useState(false); // 标记是参数变更还是刷新
@@ -29,32 +29,6 @@ const Pods: React.FC = () => {
       message.error('获取集群列表失败');
     }
   };
-
-  // 获取命名空间列表
-  const fetchNamespaces = useCallback(async () => {
-    if (!selectedCluster) return;
-    
-    try {
-      // 如果有实现 getNamespaceList API，则使用它
-      const response = await getClusterNamespaces(selectedCluster);
-      
-      if (response?.data?.code === 0) {
-        var namespaces = ['default', 'kube-system'];
-        const namespacesList = response.data.data.namespaces;
-        if (namespacesList && namespacesList.length > 0) {
-          namespacesList.forEach(ns => {
-            if (!namespaces.includes(ns.metadata.name)) {
-              namespaces.push(ns.metadata.name);
-            }
-          });
-        }
-        setNamespaces(namespaces);
-      }
-    } catch (err) {
-      // 如果 API 未实现或失败，使用默认值
-      console.warn('获取命名空间列表失败，使用默认值');
-    }
-  }, [selectedCluster]);
 
   // 获取 Pod 列表，使用 useCallback 确保函数引用稳定
   const fetchPods = useCallback(async (isParamChange = false) => {
@@ -83,13 +57,6 @@ const Pods: React.FC = () => {
   useEffect(() => {
     fetchClusters();
   }, []);
-
-  // 当集群变化时获取命名空间
-  useEffect(() => {
-    if (selectedCluster) {
-      fetchNamespaces();
-    }
-  }, [selectedCluster, fetchNamespaces]);
 
   // 当集群或命名空间变化时重新获取Pod列表
   useEffect(() => {
@@ -134,15 +101,11 @@ const Pods: React.FC = () => {
             ))}
           </Select>
           <span>命名空间:</span>
-          <Select 
-            value={namespace} 
+          <NamespaceSelector
+            clusterName={selectedCluster}
+            value={namespace}
             onChange={handleNamespaceChange}
-            style={{ width: 200 }}
-          >
-            {namespaces.map(ns => (
-              <Option key={ns} value={ns}>{ns}</Option>
-            ))}
-          </Select>
+          />
         </Space>
       }
     >
