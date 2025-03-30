@@ -135,9 +135,9 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
   // 获取所有事件合并后的数组
   const getAllEvents = () => {
     return [
-      ...events.deployment.map(evt => ({ ...evt, eventSource: 'deployment' })),
-      ...events.replicaSet.map(evt => ({ ...evt, eventSource: 'replicaSet' })),
-      ...events.pod.map(evt => ({ ...evt, eventSource: 'pod' }))
+      ...(events.deployment || []).map(evt => ({ ...evt, eventSource: 'deployment' })),
+      ...(events.replicaSet || []).map(evt => ({ ...evt, eventSource: 'replicaSet' })),
+      ...(events.pod || []).map(evt => ({ ...evt, eventSource: 'pod' }))
     ].sort((a, b) => {
       if (!a.lastTimestamp || !b.lastTimestamp) return 0;
       return new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime();
@@ -161,7 +161,7 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
 
   // 获取总事件数
   const getTotalEventCount = () => {
-    return events.deployment.length + events.replicaSet.length + events.pod.length;
+    return (events.deployment?.length || 0) + (events.replicaSet?.length || 0) + (events.pod?.length || 0);
   };
 
   // Tab项配置
@@ -179,7 +179,7 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
     },
     {
       key: 'deployment',
-      label: `Deployment (${events.deployment.length})`,
+      label: `Deployment (${events.deployment?.length || 0})`,
       children: (
         <EventsTable 
           events={events.deployment} 
@@ -190,7 +190,7 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
     },
     {
       key: 'replicaSet',
-      label: `ReplicaSet (${events.replicaSet.length})`,
+      label: `ReplicaSet (${events.replicaSet?.length || 0})`,
       children: (
         <EventsTable 
           events={events.replicaSet} 
@@ -201,7 +201,7 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
     },
     {
       key: 'pod',
-      label: `Pod (${events.pod.length})`,
+      label: `Pod (${events.pod?.length || 0})`,
       children: (
         <EventsTable 
           events={events.pod} 

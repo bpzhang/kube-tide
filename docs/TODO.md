@@ -12,12 +12,21 @@
 
 ### 工作负载管理
 
-- [] 实现StatefulSet管理功能
+- [ ] 实现StatefulSet管理功能
 - [X] 实现deployment管理功能
 - [ ] 实现DaemonSet管理功能
 - [ ] 添加Job和CronJob管理
 - [ ] 实现ConfigMap和Secret管理
 - [ ] 增加HPA（水平自动扩缩容）配置和管理
+
+### 网络管理
+
+- [X] 实现Service管理
+- [ ] 实现Ingress资源管理
+- [ ] 添加Service Mesh集成
+- [ ] 实现网络策略（NetworkPolicy）管理
+- [ ] 实现LoadBalancer类型服务的自动化配置
+- [ ] 添加DNS服务集成
 
 ### 存储管理
 
