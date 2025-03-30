@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -299,4 +300,34 @@ func (s *PodService) CheckPodExists(ctx context.Context, clusterName, namespace,
 	}
 
 	return pod, true, nil
+}
+
+// GetPodEvents 获取Pod相关的事件
+func (s *PodService) GetPodEvents(ctx context.Context, clusterName, namespace, podName string) ([]corev1.Event, error) {
+	client, err := s.clientManager.GetClient(clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	// pod, err := s.GetPodDetails(ctx, clusterName, namespace, podName)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("获取Pod详情失败: %w", err)
+	// }
+
+	// 设置字段选择器，筛选与指定Pod相关的事件
+	fieldSelector := fmt.Sprintf("involvedObject.name=%s,involvedObject.namespace=%s,involvedObject.kind=Pod", podName, namespace)
+
+	events, err := client.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
+		FieldSelector: fieldSelector,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("获取Pod事件列表失败: %w", err)
+	}
+
+	// 按照最后时间戳降序排序，确保最新事件在前
+	sort.Slice(events.Items, func(i, j int) bool {
+		return events.Items[i].LastTimestamp.After(events.Items[j].LastTimestamp.Time)
+	})
+
+	return events.Items, nil
 }

@@ -34,6 +34,14 @@ export interface PodExistsResponse {
   };
 }
 
+export interface PodEventsResponse {
+  code: number;
+  message: string;
+  data: {
+    events: any[];
+  };
+}
+
 // Pod 列表查询
 export const getPodsByNamespace = (clusterName: string, namespace: string) => {
   return api.get<PodListResponse>(`/clusters/${clusterName}/namespaces/${namespace}/pods`);
@@ -162,4 +170,15 @@ export const getPodsBySelector = (clusterName: string, namespace: string, select
  */
 export const checkPodExists = (clusterName: string, namespace: string, podName: string) => {
   return api.get<PodExistsResponse>(`/clusters/${clusterName}/namespaces/${namespace}/pods/${podName}/exists`);
+};
+
+/**
+ * 获取Pod相关的事件
+ * @param clusterName 集群名称
+ * @param namespace 命名空间
+ * @param podName Pod名称
+ * @returns Pod事件列表响应
+ */
+export const getPodEvents = (clusterName: string, namespace: string, podName: string) => {
+  return api.get<PodEventsResponse>(`/clusters/${clusterName}/namespaces/${namespace}/pods/${podName}/events`);
 };

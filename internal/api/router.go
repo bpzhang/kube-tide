@@ -100,6 +100,7 @@ func InitRouter(app *App) *gin.Engine {
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods", app.PodHandler.ListPodsByNamespace)
 		v1.POST("/clusters/:cluster/namespaces/:namespace/pods/selector", app.PodHandler.GetPodsBySelector)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod", app.PodHandler.GetPodDetails)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/events", app.PodHandler.GetPodEvents)
 		v1.DELETE("/clusters/:cluster/namespaces/:namespace/pods/:pod", app.PodHandler.DeletePod)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/logs", app.PodHandler.GetPodLogs)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/logs/stream", app.PodHandler.StreamPodLogs)

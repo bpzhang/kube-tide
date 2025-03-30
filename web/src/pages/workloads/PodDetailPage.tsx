@@ -76,7 +76,7 @@ const PodDetailPage: React.FC = () => {
     {
       key: 'info',
       label: '基本信息',
-      children: <PodDetail pod={pod} />
+      children: <PodDetail pod={pod} clusterName={clusterName!} />
     },
     {
       key: 'logs',

@@ -361,3 +361,33 @@ func (h *PodHandler) CheckPodExists(c *gin.Context) {
 		"pod":    pod,
 	})
 }
+
+// GetPodEvents 获取Pod相关的事件
+func (h *PodHandler) GetPodEvents(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	podName := c.Param("pod")
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "命名空间不能为空")
+		return
+	}
+	if podName == "" {
+		ResponseError(c, http.StatusBadRequest, "Pod名称不能为空")
+		return
+	}
+
+	events, err := h.service.GetPodEvents(context.Background(), clusterName, namespace, podName)
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ResponseSuccess(c, gin.H{
+		"events": events,
+	})
+}

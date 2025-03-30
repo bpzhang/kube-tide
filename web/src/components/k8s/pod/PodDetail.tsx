@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Descriptions, Tag, Space, Table } from 'antd';
 import { formatDate } from '@/utils/format';
+import PodEvents from './PodEvents';
 
 interface ContainerStatus {
   name: string;
@@ -53,9 +54,10 @@ interface PodDetailProps {
       containerStatuses?: ContainerStatus[];
     };
   };
+  clusterName: string; // 添加集群名称参数
 }
 
-const PodDetail: React.FC<PodDetailProps> = ({ pod }) => {
+const PodDetail: React.FC<PodDetailProps> = ({ pod, clusterName }) => {
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
       Running: 'green',
@@ -218,6 +220,12 @@ const PodDetail: React.FC<PodDetailProps> = ({ pod }) => {
           pagination={false}
         />
       </Card>
+
+      <PodEvents 
+        clusterName={clusterName} 
+        namespace={pod.metadata.namespace} 
+        podName={pod.metadata.name} 
+      />
     </Space>
   );
 };
