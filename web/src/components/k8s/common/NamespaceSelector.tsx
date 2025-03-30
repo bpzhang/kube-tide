@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Select, message } from 'antd';
 import { getNamespaceList } from '@/api/namespace';
 
 const { Option } = Select;
 
+// 本地缓存，但使用React Hook方式实现而非全局变量
 interface NamespaceSelectorProps {
   clusterName: string;  // 必须提供集群名称
   value?: string;      // 当前选中的命名空间
@@ -31,35 +32,75 @@ const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
 }) => {
   const [namespaces, setNamespaces] = useState<string[]>(defaultNamespaces);
   const [loading, setLoading] = useState<boolean>(false);
+  
+  // 使用useRef或useState来保存上次请求信息，避免使用模块级变量
+  const [lastFetchInfo, setLastFetchInfo] = useState<{
+    cluster: string; 
+    timestamp: number;
+    namespaces: string[]
+  } | null>(null);
+
+  // 判断是否需要获取新数据的函数
+  const shouldFetchNamespaces = (currentCluster: string): boolean => {
+    if (!currentCluster) return false;
+    
+    // 没有缓存或集群变化时需要重新获取
+    if (!lastFetchInfo || lastFetchInfo.cluster !== currentCluster) {
+      return true;
+    }
+    
+    // 缓存时间超过30分钟需要重新获取（30 * 60 * 1000 = 1800000毫秒）
+    const cacheAge = Date.now() - lastFetchInfo.timestamp;
+    return cacheAge > 1800000;
+  };
+
+  // 获取命名空间列表
+  const fetchNamespaces = async (cluster: string) => {
+    if (!cluster || !shouldFetchNamespaces(cluster)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await getNamespaceList(cluster);
+      if (response.data.code === 0) {
+        const namespacesList = response.data.data.namespaces.length > 0 
+          ? response.data.data.namespaces 
+          : defaultNamespaces;
+        
+        setNamespaces(namespacesList);
+        
+        // 更新缓存信息
+        setLastFetchInfo({
+          cluster,
+          timestamp: Date.now(),
+          namespaces: namespacesList
+        });
+      } else {
+        message.error(response.data.message || '获取命名空间列表失败');
+        setNamespaces(defaultNamespaces);
+      }
+    } catch (err) {
+      console.warn('获取命名空间列表失败，使用默认值', err);
+      setNamespaces(defaultNamespaces);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 当集群变化时获取命名空间列表
   useEffect(() => {
-    if (!clusterName) return;
-    
-    const fetchNamespaces = async () => {
-      setLoading(true);
-      try {
-        const response = await getNamespaceList(clusterName);
-        if (response.data.code === 0) {
-          // 如果返回的命名空间列表为空，则使用默认值
-          const namespacesList = response.data.data.namespaces.length > 0 
-            ? response.data.data.namespaces 
-            : defaultNamespaces;
-          setNamespaces(namespacesList);
-        } else {
-          message.error(response.data.message || '获取命名空间列表失败');
-          setNamespaces(defaultNamespaces);
-        }
-      } catch (err) {
-        console.warn('获取命名空间列表失败，使用默认值');
-        setNamespaces(defaultNamespaces);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // 如果有上次的缓存并且集群名相同，使用缓存数据
+    if (lastFetchInfo && lastFetchInfo.cluster === clusterName && !shouldFetchNamespaces(clusterName)) {
+      setNamespaces(lastFetchInfo.namespaces);
+      return;
+    }
 
-    fetchNamespaces();
-  }, [clusterName, defaultNamespaces]);
+    // 需要获取新数据
+    if (clusterName) {
+      fetchNamespaces(clusterName);
+    }
+  }, [clusterName]); // 只在clusterName变化时执行
 
   // 处理命名空间变化
   const handleNamespaceChange = (value: string) => {
