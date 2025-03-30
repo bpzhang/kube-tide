@@ -88,3 +88,7 @@ export const testClusterConnection = (clusterName: string) => {
 export const getClusterMetrics = (clusterName: string) => {
   return api.get<ClusterMetricsResponse>(`/clusters/${clusterName}/metrics`);
 };
+
+export const getClusterNamespaces = (clusterName: string) => {
+  return api.get<{code: number; message: string; data: {namespaces: string[]}}>(`/clusters/${clusterName}/namespaces`);
+};
