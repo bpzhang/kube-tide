@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 
 	"kube-tide/internal/core/k8s"
@@ -232,5 +233,35 @@ func (h *DeploymentHandler) CreateDeployment(c *gin.Context) {
 	ResponseSuccess(c, gin.H{
 		"message":    "Deployment创建成功",
 		"deployment": deployment,
+	})
+}
+
+// GetDeploymentEvents 获取Deployment相关的事件
+func (h *DeploymentHandler) GetDeploymentEvents(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	deploymentName := c.Param("deployment")
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "命名空间不能为空")
+		return
+	}
+	if deploymentName == "" {
+		ResponseError(c, http.StatusBadRequest, "Deployment名称不能为空")
+		return
+	}
+
+	events, err := h.service.GetDeploymentEvents(context.Background(), clusterName, namespace, deploymentName)
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ResponseSuccess(c, gin.H{
+		"events": events,
 	})
 }

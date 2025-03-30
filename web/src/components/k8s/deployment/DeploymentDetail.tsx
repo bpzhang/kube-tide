@@ -4,8 +4,9 @@ import { EditOutlined } from '@ant-design/icons';
 import { formatDate } from '@/utils/format';
 import EditDeploymentModal from './EditDeploymentModal';
 import PodList from '../pod/PodList';
-import { updateDeployment, UpdateDeploymentRequest } from '@/api/deployment';
+import { updateDeployment, UpdateDeploymentRequest, getDeploymentEvents } from '@/api/deployment';
 import { getPodsBySelector } from '@/api/pod';
+import K8sEvents from '../common/K8sEvents';
 
 const { Title } = Typography;
 
@@ -295,6 +296,14 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
         onClose={hideEditModal}
         onSubmit={handleUpdateSubmit}
         deployment={deployment}
+      />
+
+      <K8sEvents
+        clusterName={clusterName}
+        namespace={deployment.namespace}
+        resourceName={deployment.name}
+        resourceKind="Deployment"
+        fetchEvents={getDeploymentEvents}
       />
     </Space>
   );

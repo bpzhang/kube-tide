@@ -1,7 +1,8 @@
 import React from 'react';
 import { Card, Descriptions, Tag, Space, Table } from 'antd';
 import { formatDate } from '@/utils/format';
-import PodEvents from './PodEvents';
+import K8sEvents from '../common/K8sEvents';
+import { getPodEvents } from '@/api/pod';
 
 interface ContainerStatus {
   name: string;
@@ -221,10 +222,12 @@ const PodDetail: React.FC<PodDetailProps> = ({ pod, clusterName }) => {
         />
       </Card>
 
-      <PodEvents 
+      <K8sEvents 
         clusterName={clusterName} 
         namespace={pod.metadata.namespace} 
-        podName={pod.metadata.name} 
+        resourceName={pod.metadata.name} 
+        resourceKind="Pod"
+        fetchEvents={getPodEvents} 
       />
     </Space>
   );

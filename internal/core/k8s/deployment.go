@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -167,6 +168,41 @@ func (ds *DeploymentService) GetDeploymentDetails(clusterName, namespace, name s
 	}
 
 	return details, nil
+}
+
+// GetDeploymentEvents 获取Deployment相关的事件
+func (s *DeploymentService) GetDeploymentEvents(ctx context.Context, clusterName, namespace, deploymentName string) ([]corev1.Event, error) {
+	client, err := s.clientManager.GetClient(clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	deployment, err := s.GetDeploymentDetails(clusterName, namespace, deploymentName)
+	if err != nil {
+		return nil, fmt.Errorf("获取Deployment详情失败: %w", err)
+	}
+
+	if deployment == nil {
+		return nil, fmt.Errorf("deployment %s/%s不存在", namespace, deploymentName)
+	}
+
+	// 设置字段选择器，筛选与指定Deployment相关的事件
+	fieldSelector := fmt.Sprintf("involvedObject.name=%s,involvedObject.namespace=%s,involvedObject.kind=Deployment",
+		deploymentName, namespace)
+
+	events, err := client.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
+		FieldSelector: fieldSelector,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("获取Deployment事件列表失败: %w", err)
+	}
+
+	// 按照最后时间戳降序排序，确保最新事件在前
+	sort.Slice(events.Items, func(i, j int) bool {
+		return events.Items[i].LastTimestamp.After(events.Items[j].LastTimestamp.Time)
+	})
+
+	return events.Items, nil
 }
 
 // convertDeploymentList 将K8s API的Deployment列表转换为自定义格式

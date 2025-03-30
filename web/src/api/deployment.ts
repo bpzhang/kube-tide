@@ -361,3 +361,22 @@ export const createDeployment = (
 ) => {
   return api.post(`/clusters/${clusterName}/namespaces/${namespace}/deployments`, deploymentData);
 };
+
+export interface DeploymentEventsResponse {
+  code: number;
+  message: string;
+  data: {
+    events: any[];
+  };
+}
+
+/**
+ * 获取Deployment相关的事件
+ * @param clusterName 集群名称
+ * @param namespace 命名空间
+ * @param deploymentName Deployment名称
+ * @returns Deployment事件列表响应
+ */
+export const getDeploymentEvents = (clusterName: string, namespace: string, deploymentName: string) => {
+  return api.get<DeploymentEventsResponse>(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/events`);
+};

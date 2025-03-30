@@ -120,6 +120,7 @@ func InitRouter(app *App) *gin.Engine {
 		v1.GET("/clusters/:cluster/deployments", app.DeploymentHandler.ListDeployments)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/deployments", app.DeploymentHandler.ListDeploymentsByNamespace)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/deployments/:deployment", app.DeploymentHandler.GetDeploymentDetails)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/events", app.DeploymentHandler.GetDeploymentEvents)
 		v1.POST("/clusters/:cluster/namespaces/:namespace/deployments", app.DeploymentHandler.CreateDeployment)
 		v1.PUT("/clusters/:cluster/namespaces/:namespace/deployments/:deployment", app.DeploymentHandler.UpdateDeployment)
 		v1.PUT("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/scale", app.DeploymentHandler.ScaleDeployment)
