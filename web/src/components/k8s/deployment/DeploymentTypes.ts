@@ -128,6 +128,33 @@ export interface VolumeFormData {
   };
 }
 
+// 节点亲和性匹配表达式
+export interface NodeAffinityExpression {
+  key: string;
+  operator: 'In' | 'NotIn' | 'Exists' | 'DoesNotExist' | 'Gt' | 'Lt';
+  values?: string[];
+}
+
+// 节点亲和性选择器
+export interface NodeSelectorTerm {
+  matchExpressions?: NodeAffinityExpression[];
+  matchFields?: NodeAffinityExpression[];
+}
+
+// 首选节点亲和性规则
+export interface PreferredNodeAffinity {
+  weight: number;
+  preference: NodeSelectorTerm;
+}
+
+// 节点亲和性配置
+export interface NodeAffinityConfig {
+  // 必须满足的节点亲和性规则
+  requiredTerms: NodeSelectorTerm[];
+  // 优先满足的节点亲和性规则
+  preferredTerms: PreferredNodeAffinity[];
+}
+
 // 表单数据类型定义
 export interface DeploymentFormData {
   name?: string;
@@ -143,6 +170,7 @@ export interface DeploymentFormData {
   labels?: Array<{ key: string; value: string }>;
   annotations?: Array<{ key: string; value: string }>;
   nodeSelector?: Array<{ key: string; value: string }>;
+  nodeAffinity?: NodeAffinityConfig;
   serviceAccountName?: string;
   hostNetwork?: boolean;
   dnsPolicy?: string;
@@ -393,17 +421,96 @@ export const processFormToCreateRequest = (values: DeploymentFormData): CreateDe
     });
   }
 
-  // 处理高级选项
-  if (values.serviceAccountName) {
-    deploymentData.serviceAccountName = values.serviceAccountName;
-  }
+  // 处理节点亲和性
+  if (values.nodeAffinity) {
+    deploymentData.affinity = {
+      nodeAffinity: {}
+    };
 
-  if (values.hostNetwork !== undefined) {
-    deploymentData.hostNetwork = values.hostNetwork;
-  }
+    // 处理必须满足的节点选择规则
+    if (values.nodeAffinity.requiredTerms && values.nodeAffinity.requiredTerms.length > 0) {
+      deploymentData.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution = {
+        nodeSelectorTerms: values.nodeAffinity.requiredTerms.map(term => {
+          const result: any = {};
+          
+          if (term.matchExpressions && term.matchExpressions.length > 0) {
+            result.matchExpressions = term.matchExpressions.filter(expr => expr.key && expr.operator)
+              .map(expr => ({
+                key: expr.key,
+                operator: expr.operator,
+                values: (expr.operator === 'Exists' || expr.operator === 'DoesNotExist') 
+                  ? undefined 
+                  : (expr.values || [])
+              }));
+          }
+          
+          if (term.matchFields && term.matchFields.length > 0) {
+            result.matchFields = term.matchFields.filter(field => field.key && field.operator)
+              .map(field => ({
+                key: field.key,
+                operator: field.operator,
+                values: (field.operator === 'Exists' || field.operator === 'DoesNotExist') 
+                  ? undefined 
+                  : (field.values || [])
+              }));
+          }
+          
+          return result;
+        }).filter(term => 
+          (term.matchExpressions && term.matchExpressions.length > 0) || 
+          (term.matchFields && term.matchFields.length > 0)
+        )
+      };
+    }
 
-  if (values.dnsPolicy) {
-    deploymentData.dnsPolicy = values.dnsPolicy;
+    // 处理优先满足的节点选择规则
+    if (values.nodeAffinity.preferredTerms && values.nodeAffinity.preferredTerms.length > 0) {
+      deploymentData.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution = 
+        values.nodeAffinity.preferredTerms
+          .filter(preferred => preferred.weight > 0 && preferred.preference)
+          .map(preferred => {
+            const term: any = {
+              weight: preferred.weight,
+              preference: {}
+            };
+
+            if (preferred.preference.matchExpressions && preferred.preference.matchExpressions.length > 0) {
+              term.preference.matchExpressions = preferred.preference.matchExpressions
+                .filter(expr => expr.key && expr.operator)
+                .map(expr => ({
+                  key: expr.key,
+                  operator: expr.operator,
+                  values: (expr.operator === 'Exists' || expr.operator === 'DoesNotExist') 
+                    ? undefined 
+                    : (expr.values || [])
+                }));
+            }
+
+            if (preferred.preference.matchFields && preferred.preference.matchFields.length > 0) {
+              term.preference.matchFields = preferred.preference.matchFields
+                .filter(field => field.key && field.operator)
+                .map(field => ({
+                  key: field.key,
+                  operator: field.operator,
+                  values: (field.operator === 'Exists' || field.operator === 'DoesNotExist') 
+                    ? undefined 
+                    : (field.values || [])
+                }));
+            }
+
+            return term;
+          })
+          .filter(preferred => 
+            (preferred.preference.matchExpressions && preferred.preference.matchExpressions.length > 0) || 
+            (preferred.preference.matchFields && preferred.preference.matchFields.length > 0)
+          );
+    }
+
+    // 如果没有亲和性规则，则移除affinity字段
+    if (!deploymentData.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution &&
+        !deploymentData.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution) {
+      delete deploymentData.affinity;
+    }
   }
   
   return deploymentData;
@@ -560,6 +667,108 @@ export const processFormToUpdateRequest = (values: DeploymentFormData): UpdateDe
     });
   }
   
+  // 处理节点选择器
+  if (values.nodeSelector && values.nodeSelector.length > 0) {
+    updateData.nodeSelector = {};
+    values.nodeSelector.forEach((item: { key: string; value: string }) => {
+      if (item.key && item.value) {
+        updateData.nodeSelector![item.key] = item.value;
+      }
+    });
+  }
+
+  // 处理节点亲和性
+  if (values.nodeAffinity) {
+    updateData.affinity = {
+      nodeAffinity: {}
+    };
+
+    // 处理必须满足的节点选择规则
+    if (values.nodeAffinity.requiredTerms && values.nodeAffinity.requiredTerms.length > 0) {
+      updateData.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution = {
+        nodeSelectorTerms: values.nodeAffinity.requiredTerms.map(term => {
+          const result: any = {};
+          
+          if (term.matchExpressions && term.matchExpressions.length > 0) {
+            result.matchExpressions = term.matchExpressions.filter(expr => expr.key && expr.operator)
+              .map(expr => ({
+                key: expr.key,
+                operator: expr.operator,
+                values: (expr.operator === 'Exists' || expr.operator === 'DoesNotExist') 
+                  ? undefined 
+                  : (expr.values || [])
+              }));
+          }
+          
+          if (term.matchFields && term.matchFields.length > 0) {
+            result.matchFields = term.matchFields.filter(field => field.key && field.operator)
+              .map(field => ({
+                key: field.key,
+                operator: field.operator,
+                values: (field.operator === 'Exists' || field.operator === 'DoesNotExist') 
+                  ? undefined 
+                  : (field.values || [])
+              }));
+          }
+          
+          return result;
+        }).filter(term => 
+          (term.matchExpressions && term.matchExpressions.length > 0) || 
+          (term.matchFields && term.matchFields.length > 0)
+        )
+      };
+    }
+
+    // 处理优先满足的节点选择规则
+    if (values.nodeAffinity.preferredTerms && values.nodeAffinity.preferredTerms.length > 0) {
+      updateData.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution = 
+        values.nodeAffinity.preferredTerms
+          .filter(preferred => preferred.weight > 0 && preferred.preference)
+          .map(preferred => {
+            const term: any = {
+              weight: preferred.weight,
+              preference: {}
+            };
+
+            if (preferred.preference.matchExpressions && preferred.preference.matchExpressions.length > 0) {
+              term.preference.matchExpressions = preferred.preference.matchExpressions
+                .filter(expr => expr.key && expr.operator)
+                .map(expr => ({
+                  key: expr.key,
+                  operator: expr.operator,
+                  values: (expr.operator === 'Exists' || expr.operator === 'DoesNotExist') 
+                    ? undefined 
+                    : (expr.values || [])
+                }));
+            }
+
+            if (preferred.preference.matchFields && preferred.preference.matchFields.length > 0) {
+              term.preference.matchFields = preferred.preference.matchFields
+                .filter(field => field.key && field.operator)
+                .map(field => ({
+                  key: field.key,
+                  operator: field.operator,
+                  values: (field.operator === 'Exists' || field.operator === 'DoesNotExist') 
+                    ? undefined 
+                    : (field.values || [])
+                }));
+            }
+
+            return term;
+          })
+          .filter(preferred => 
+            (preferred.preference.matchExpressions && preferred.preference.matchExpressions.length > 0) || 
+            (preferred.preference.matchFields && preferred.preference.matchFields.length > 0)
+          );
+    }
+
+    // 如果没有亲和性规则，则移除affinity字段
+    if (!updateData.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution &&
+        !updateData.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution) {
+      delete updateData.affinity;
+    }
+  }
+  
   return updateData;
 };
 
@@ -568,6 +777,82 @@ export const processDeploymentToFormData = (deployment: any): DeploymentFormData
   // 转换labels和annotations为字符串数组格式，方便表单处理
   const labelsArray = Object.entries(deployment.labels || {}).map(([key, value]) => ({ key, value }));
   const annotationsArray = Object.entries(deployment.annotations || {}).map(([key, value]) => ({ key, value }));
+  const nodeSelectorArray = Object.entries(deployment.nodeSelector || {}).map(([key, value]) => ({ key, value }));
+  
+  // 处理节点亲和性
+  let nodeAffinity: NodeAffinityConfig | undefined = undefined;
+  
+  if (deployment.affinity?.nodeAffinity) {
+    const affinity = deployment.affinity.nodeAffinity;
+    
+    nodeAffinity = {
+      requiredTerms: [],
+      preferredTerms: []
+    };
+
+    // 处理必须满足的节点选择规则
+    if (affinity.requiredDuringSchedulingIgnoredDuringExecution?.nodeSelectorTerms) {
+      nodeAffinity.requiredTerms = affinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.map((term: any) => {
+        const result: NodeSelectorTerm = {
+          matchExpressions: [],
+          matchFields: []
+        };
+        
+        // 处理表达式匹配
+        if (term.matchExpressions) {
+          result.matchExpressions = term.matchExpressions.map((expr: any) => ({
+            key: expr.key,
+            operator: expr.operator,
+            values: expr.values || []
+          }));
+        }
+        
+        // 处理字段匹配
+        if (term.matchFields) {
+          result.matchFields = term.matchFields.map((field: any) => ({
+            key: field.key,
+            operator: field.operator,
+            values: field.values || []
+          }));
+        }
+        
+        return result;
+      });
+    }
+    
+    // 处理优先满足的节点选择规则
+    if (affinity.preferredDuringSchedulingIgnoredDuringExecution) {
+      nodeAffinity.preferredTerms = affinity.preferredDuringSchedulingIgnoredDuringExecution.map((term: any) => {
+        const preference: NodeSelectorTerm = {
+          matchExpressions: [],
+          matchFields: []
+        };
+        
+        // 处理表达式匹配
+        if (term.preference.matchExpressions) {
+          preference.matchExpressions = term.preference.matchExpressions.map((expr: any) => ({
+            key: expr.key,
+            operator: expr.operator,
+            values: expr.values || []
+          }));
+        }
+        
+        // 处理字段匹配
+        if (term.preference.matchFields) {
+          preference.matchFields = term.preference.matchFields.map((field: any) => ({
+            key: field.key,
+            operator: field.operator,
+            values: field.values || []
+          }));
+        }
+        
+        return {
+          weight: term.weight,
+          preference
+        };
+      });
+    }
+  }
   
   // 处理容器资源限制的数据格式
   const processedContainers = deployment.containers.map((container: any) => {
@@ -679,6 +964,10 @@ export const processDeploymentToFormData = (deployment: any): DeploymentFormData
     containers: processedContainers,
     labels: labelsArray,
     annotations: annotationsArray,
-    // 其他属性按需添加
+    nodeSelector: nodeSelectorArray,
+    nodeAffinity: nodeAffinity,
+    serviceAccountName: deployment.serviceAccountName,
+    hostNetwork: deployment.hostNetwork,
+    dnsPolicy: deployment.dnsPolicy
   };
 };

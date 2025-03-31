@@ -7,6 +7,7 @@ import {
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { DeploymentFormProps } from './DeploymentTypes';
 import PortNameSelect from '../common/PortNameSelect';
+import NodeAffinityManager from './NodeAffinityManager';
 
 const { Option } = Select;
 
@@ -330,7 +331,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
 
                   <Divider orientation="left">端口映射</Divider>
                   <Form.List name={[field.name, 'ports']}>
-                    {(portFields, { add: addPort, remove: removePort }) => (
+                    {(portFields, { addPort, removePort }) => (
                       <>
                         {portFields.map(portField => (
                           <Row key={`port-${field.key}-${portField.key}`} gutter={16} align="middle">
@@ -394,7 +395,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   
                   <Divider orientation="left">环境变量</Divider>
                   <Form.List name={[field.name, 'env']}>
-                    {(envFields, { add: addEnv, remove: removeEnv }) => (
+                    {(envFields, { addEnv, removeEnv }) => (
                       <>
                         {envFields.map(envField => (
                           <Row key={`env-${field.key}-${envField.key}`} gutter={8} align="middle">
@@ -1417,6 +1418,15 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
     );
   }, []);
   
+  // 渲染节点亲和性Tab
+  const renderNodeAffinityTab = useCallback(() => {
+    return (
+      <Form.Item name="nodeAffinity">
+        <NodeAffinityManager />
+      </Form.Item>
+    );
+  }, []);
+  
   // 定义Tab项
   const tabItems = [
     {
@@ -1438,6 +1448,11 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
       key: 'labelsAndAnnotations',
       label: '标签和注解',
       children: renderLabelsAndAnnotationsTab()
+    },
+    {
+      key: 'nodeAffinity',
+      label: '节点亲和性',
+      children: renderNodeAffinityTab()
     },
     {
       key: 'advanced',

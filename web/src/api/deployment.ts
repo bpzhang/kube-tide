@@ -238,6 +238,40 @@ export interface UpdateDeploymentRequest {
       readOnly?: boolean;
     }>;
   };
+  nodeSelector?: { [key: string]: string };
+  affinity?: {
+    nodeAffinity?: {
+      requiredDuringSchedulingIgnoredDuringExecution?: {
+        nodeSelectorTerms: Array<{
+          matchExpressions?: Array<{
+            key: string;
+            operator: string;
+            values?: string[];
+          }>;
+          matchFields?: Array<{
+            key: string;
+            operator: string;
+            values?: string[];
+          }>;
+        }>;
+      };
+      preferredDuringSchedulingIgnoredDuringExecution?: Array<{
+        weight: number;
+        preference: {
+          matchExpressions?: Array<{
+            key: string;
+            operator: string;
+            values?: string[];
+          }>;
+          matchFields?: Array<{
+            key: string;
+            operator: string;
+            values?: string[];
+          }>;
+        };
+      }>;
+    };
+  };
 }
 
 export const updateDeployment = (
@@ -349,9 +383,40 @@ export interface CreateDeploymentRequest {
     };
   }>;
   nodeSelector?: { [key: string]: string };
+  affinity?: {
+    nodeAffinity?: {
+      requiredDuringSchedulingIgnoredDuringExecution?: {
+        nodeSelectorTerms: Array<{
+          matchExpressions?: Array<{
+            key: string;
+            operator: string;
+            values?: string[];
+          }>;
+          matchFields?: Array<{
+            key: string;
+            operator: string;
+            values?: string[];
+          }>;
+        }>;
+      };
+      preferredDuringSchedulingIgnoredDuringExecution?: Array<{
+        weight: number;
+        preference: {
+          matchExpressions?: Array<{
+            key: string;
+            operator: string;
+            values?: string[];
+          }>;
+          matchFields?: Array<{
+            key: string;
+            operator: string;
+            values?: string[];
+          }>;
+        };
+      }>;
+    };
+  };
   serviceAccountName?: string;
-  hostNetwork?: boolean;
-  dnsPolicy?: string;
 }
 
 export const createDeployment = (

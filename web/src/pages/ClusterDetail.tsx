@@ -82,7 +82,7 @@ const ClusterDetailPage: React.FC = () => {
       const response = await testClusterConnection(clusterName);
       if (response.data.code === 0) {
         setConnectionStatus('connected');
-        message.success('集群连接测试成功');
+        // message.success('集群连接测试成功');
         // 更新集群详情
         fetchClusterDetails();
       } else {
