@@ -4,9 +4,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   testClusterConnection,
   getClusterDetails,
-  getClusterMetrics
+  getClusterMetrics,
+  getClusterEvents
 } from '../api/cluster';
 import type { ClusterDetail, ClusterMetrics } from '../api/cluster';
+import K8sEvents from '../components/k8s/common/K8sEvents';
 import {
   LineChart,
   Line,
@@ -25,6 +27,24 @@ import {
 
 // 定义颜色常量
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+// 自定义组件：集群事件列表
+const ClusterEvents: React.FC<{ clusterName: string }> = ({ clusterName }) => {
+  // 包装获取集群事件的函数，使其符合K8sEvents组件的fetchEvents参数格式
+  const fetchClusterEvents = async (clusterName: string) => {
+    return getClusterEvents(clusterName);
+  };
+
+  return (
+    <K8sEvents 
+      clusterName={clusterName}
+      namespace="all"
+      resourceName={clusterName}
+      resourceKind="Cluster"
+      fetchEvents={fetchClusterEvents}
+    />
+  );
+};
 
 const ClusterDetailPage: React.FC = () => {
   const { clusterName } = useParams<{ clusterName: string }>();
@@ -457,6 +477,13 @@ const ClusterDetailPage: React.FC = () => {
             pagination={{ pageSize: 10 }}
           />
         </Card>
+
+        {/* 集群事件 */}
+        {connectionStatus === 'connected' && (
+          <Card title="集群事件">
+            <ClusterEvents clusterName={clusterName} />
+          </Card>
+        )}
       </Space>
     </Spin>
   );

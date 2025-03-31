@@ -65,6 +65,14 @@ export interface ClusterMetricsResponse {
   };
 }
 
+export interface ClusterEventsResponse {
+  code: number;
+  message: string;
+  data: {
+    events: any[];
+  };
+}
+
 export const getClusterList = () => {
   return api.get<ClusterResponse>('/clusters');
 };
@@ -91,4 +99,8 @@ export const getClusterMetrics = (clusterName: string) => {
 
 export const getClusterNamespaces = (clusterName: string) => {
   return api.get<{code: number; message: string; data: {namespaces: string[]}}>(`/clusters/${clusterName}/namespaces`);
+};
+
+export const getClusterEvents = (clusterName: string) => {
+  return api.get<ClusterEventsResponse>(`/clusters/${clusterName}/events`);
 };

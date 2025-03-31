@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"sort"
 
 	"kube-tide/internal/core/k8s"
 
@@ -167,5 +168,37 @@ func (h *ClusterHandler) GetClusterMetrics(c *gin.Context) {
 
 	ResponseSuccess(c, gin.H{
 		"metrics": metrics,
+	})
+}
+
+// GetClusterEvents 获取集群事件列表
+func (h *ClusterHandler) GetClusterEvents(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		return
+	}
+
+	// 获取集群客户端
+	client, err := h.clientManager.GetClient(clusterName)
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// 获取集群范围内的事件
+	events, err := client.CoreV1().Events("").List(c, metav1.ListOptions{})
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, fmt.Sprintf("获取集群事件失败: %v", err))
+		return
+	}
+
+	// 按时间倒序排序，最新的事件在前面
+	sort.Slice(events.Items, func(i, j int) bool {
+		return events.Items[i].LastTimestamp.After(events.Items[j].LastTimestamp.Time)
+	})
+
+	ResponseSuccess(c, gin.H{
+		"events": events.Items,
 	})
 }

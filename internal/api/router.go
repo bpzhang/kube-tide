@@ -67,6 +67,8 @@ func InitRouter(app *App) *gin.Engine {
 		v1.GET("/clusters/:cluster", app.ClusterHandler.GetClusterDetails)
 		// 集群监控指标
 		v1.GET("/clusters/:cluster/metrics", app.ClusterHandler.GetClusterMetrics)
+		// 集群事件
+		v1.GET("/clusters/:cluster/events", app.ClusterHandler.GetClusterEvents)
 
 		// 命名空间管理 - 使用专门的NamespaceHandler
 		v1.GET("/clusters/:cluster/namespaces", app.NamespaceHandler.ListNamespaces)
