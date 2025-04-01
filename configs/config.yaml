@@ -9,8 +9,8 @@ logging:
   # File logging configuration
   file:
     enabled: true
-    path: "./logs/app.log"
-    error_path: "./logs/error.log"
+    path: "./logs/kube-tidb.log"
+    error_path: "./logs/kube-tide-error.log"
   
   # File logging configuration
   rotate:

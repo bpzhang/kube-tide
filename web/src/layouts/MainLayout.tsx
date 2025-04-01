@@ -69,7 +69,7 @@ const MainLayout: React.FC = () => {
             style={{ height: '100%', borderRight: 0 }}
             items={menuItems}
           />
-          <div style={{ padding: '16px', fontWeight: 'bold' }}>Additional Menu Item</div>
+          {/* <div style={{ padding: '16px', fontWeight: 'bold' }}>Additional Menu Item</div> */}
         </Sider>
         <Layout style={{ padding: '24px' }}>
           <Content style={{ background: '#fff', padding: 24, margin: 0, minHeight: 280 }}>

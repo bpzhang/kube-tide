@@ -1,7 +1,9 @@
 package logger
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -149,9 +151,26 @@ func getWriter(path string, config configs.LogRotateConfig) zapcore.WriteSyncer 
 		return zapcore.AddSync(file)
 	}
 
+	// 如果启用了按时间轮转，则使用带时间戳的文件名
+	var filename string
+	var ext string
+	if config.RotationTime != "" {
+		dir := filepath.Dir(path)
+		base := filepath.Base(path)
+		ext = filepath.Ext(base)
+		nameWithoutExt := base[:len(base)-len(ext)]
+
+		// 使用当前日期创建文件名
+		now := time.Now()
+		dateStr := now.Format("2006-01-02")
+		filename = filepath.Join(dir, fmt.Sprintf("%s-%s%s", nameWithoutExt, dateStr, ext))
+	} else {
+		filename = path
+	}
+
 	// 配置日志滚动
 	logger := &lumberjack.Logger{
-		Filename:   path,
+		Filename:   filename,
 		MaxSize:    config.MaxSize, // 最大文件大小（MB）
 		MaxBackups: config.MaxBackups,
 		MaxAge:     config.MaxAge,
@@ -182,8 +201,20 @@ func getWriter(path string, config configs.LogRotateConfig) zapcore.WriteSyncer 
 				timer := time.NewTimer(duration)
 				<-timer.C
 
-				// 轮转日志，通过关闭并重新打开来实现
-				logger.Rotate()
+				// 生成新的日志文件名
+				dir := filepath.Dir(path)
+				base := filepath.Base(path)
+				ext := filepath.Ext(base)
+				nameWithoutExt := base[:len(base)-len(ext)]
+
+				newDate := time.Now().Format("2006-01-02")
+				newFilename := filepath.Join(dir, fmt.Sprintf("%s-%s%s", nameWithoutExt, newDate, ext))
+
+				// 关闭当前日志文件
+				logger.Close()
+
+				// 更新文件名并重新打开
+				logger.Filename = newFilename
 			}
 		}()
 	}
