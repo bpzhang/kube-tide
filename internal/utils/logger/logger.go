@@ -111,7 +111,7 @@ func Warn(msg string, args ...any) {
 }
 
 // Error 全局Error日志
-func Err(msg string, args ...any) {
+func Error(msg string, args ...any) {
 	defaultLoggerInstance.Error(msg, args...)
 }
 

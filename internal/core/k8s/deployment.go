@@ -422,7 +422,7 @@ func (ds *DeploymentService) RestartDeployment(clusterName, namespace, name stri
 	// 获取当前Deployment
 	deployment, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
-		logger.Err("获取Deployment失败", err)
+		logger.Error("获取Deployment失败", err)
 		return fmt.Errorf("获取Deployment失败: %v", err)
 	}
 
@@ -435,7 +435,7 @@ func (ds *DeploymentService) RestartDeployment(clusterName, namespace, name stri
 	// 更新Deployment
 	_, err = client.AppsV1().Deployments(namespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 	if err != nil {
-		logger.Err("更新Deployment失败", err)
+		logger.Error("更新Deployment失败", err)
 		return fmt.Errorf("重启Deployment失败: %v", err)
 	}
 
@@ -723,7 +723,7 @@ func (ds *DeploymentService) UpdateDeployment(clusterName, namespace, name strin
 	// 获取当前Deployment
 	deployment, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
-		logger.Err("获取Deployment失败", err)
+		logger.Error("获取Deployment失败", err)
 		return fmt.Errorf("获取Deployment失败: %v", err)
 	}
 

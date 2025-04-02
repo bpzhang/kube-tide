@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sort"
@@ -26,8 +27,8 @@ func NewClusterHandler(clientManager *k8s.ClientManager) *ClusterHandler {
 
 // ListClusters 获取集群列表
 func (h *ClusterHandler) ListClusters(c *gin.Context) {
-	// 使用请求操作日志记录
-	err := logger.LogRequestOperation(c.Request.URL.Path, c.Request.Method, "ListClusters", func() error {
+	// 使用通用操作日志记录
+	err := logger.LogOperation("获取集群列表", func() error {
 		clusters := h.clientManager.ListClusters()
 		ResponseSuccess(c, gin.H{
 			"clusters": clusters,
@@ -48,7 +49,7 @@ func (h *ClusterHandler) AddCluster(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Err("无效的添加集群请求", "error", err.Error())
+		logger.Error("无效的添加集群请求", "error", err.Error())
 		ResponseError(c, http.StatusBadRequest, "无效的请求参数")
 		return
 	}
@@ -77,7 +78,17 @@ func (h *ClusterHandler) RemoveCluster(c *gin.Context) {
 	}
 
 	logger.Info("删除集群", "name", clusterName)
-	h.clientManager.RemoveCluster(clusterName)
+
+	err := logger.LogOperation("删除集群", func() error {
+		h.clientManager.RemoveCluster(clusterName)
+		return nil
+	})
+
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	ResponseSuccess(c, nil)
 }
 
@@ -89,9 +100,9 @@ func (h *ClusterHandler) TestConnection(c *gin.Context) {
 		return
 	}
 
-	// 使用K8s日志记录器
-	k8sLogger := logger.NewK8sLogger(clusterName, "", "Cluster")
-	_, err := k8sLogger.LogOperation("TestConnection", func() (interface{}, error) {
+	// 使用通用日志函数
+	_, err := logger.LogFunc("测试集群连接", func() (interface{}, error) {
+		logger.Info("测试连接到集群", "clusterName", clusterName)
 		return nil, h.clientManager.TestConnection(clusterName)
 	})
 
@@ -113,9 +124,10 @@ func (h *ClusterHandler) GetClusterDetails(c *gin.Context) {
 		return
 	}
 
-	// 使用K8s日志记录器
-	k8sLogger := logger.NewK8sLogger(clusterName, "", "Cluster")
-	result, err := k8sLogger.LogOperation("GetDetails", func() (interface{}, error) {
+	// 使用通用日志函数记录操作，并添加上下文
+	result, err := logger.LogFuncWithContext(c.Request.Context(), "获取集群详情", func(ctx context.Context) (interface{}, error) {
+		logger.Info("获取集群详情", "clusterName", clusterName)
+
 		client, err := h.clientManager.GetClient(clusterName)
 		if err != nil {
 			return nil, err
@@ -128,13 +140,13 @@ func (h *ClusterHandler) GetClusterDetails(c *gin.Context) {
 		}
 
 		// 获取命名空间列表
-		namespaces, err := client.CoreV1().Namespaces().List(c, metav1.ListOptions{})
+		namespaces, err := client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("获取命名空间列表失败: %v", err)
 		}
 
 		// 获取节点列表以统计集群资源
-		nodes, err := client.CoreV1().Nodes().List(c, metav1.ListOptions{})
+		nodes, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("获取节点列表失败: %v", err)
 		}
@@ -179,9 +191,10 @@ func (h *ClusterHandler) GetClusterMetrics(c *gin.Context) {
 		return
 	}
 
-	// 使用K8s日志记录器
-	k8sLogger := logger.NewK8sLogger(clusterName, "", "ClusterMetrics")
-	metrics, err := k8sLogger.LogOperation("GetMetrics", func() (interface{}, error) {
+	// 使用通用日志函数
+	metrics, err := logger.LogFunc("获取集群监控指标", func() (interface{}, error) {
+		logger.Info("获取集群监控指标", "clusterName", clusterName)
+
 		// 获取集群客户端
 		client, err := h.clientManager.GetClient(clusterName)
 		if err != nil {
@@ -210,9 +223,10 @@ func (h *ClusterHandler) GetClusterEvents(c *gin.Context) {
 		return
 	}
 
-	// 使用K8s日志记录器
-	k8sLogger := logger.NewK8sLogger(clusterName, "", "Events")
-	events, err := k8sLogger.LogOperation("GetEvents", func() (interface{}, error) {
+	// 使用通用日志函数和上下文
+	events, err := logger.LogFuncWithContext(c.Request.Context(), "获取集群事件", func(ctx context.Context) (interface{}, error) {
+		logger.Info("获取集群事件", "clusterName", clusterName)
+
 		// 获取集群客户端
 		client, err := h.clientManager.GetClient(clusterName)
 		if err != nil {
@@ -220,7 +234,7 @@ func (h *ClusterHandler) GetClusterEvents(c *gin.Context) {
 		}
 
 		// 获取集群范围内的事件
-		events, err := client.CoreV1().Events("").List(c, metav1.ListOptions{})
+		events, err := client.CoreV1().Events("").List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("获取集群事件失败: %v", err)
 		}
