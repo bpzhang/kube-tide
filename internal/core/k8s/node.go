@@ -381,102 +381,90 @@ func (s *NodeService) GetNodeLabels(ctx context.Context, clusterName, nodeName s
 
 // AddNodeLabel 添加或更新节点标签
 func (s *NodeService) AddNodeLabel(ctx context.Context, clusterName, nodeName, key, value string) error {
-	log := logger.WithContext(
-		logger.String("cluster", clusterName),
-		logger.String("node", nodeName),
-		logger.String("labelKey", key),
-		logger.String("labelValue", value),
-	)
-	log.Info("开始添加节点标签")
+
+	logger.Info("开始添加节点标签")
 
 	client, err := s.clientManager.GetClient(clusterName)
 	if err != nil {
-		log.Error("获取客户端失败", logger.Error(err))
+		logger.Err("获取客户端失败", (err))
 		return err
 	}
 
 	// 获取节点
-	log.Debug("正在获取节点")
+	logger.Debug("正在获取节点")
 	node, err := client.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
-		log.Error("获取节点失败", logger.Error(err))
+		logger.Err("获取节点失败", err)
 		return fmt.Errorf("获取节点失败: %w", err)
 	}
 
 	// 如果节点没有标签，初始化标签map
 	if node.Labels == nil {
-		log.Debug("节点没有标签，初始化标签map")
+		logger.Debug("节点没有标签，初始化标签map")
 		node.Labels = make(map[string]string)
 	}
 
 	oldValue, exists := node.Labels[key]
 	if exists {
-		log.Info("更新已有标签",
-			logger.String("oldValue", oldValue),
-			logger.String("newValue", value))
+		logger.Info("更新已有标签", oldValue)
 	} else {
-		log.Info("添加新标签")
+		logger.Info("添加新标签")
 	}
 
 	// 添加或更新标签
 	node.Labels[key] = value
 
 	// 更新节点
-	log.Debug("正在更新节点")
+	logger.Debug("正在更新节点")
 	_, err = client.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
 	if err != nil {
-		log.Error("添加标签失败", logger.Error(err))
+		logger.Err("添加标签失败", (err))
 		return fmt.Errorf("添加标签失败: %w", err)
 	}
 
-	log.Info("成功添加节点标签")
+	logger.Info("成功添加节点标签")
 	return nil
 }
 
 // RemoveNodeLabel 删除节点标签
 func (s *NodeService) RemoveNodeLabel(ctx context.Context, clusterName, nodeName, key string) error {
-	log := logger.WithContext(
-		logger.String("cluster", clusterName),
-		logger.String("node", nodeName),
-		logger.String("labelKey", key),
-	)
-	log.Info("开始删除节点标签")
+
+	logger.Info("开始删除节点标签")
 
 	client, err := s.clientManager.GetClient(clusterName)
 	if err != nil {
-		log.Error("获取客户端失败", logger.Error(err))
+		logger.Err("获取客户端失败", (err))
 		return err
 	}
 
 	// 获取节点
-	log.Debug("正在获取节点")
+	logger.Debug("正在获取节点")
 	node, err := client.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
-		log.Error("获取节点失败", logger.Error(err))
+		logger.Err("获取节点失败", (err))
 		return fmt.Errorf("获取节点失败: %w", err)
 	}
 
 	// 检查标签是否存在
 	value, exists := node.Labels[key]
 	if !exists {
-		log.Warn("标签不存在", logger.String("key", key))
+		logger.Warn("标签不存在", key)
 		return fmt.Errorf("标签不存在")
 	}
 
-	log.Info("找到要删除的标签", logger.String("key", key), logger.String("value", value))
-
+	logger.Info("删除标签", value)
 	// 删除标签
 	delete(node.Labels, key)
 
 	// 更新节点
-	log.Debug("正在更新节点")
+	logger.Debug("正在更新节点")
 	_, err = client.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
 	if err != nil {
-		log.Error("删除标签失败", logger.Error(err))
+		logger.Err("删除标签失败", err)
 		return fmt.Errorf("删除标签失败: %w", err)
 	}
 
-	log.Info("成功删除节点标签")
+	logger.Info("成功删除节点标签")
 	return nil
 }
 

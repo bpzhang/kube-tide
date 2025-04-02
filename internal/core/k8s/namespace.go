@@ -23,7 +23,7 @@ func NewNamespaceService(clientManager *ClientManager) *NamespaceService {
 
 // ListNamespaces 获取指定集群的所有命名空间
 func (s *NamespaceService) ListNamespaces(clusterName string) ([]string, error) {
-	logger.Info("获取集群 %s 的命名空间列表", logger.String("clusterName", clusterName))
+	logger.Info("获取命名空间列表", "clusterName", clusterName)
 	// 获取集群的Kubernetes客户端
 	client, err := s.clientManager.GetClient(clusterName)
 	if err != nil {

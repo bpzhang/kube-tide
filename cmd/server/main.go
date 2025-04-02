@@ -32,14 +32,12 @@ func main() {
 		logger.WithRotateConfig(config.Logging.RotateConfig),
 	)
 
-	log := logger.GetLogger()
-	defer log.Sync() // Make sure the buffer log is written before the program exits
-
-	log.Info("初始化服务...")
-	log.Info("配置加载完成",
-		logger.String("端口", config.Server.Port),
-		logger.Bool("日志文件启用", config.Logging.FileConfig.Enabled),
-		logger.Bool("日志滚动启用", config.Logging.RotateConfig.Enabled),
+	// 使用新的日志接口
+	logger.Info("初始化服务...")
+	logger.Info("配置加载完成",
+		"端口", config.Server.Port,
+		"日志文件启用", config.Logging.FileConfig.Enabled,
+		"日志滚动启用", config.Logging.RotateConfig.Enabled,
 	)
 
 	// init kubernetes client
@@ -88,14 +86,14 @@ func main() {
 
 	// Start the server in a separate goroutine
 	go func() {
-		log.Info("服务器启动",
-			logger.String("监听地址", srv.Addr),
-			logger.String("API文档", fmt.Sprintf("http://%s:%s/api", config.Server.Host, config.Server.Port)),
-			logger.String("Web界面", fmt.Sprintf("http://%s:%s", config.Server.Host, config.Server.Port)),
+		logger.Info("服务器启动",
+			"监听地址", srv.Addr,
+			"API文档", fmt.Sprintf("http://%s:%s/api", config.Server.Host, config.Server.Port),
+			"Web界面", fmt.Sprintf("http://%s:%s", config.Server.Host, config.Server.Port),
 		)
 
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal("监听失败", logger.Error(err))
+			logger.Fatal("监听失败", "error", err.Error())
 		}
 	}()
 
@@ -106,16 +104,16 @@ func main() {
 	// kill -9 is syscall.SIGKILL, but cannot be caught, so no need to add
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Info("Shutting down the server...")
+	logger.Info("Shutting down the server...")
 
 	// Set a 5-second timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown", logger.Error(err))
+		logger.Fatal("Server forced to shutdown", "error", err.Error())
 	}
 
-	log.Info("Server has exited safely")
+	logger.Info("Server has exited safely")
 }
 
 func getLogLevel(level string) zapcore.Level {

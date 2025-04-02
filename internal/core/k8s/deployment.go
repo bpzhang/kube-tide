@@ -386,7 +386,7 @@ func (ds *DeploymentService) convertDeployment(deployment *appsv1.Deployment) De
 
 // ScaleDeployment 调整Deployment的副本数
 func (ds *DeploymentService) ScaleDeployment(clusterName, namespace, name string, replicas int32) error {
-	log := logger.WithContext(logger.String("clusterName", clusterName), logger.String("namespace", namespace), logger.String("name", name))
+	logger.Info("调整Deployment副本数:", clusterName, namespace, name, replicas)
 	client, err := ds.clientManager.GetClient(clusterName)
 	if err != nil {
 		return fmt.Errorf("获取集群客户端失败: %v", err)
@@ -407,13 +407,13 @@ func (ds *DeploymentService) ScaleDeployment(clusterName, namespace, name string
 		return fmt.Errorf("更新Deployment副本数失败: %v", err)
 	}
 
-	log.Info("成功调整Deployment副本数", logger.Int32("replicas", replicas))
+	logger.Info("成功调整Deployment副本数:", clusterName, namespace, name, replicas)
 	return nil
 }
 
 // RestartDeployment 重启Deployment（通过添加重启注解实现）
 func (ds *DeploymentService) RestartDeployment(clusterName, namespace, name string) error {
-	log := logger.WithContext(logger.String("clusterName", clusterName), logger.String("namespace", namespace), logger.String("name", name))
+	logger.Info("重启Deployment:", clusterName, namespace, name)
 	client, err := ds.clientManager.GetClient(clusterName)
 	if err != nil {
 		return fmt.Errorf("获取集群客户端失败: %v", err)
@@ -422,7 +422,7 @@ func (ds *DeploymentService) RestartDeployment(clusterName, namespace, name stri
 	// 获取当前Deployment
 	deployment, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
-		log.Error("获取Deployment失败", logger.Error(err))
+		logger.Err("获取Deployment失败", err)
 		return fmt.Errorf("获取Deployment失败: %v", err)
 	}
 
@@ -435,11 +435,11 @@ func (ds *DeploymentService) RestartDeployment(clusterName, namespace, name stri
 	// 更新Deployment
 	_, err = client.AppsV1().Deployments(namespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 	if err != nil {
-		log.Error("重启Deployment失败", logger.Error(err))
+		logger.Err("更新Deployment失败", err)
 		return fmt.Errorf("重启Deployment失败: %v", err)
 	}
 
-	log.Info("成功重启Deployment:", logger.String("name", name))
+	logger.Info("成功重启Deployment:", clusterName, namespace, name)
 	return nil
 }
 
@@ -714,7 +714,7 @@ type Capabilities struct {
 
 // UpdateDeployment 更新Deployment配置
 func (ds *DeploymentService) UpdateDeployment(clusterName, namespace, name string, update UpdateDeploymentRequest) error {
-	log := logger.WithContext(logger.String("clusterName", clusterName), logger.String("namespace", namespace), logger.String("name", name))
+	logger.Info("更新Deployment:", clusterName, namespace, name)
 	client, err := ds.clientManager.GetClient(clusterName)
 	if err != nil {
 		return fmt.Errorf("获取集群客户端失败: %v", err)
@@ -723,7 +723,7 @@ func (ds *DeploymentService) UpdateDeployment(clusterName, namespace, name strin
 	// 获取当前Deployment
 	deployment, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
-		log.Error("获取Deployment失败", logger.Error(err))
+		logger.Err("获取Deployment失败", err)
 		return fmt.Errorf("获取Deployment失败: %v", err)
 	}
 
@@ -791,7 +791,6 @@ func (ds *DeploymentService) UpdateDeployment(clusterName, namespace, name strin
 					for k, v := range res.Limits {
 						quantity, err := resource.ParseQuantity(v)
 						if err != nil {
-							log.Error("解析资源限制值失败", logger.String("key", k), logger.String("value", v), logger.Error(err))
 							// 解析资源限制值失败
 							return fmt.Errorf("解析资源限制值失败 %s=%s: %v", k, v, err)
 						}
@@ -806,7 +805,6 @@ func (ds *DeploymentService) UpdateDeployment(clusterName, namespace, name strin
 					for k, v := range res.Requests {
 						quantity, err := resource.ParseQuantity(v)
 						if err != nil {
-							log.Error("解析资源请求值失败", logger.String("key", k), logger.String("value", v), logger.Error(err))
 							return fmt.Errorf("解析资源请求值失败 %s=%s: %v", k, v, err)
 						}
 						requests[corev1.ResourceName(k)] = quantity
@@ -970,20 +968,17 @@ func (ds *DeploymentService) UpdateDeployment(clusterName, namespace, name strin
 	// 更新Deployment
 	_, err = client.AppsV1().Deployments(namespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
 	if err != nil {
-		log.Error("更新Deployment失败", logger.Error(err))
 		return fmt.Errorf("更新Deployment失败: %v", err)
 	}
 
-	log.Info("成功更新Deployment:", logger.String("name", name))
+	logger.Info("成功更新Deployment:", clusterName, namespace, name)
 	return nil
 }
 
 // CreateDeployment 创建新的Deployment
 func (ds *DeploymentService) CreateDeployment(clusterName, namespace string, create CreateDeploymentRequest) (*DeploymentInfo, error) {
-	log := logger.WithContext(logger.String("clusterName", clusterName), logger.String("namespace", namespace), logger.String("name", create.Name))
 	client, err := ds.clientManager.GetClient(clusterName)
 	if err != nil {
-		log.Error("获取集群客户端失败", logger.Error(err))
 		return nil, fmt.Errorf("获取集群客户端失败: %v", err)
 	}
 
@@ -1139,7 +1134,6 @@ func (ds *DeploymentService) CreateDeployment(clusterName, namespace string, cre
 				for k, v := range container.Resources.Limits {
 					quantity, err := resource.ParseQuantity(v)
 					if err != nil {
-						log.Error("解析资源限制值失败", logger.String("key", k), logger.String("value", v), logger.Error(err))
 						return nil, fmt.Errorf("解析资源限制值失败 %s=%s: %v", k, v, err)
 					}
 					limits[corev1.ResourceName(k)] = quantity
@@ -1152,7 +1146,6 @@ func (ds *DeploymentService) CreateDeployment(clusterName, namespace string, cre
 				for k, v := range container.Resources.Requests {
 					quantity, err := resource.ParseQuantity(v)
 					if err != nil {
-						log.Error("解析资源请求值失败", logger.String("key", k), logger.String("value", v), logger.Error(err))
 						return nil, fmt.Errorf("解析资源请求值失败 %s=%s: %v", k, v, err)
 					}
 					requests[corev1.ResourceName(k)] = quantity
@@ -1425,7 +1418,7 @@ func (ds *DeploymentService) CreateDeployment(clusterName, namespace string, cre
 		return nil, fmt.Errorf("创建Deployment失败: %v", err)
 	}
 
-	log.Info("成功创建Deployment:", logger.String("name", deployment.Name))
+	logger.Info("成功创建Deployment:", clusterName, namespace)
 
 	// 转换并返回创建结果
 	deploymentInfo := ds.convertDeployment(result)

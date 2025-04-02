@@ -16,12 +16,12 @@ var webFS embed.FS
 
 // GetFileSystem 返回嵌入的文件系统
 func GetFileSystem() http.FileSystem {
-	log := logger.GetLogger()
+	
 
 	// 创建子文件系统，仅包含web/dist目录
 	sub, err := fs.Sub(webFS, "web/dist")
 	if err != nil {
-		log.Error("创建子文件系统失败", logger.Error(err))
+		logger.Err("创建子文件系统失败", err)
 		return nil
 	}
 
