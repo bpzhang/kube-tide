@@ -11,18 +11,18 @@ type Logger interface {
 	WithContext(ctx context.Context) Logger
 
 	// 基本日志方法 - 不暴露zapcore.Field
-	Debug(msg string, args ...interface{})
-	Info(msg string, args ...interface{})
-	Warn(msg string, args ...interface{})
-	Error(msg string, args ...interface{})
-	Fatal(msg string, args ...interface{})
+	Debug(msg string, args ...any)
+	Info(msg string, args ...any)
+	Warn(msg string, args ...any)
+	Error(msg string, args ...any)
+	Fatal(msg string, args ...any)
 
 	// 格式化日志方法
-	Debugf(template string, args ...interface{})
-	Infof(template string, args ...interface{})
-	Warnf(template string, args ...interface{})
-	Errorf(template string, args ...interface{})
-	Fatalf(template string, args ...interface{})
+	Debugf(template string, args ...any)
+	Infof(template string, args ...any)
+	Warnf(template string, args ...any)
+	Errorf(template string, args ...any)
+	Fatalf(template string, args ...any)
 }
 
 // 默认logger实现
@@ -41,52 +41,52 @@ func (l *defaultLogger) WithContext(ctx context.Context) Logger {
 }
 
 // Debug 记录Debug级别日志
-func (l *defaultLogger) Debug(msg string, args ...interface{}) {
+func (l *defaultLogger) Debug(msg string, args ...any) {
 	getZapLogger().Debug(msg, toZapFields(args...)...)
 }
 
 // Info 记录Info级别日志
-func (l *defaultLogger) Info(msg string, args ...interface{}) {
+func (l *defaultLogger) Info(msg string, args ...any) {
 	getZapLogger().Info(msg, toZapFields(args...)...)
 }
 
 // Warn 记录Warn级别日志
-func (l *defaultLogger) Warn(msg string, args ...interface{}) {
+func (l *defaultLogger) Warn(msg string, args ...any) {
 	getZapLogger().Warn(msg, toZapFields(args...)...)
 }
 
 // Error 记录Error级别日志
-func (l *defaultLogger) Error(msg string, args ...interface{}) {
+func (l *defaultLogger) Error(msg string, args ...any) {
 	getZapLogger().Error(msg, toZapFields(args...)...)
 }
 
 // Fatal 记录Fatal级别日志
-func (l *defaultLogger) Fatal(msg string, args ...interface{}) {
+func (l *defaultLogger) Fatal(msg string, args ...any) {
 	getZapLogger().Fatal(msg, toZapFields(args...)...)
 }
 
 // Debugf 记录Debug级别格式化日志
-func (l *defaultLogger) Debugf(template string, args ...interface{}) {
+func (l *defaultLogger) Debugf(template string, args ...any) {
 	getZapSugaredLogger().Debugf(template, args...)
 }
 
 // Infof 记录Info级别格式化日志
-func (l *defaultLogger) Infof(template string, args ...interface{}) {
+func (l *defaultLogger) Infof(template string, args ...any) {
 	getZapSugaredLogger().Infof(template, args...)
 }
 
 // Warnf 记录Warn级别格式化日志
-func (l *defaultLogger) Warnf(template string, args ...interface{}) {
+func (l *defaultLogger) Warnf(template string, args ...any) {
 	getZapSugaredLogger().Warnf(template, args...)
 }
 
 // Errorf 记录Error级别格式化日志
-func (l *defaultLogger) Errorf(template string, args ...interface{}) {
+func (l *defaultLogger) Errorf(template string, args ...any) {
 	getZapSugaredLogger().Errorf(template, args...)
 }
 
 // Fatalf 记录Fatal级别格式化日志
-func (l *defaultLogger) Fatalf(template string, args ...interface{}) {
+func (l *defaultLogger) Fatalf(template string, args ...any) {
 	getZapSugaredLogger().Fatalf(template, args...)
 }
 
@@ -96,56 +96,56 @@ var defaultLoggerInstance = NewLogger()
 // 全局日志方法，不再暴露zapcore.Field类型
 
 // Debug 全局Debug日志
-func Debug(msg string, args ...interface{}) {
+func Debug(msg string, args ...any) {
 	defaultLoggerInstance.Debug(msg, args...)
 }
 
 // Info 全局Info日志
-func Info(msg string, args ...interface{}) {
+func Info(msg string, args ...any) {
 	defaultLoggerInstance.Info(msg, args...)
 }
 
 // Warn 全局Warn日志
-func Warn(msg string, args ...interface{}) {
+func Warn(msg string, args ...any) {
 	defaultLoggerInstance.Warn(msg, args...)
 }
 
 // Error 全局Error日志
-func Err(msg string, args ...interface{}) {
+func Err(msg string, args ...any) {
 	defaultLoggerInstance.Error(msg, args...)
 }
 
 // Fatal 全局Fatal日志
-func Fatal(msg string, args ...interface{}) {
+func Fatal(msg string, args ...any) {
 	defaultLoggerInstance.Fatal(msg, args...)
 }
 
 // Debugf 全局Debug格式化日志
-func Debugf(template string, args ...interface{}) {
+func Debugf(template string, args ...any) {
 	defaultLoggerInstance.Debugf(template, args...)
 }
 
 // Infof 全局Info格式化日志
-func Infof(template string, args ...interface{}) {
+func Infof(template string, args ...any) {
 	defaultLoggerInstance.Infof(template, args...)
 }
 
 // Warnf 全局Warn格式化日志
-func Warnf(template string, args ...interface{}) {
+func Warnf(template string, args ...any) {
 	defaultLoggerInstance.Warnf(template, args...)
 }
 
 // Errorf 全局Error格式化日志
-func Errorf(template string, args ...interface{}) {
+func Errorf(template string, args ...any) {
 	defaultLoggerInstance.Errorf(template, args...)
 }
 
 // Fatalf 全局Fatal格式化日志
-func Fatalf(template string, args ...interface{}) {
+func Fatalf(template string, args ...any) {
 	defaultLoggerInstance.Fatalf(template, args...)
 }
 
-// 以下是用于创建AOP风格日志切面的辅助方法
+// 以下是通用的切面日志工具
 
 // LogOperation 记录操作的开始和结束，以及可能的错误
 func LogOperation(operationName string, fn func() error) error {
@@ -165,7 +165,7 @@ func LogOperation(operationName string, fn func() error) error {
 }
 
 // LogFunc 为任意函数添加日志记录装饰
-func LogFunc(funcName string, fn func() (interface{}, error)) (interface{}, error) {
+func LogFunc(funcName string, fn func() (any, error)) (any, error) {
 	Debugf("调用函数: %s", funcName)
 	start := time.Now()
 
@@ -199,90 +199,20 @@ func LogWithContext(ctx context.Context, operationName string, fn func(ctx conte
 	return err
 }
 
-// K8sOperationLogger K8s专用日志记录器
-type K8sOperationLogger struct {
-	ClusterName  string
-	Namespace    string
-	ResourceKind string
-}
-
-// NewK8sLogger 创建K8s操作日志记录器
-func NewK8sLogger(clusterName, namespace, resourceKind string) *K8sOperationLogger {
-	return &K8sOperationLogger{
-		ClusterName:  clusterName,
-		Namespace:    namespace,
-		ResourceKind: resourceKind,
-	}
-}
-
-// LogOperation 记录K8s操作
-func (kl *K8sOperationLogger) LogOperation(operation string, fn func() (interface{}, error)) (interface{}, error) {
-	clusterInfo := kl.ClusterName
-	if kl.Namespace != "" {
-		clusterInfo += ":" + kl.Namespace
-	}
-
-	Info("K8s操作开始",
-		"cluster", kl.ClusterName,
-		"namespace", kl.Namespace,
-		"resource", kl.ResourceKind,
-		"operation", operation,
-	)
-
+// LogFuncWithContext 为带上下文的函数添加日志记录
+func LogFuncWithContext(ctx context.Context, funcName string, fn func(ctx context.Context) (any, error)) (any, error) {
+	logger := NewLogger().WithContext(ctx)
+	logger.Debugf("调用函数: %s", funcName)
 	start := time.Now()
-	result, err := fn()
-	duration := time.Since(start)
 
+	result, err := fn(ctx)
+
+	duration := time.Since(start)
 	if err != nil {
-		Err("K8s操作失败",
-			"cluster", kl.ClusterName,
-			"namespace", kl.Namespace,
-			"resource", kl.ResourceKind,
-			"operation", operation,
-			"duration", duration.String(),
-			"error", err.Error(),
-		)
+		logger.Errorf("函数调用失败: %s, 耗时: %v, 错误: %v", funcName, duration, err)
 	} else {
-		Info("K8s操作成功",
-			"cluster", kl.ClusterName,
-			"namespace", kl.Namespace,
-			"resource", kl.ResourceKind,
-			"operation", operation,
-			"duration", duration.String(),
-		)
+		logger.Debugf("函数调用成功: %s, 耗时: %v", funcName, duration)
 	}
 
 	return result, err
-}
-
-// LogRequestOperation 用于记录HTTP请求处理过程
-func LogRequestOperation(requestPath, method, operationName string, fn func() error) error {
-	Info("处理请求",
-		"path", requestPath,
-		"method", method,
-		"operation", operationName,
-	)
-
-	start := time.Now()
-	err := fn()
-	duration := time.Since(start)
-
-	if err != nil {
-		Err("请求处理失败",
-			"path", requestPath,
-			"method", method,
-			"operation", operationName,
-			"duration", duration.String(),
-			"error", err.Error(),
-		)
-	} else {
-		Info("请求处理成功",
-			"path", requestPath,
-			"method", method,
-			"operation", operationName,
-			"duration", duration.String(),
-		)
-	}
-
-	return err
 }
