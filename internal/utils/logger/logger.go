@@ -1,9 +1,13 @@
 package logger
 
 import (
+	"compress/gzip"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -56,7 +60,7 @@ var defaultOptions = Options{
 		MaxSize:      100,
 		MaxAge:       30,
 		MaxBackups:   10,
-		Compress:     true,
+		Compression:  "after_days:7",
 		LocalTime:    true,
 		RotationTime: "daily",
 	},
@@ -168,17 +172,31 @@ func getWriter(path string, config configs.LogRotateConfig) zapcore.WriteSyncer 
 		filename = path
 	}
 
+	// 解析压缩策略
+	compress := false
+	var compressDays int
+
+	if strings.HasPrefix(config.Compression, "after_days:") {
+		// 提取天数
+		daysStr := strings.TrimPrefix(config.Compression, "after_days:")
+		if days, err := strconv.Atoi(daysStr); err == nil && days > 0 {
+			compressDays = days
+		}
+	} else if config.Compression == "immediate" {
+		compress = true
+	}
+
 	// 配置日志滚动
 	logger := &lumberjack.Logger{
 		Filename:   filename,
 		MaxSize:    config.MaxSize, // 最大文件大小（MB）
 		MaxBackups: config.MaxBackups,
 		MaxAge:     config.MaxAge,
-		Compress:   config.Compress,
+		Compress:   compress, // 只有在immediate模式下才设置为true
 		LocalTime:  config.LocalTime,
 	}
 
-	// 如果配置了基于时间的轮转
+	// 处理基于时间的轮转
 	if config.RotationTime != "" {
 		// 启动一个goroutine来处理基于时间的日志轮转
 		go func() {
@@ -215,11 +233,140 @@ func getWriter(path string, config configs.LogRotateConfig) zapcore.WriteSyncer 
 
 				// 更新文件名并重新打开
 				logger.Filename = newFilename
+
+				// 如果配置了延迟压缩，则处理旧日志文件的压缩
+				if compressDays > 0 {
+					go compressOldLogFiles(dir, nameWithoutExt, ext, compressDays)
+				}
+			}
+		}()
+	}
+
+	// 如果只配置了延迟压缩但没有基于时间的轮转，也需要定期检查旧日志文件
+	if compressDays > 0 && config.RotationTime == "" {
+		go func() {
+			// 每天检查一次旧日志
+			ticker := time.NewTicker(24 * time.Hour)
+			defer ticker.Stop()
+
+			for range ticker.C {
+				dir := filepath.Dir(path)
+				base := filepath.Base(path)
+				ext := filepath.Ext(base)
+				nameWithoutExt := base[:len(base)-len(ext)]
+
+				compressOldLogFiles(dir, nameWithoutExt, ext, compressDays)
 			}
 		}()
 	}
 
 	return zapcore.AddSync(logger)
+}
+
+// compressOldLogFiles 压缩超过指定天数的日志文件
+func compressOldLogFiles(logDir string, namePrefix string, ext string, daysOld int) {
+	// 确保目录存在
+	if _, err := os.Stat(logDir); os.IsNotExist(err) {
+		return
+	}
+
+	// 获取当前时间
+	now := time.Now()
+	cutoffTime := now.AddDate(0, 0, -daysOld)
+
+	// 遍历日志目录
+	files, err := os.ReadDir(logDir)
+	if err != nil {
+		Errorf("Failed to read log directory: %v", err)
+		return
+	}
+
+	// 日志文件命名格式: namePrefix-YYYY-MM-DD.ext
+	datePattern := fmt.Sprintf(`%s-(\d{4}-\d{2}-\d{2})%s`, namePrefix, ext)
+	dateRegex, err := regexp.Compile(datePattern)
+	if err != nil {
+		Errorf("Failed to compile regex pattern: %v", err)
+		return
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		filename := file.Name()
+
+		// 跳过已压缩的文件
+		if strings.HasSuffix(filename, ".gz") || strings.HasSuffix(filename, ".zip") {
+			continue
+		}
+
+		// 检查是否匹配日志文件模式
+		matches := dateRegex.FindStringSubmatch(filename)
+		if len(matches) < 2 {
+			continue
+		}
+
+		// 解析文件日期
+		dateStr := matches[1]
+		fileDate, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			continue
+		}
+
+		// 检查文件是否超过指定天数
+		if fileDate.Before(cutoffTime) {
+			filePath := filepath.Join(logDir, filename)
+			compressLogFile(filePath)
+		}
+	}
+}
+
+// compressLogFile 压缩单个日志文件
+func compressLogFile(filePath string) {
+	Infof("Compressing log file: %s", filePath)
+
+	// 打开源文件
+	sourceFile, err := os.Open(filePath)
+	if err != nil {
+		Errorf("Failed to open file for compression: %v", err)
+		return
+	}
+	defer sourceFile.Close()
+
+	// 创建压缩文件
+	targetPath := filePath + ".gz"
+	targetFile, err := os.Create(targetPath)
+	if err != nil {
+		Errorf("Failed to create compressed file: %v", err)
+		return
+	}
+	defer targetFile.Close()
+
+	// 创建gzip写入器
+	gzipWriter := gzip.NewWriter(targetFile)
+	defer gzipWriter.Close()
+
+	// 复制内容
+	_, err = io.Copy(gzipWriter, sourceFile)
+	if err != nil {
+		Errorf("Failed to compress file: %v", err)
+		// 如果压缩失败，删除不完整的压缩文件
+		targetFile.Close()
+		os.Remove(targetPath)
+		return
+	}
+
+	// 确保所有数据都刷新到压缩文件
+	gzipWriter.Flush()
+	gzipWriter.Close()
+
+	// 压缩成功后删除原始文件
+	sourceFile.Close()
+	err = os.Remove(filePath)
+	if err != nil {
+		Errorf("Failed to remove original file after compression: %v", err)
+	}
 }
 
 // 获取zap Logger实例

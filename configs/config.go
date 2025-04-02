@@ -42,7 +42,7 @@ type LogRotateConfig struct {
 	MaxSize      int    `mapstructure:"max_size"`      // 每个日志文件的最大大小，单位MB
 	MaxAge       int    `mapstructure:"max_age"`       // 保留旧日志文件的最大天数
 	MaxBackups   int    `mapstructure:"max_backups"`   // 保留的旧日志文件的最大数量
-	Compress     bool   `mapstructure:"compress"`      // 是否压缩旧日志文件
+	Compression  string `mapstructure:"compression"`   // 压缩策略："none"(不压缩), "immediate"(立即压缩), 或者 "after_days:N"(N天后压缩)
 	LocalTime    bool   `mapstructure:"local_time"`    // 使用本地时间命名备份文件
 	RotationTime string `mapstructure:"rotation_time"` // 轮转时间间隔（daily/hourly）
 }
@@ -69,7 +69,7 @@ func LoadConfig() *Config {
 	viper.SetDefault("logging.rotate.max_size", 100)
 	viper.SetDefault("logging.rotate.max_age", 30)
 	viper.SetDefault("logging.rotate.max_backups", 10)
-	viper.SetDefault("logging.rotate.compress", true)
+	viper.SetDefault("logging.rotate.compression", "after_days:7") // Default to compressing logs older than 7 days
 	viper.SetDefault("logging.rotate.local_time", true)
 	viper.SetDefault("logging.rotate.rotation_time", "daily")
 

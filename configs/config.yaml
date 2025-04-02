@@ -18,6 +18,6 @@ logging:
     max_size: 100      # file size in MB
     max_age: 30        # maximum days to retain old log files
     max_backups: 10    # maximum number of old log files to retain
-    compress: true     # whether to compress old log files
+    Compression: "after_days:7" # 压缩策略："none"(不压缩), "immediate"(立即压缩), 或者 "after_days:N"(N天后压缩)
     local_time: true   # use local time to name backup files
     rotation_time: daily # rotation time interval: daily, hourly
