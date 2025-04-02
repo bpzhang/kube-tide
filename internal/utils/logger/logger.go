@@ -494,6 +494,11 @@ func Int(key string, val int) zapcore.Field {
 	return zap.Int(key, val)
 }
 
+// Int32 创建int32字段
+func Int32(key string, val int32) zapcore.Field {
+	return zap.Int32(key, val)
+}
+
 // Int64 创建int64字段
 func Int64(key string, val int64) zapcore.Field {
 	return zap.Int64(key, val)
