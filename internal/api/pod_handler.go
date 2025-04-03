@@ -8,34 +8,36 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"kube-tide/internal/utils/logger"
 
 	"kube-tide/internal/core/k8s"
 
 	"github.com/gin-gonic/gin"
 )
 
-// PodHandler Pod管理处理器
+// PodHandler pod management handler
 type PodHandler struct {
 	service *k8s.PodService
 }
 
-// NewPodHandler 创建Pod管理处理器
+// NewPodHandler create pod management handler
 func NewPodHandler(service *k8s.PodService) *PodHandler {
 	return &PodHandler{
 		service: service,
 	}
 }
 
-// ListPods 获取所有Pod列表
+// ListPods get all pods list
 func (h *PodHandler) ListPods(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
 		return
 	}
 
 	pods, err := h.service.GetPods(context.Background(), clusterName)
 	if err != nil {
+		logger.Errorf("Failed to get pods: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -45,21 +47,23 @@ func (h *PodHandler) ListPods(c *gin.Context) {
 	})
 }
 
-// ListPodsByNamespace 获取指定命名空间的Pod列表
+// ListPodsByNamespace get pods list by specified namespace
 func (h *PodHandler) ListPodsByNamespace(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "命名空间不能为空")
+		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		logger.Errorf("Failed to list pods by namespace: namespace cannot be empty")
 		return
 	}
 
 	pods, err := h.service.GetPodsByNamespace(context.Background(), clusterName, namespace)
 	if err != nil {
+		logger.Errorf("Failed to get pods by namespace: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -69,21 +73,23 @@ func (h *PodHandler) ListPodsByNamespace(c *gin.Context) {
 	})
 }
 
-// GetPodDetails 获取Pod详情
+// GetPodDetails get pod details
 func (h *PodHandler) GetPodDetails(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	podName := c.Param("pod")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "命名空间不能为空")
+		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		logger.Errorf("Failed to get pod details: namespace cannot be empty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "Pod名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "pod name cannot be empty")
+		logger.Errorf("Failed to get pod details: pod name cannot be empty")
 		return
 	}
 
@@ -98,21 +104,23 @@ func (h *PodHandler) GetPodDetails(c *gin.Context) {
 	})
 }
 
-// DeletePod 删除Pod
+// DeletePod delete pod
 func (h *PodHandler) DeletePod(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	podName := c.Param("pod")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "命名空间不能为空")
+		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		logger.Errorf("Failed to delete pod: namespace cannot be empty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "Pod名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "pod name cannot be empty")
+		logger.Errorf("Failed to delete pod: pod name cannot be empty")
 		return
 	}
 
@@ -125,7 +133,7 @@ func (h *PodHandler) DeletePod(c *gin.Context) {
 	ResponseSuccess(c, nil)
 }
 
-// GetPodLogs 获取Pod日志
+// GetPodLogs get pod logs
 func (h *PodHandler) GetPodLogs(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
@@ -134,19 +142,21 @@ func (h *PodHandler) GetPodLogs(c *gin.Context) {
 	tailLines := c.Query("tailLines")
 
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "命名空间不能为空")
+		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		logger.Errorf("Failed to get pod logs: namespace cannot be empty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "Pod名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "pod name cannot be empty")
+		logger.Errorf("Failed to get pod logs: pod name cannot be empty")
 		return
 	}
 
-	var lines int64 = 100 // 默认获取100行
+	var lines int64 = 100 
 	if tailLines != "" {
 		if l, err := strconv.ParseInt(tailLines, 10, 64); err == nil {
 			lines = l
@@ -164,7 +174,7 @@ func (h *PodHandler) GetPodLogs(c *gin.Context) {
 	})
 }
 
-// StreamPodLogs 流式获取Pod日志（实时日志）
+// StreamPodLogs stream pod logs (real-time logs)
 func (h *PodHandler) StreamPodLogs(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
@@ -174,19 +184,21 @@ func (h *PodHandler) StreamPodLogs(c *gin.Context) {
 	followStr := c.DefaultQuery("follow", "true")
 
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "命名空间不能为空")
+		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		logger.Errorf("Failed to stream pod logs: namespace cannot be empty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "Pod名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "pod name cannot be empty")
+		logger.Errorf("Failed to stream pod logs: pod name cannot be empty")
 		return
 	}
 
-	var tailLines int64 = 100 // 默认获取100行
+	var tailLines int64 = 100 // default to 100 lines
 	if tailLinesStr != "" {
 		if l, err := strconv.ParseInt(tailLinesStr, 10, 64); err == nil {
 			tailLines = l
@@ -195,56 +207,56 @@ func (h *PodHandler) StreamPodLogs(c *gin.Context) {
 
 	follow := followStr == "true"
 
-	// 设置响应头，指示这是一个SSE流
+	// Set response headers to indicate this is an SSE stream
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*") // 允许跨域
-	c.Writer.Header().Set("X-Accel-Buffering", "no")          // 禁用Nginx缓冲，如果使用了Nginx
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*") // Allow cross-origin
+	c.Writer.Header().Set("X-Accel-Buffering", "no")          // Disable Nginx buffering if using Nginx
 
-	// 立即刷新头信息
+	// Immediately flush headers
 	c.Writer.Flush()
 
-	// 获取日志流
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour) // 增加超时时间
+	// get the context with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour) // increase timeout to 1 hour
 	defer cancel()
 
-	// 发送初始连接成功消息
-	fmt.Fprintf(c.Writer, "data: %s\n\n", "连接已建立，开始接收日志流...")
+	// send initial message to the client
+	fmt.Fprintf(c.Writer, "data: %s\n\n", "logs are starting...")
 	c.Writer.Flush()
 
 	logStream, err := h.service.StreamPodLogs(ctx, clusterName, namespace, podName, containerName, tailLines, follow)
 	if err != nil {
-		errMsg := fmt.Sprintf("获取日志流失败: %s", err.Error())
-		// 以SSE格式返回错误，而不是使用标准错误响应格式
+		errMsg := fmt.Sprintf("Get pod logs failed: %s", err.Error())
+		// send error message to the client
 		fmt.Fprintf(c.Writer, "data: {\"error\": \"%s\"}\n\n", errMsg)
 		c.Writer.Flush()
 		return
 	}
 	defer logStream.Close()
 
-	// 使用bufio逐行读取日志并发送
+	// Use bufio to read the log line by line and send
 	scanner := bufio.NewScanner(logStream)
 
-	// 增加扫描器的缓冲区大小，以处理更长的日志行
+	// Increase the buffer size of the scanner to handle longer log lines
 	const maxScanTokenSize = 1024 * 1024 // 1MB
 	scanBuf := make([]byte, maxScanTokenSize)
 	scanner.Buffer(scanBuf, maxScanTokenSize)
 
-	// 发送心跳以保持连接
+	// Send heartbeat to keep connected
 	heartbeat := time.NewTicker(30 * time.Second)
 	defer heartbeat.Stop()
 
-	// 设置完成通道，用于通知心跳goroutine结束
+	// Set done channel to notify heartbeat goroutine to finish
 	done := make(chan bool)
 	defer close(done)
 
-	// 启动心跳goroutine
+	// Start heartbeat goroutine
 	go func() {
 		for {
 			select {
 			case <-heartbeat.C:
-				// 发送注释行作为心跳
+				// Send comment line as heartbeat
 				fmt.Fprintf(c.Writer, ": heartbeat\n\n")
 				c.Writer.Flush()
 			case <-done:
@@ -255,23 +267,23 @@ func (h *PodHandler) StreamPodLogs(c *gin.Context) {
 
 	c.Stream(func(w io.Writer) bool {
 		if !scanner.Scan() {
-			// 发送一个心跳确保客户端知道我们仍然在线
+			// Send a heartbeat to ensure the client knows we are still online
 			fmt.Fprintf(w, ": heartbeat\n\n")
-			// 等待一小段时间，避免在日志停止时立即返回false
+			// Wait a short time to avoid returning false immediately when logs stop
 			select {
 			case <-time.After(500 * time.Millisecond):
-				// 如果没有更多的日志，检查扫描器是否有错误
+				// If no more logs, check if the scanner has errors
 				if err := scanner.Err(); err != nil {
 					fmt.Fprintf(w, "data: {\"error\": \"%s\"}\n\n", err.Error())
 					return false
 				}
-				// 如果follow为true，而且没有错误，继续等待
+				// If follow is true and no errors, continue waiting
 				if follow {
 					return true
 				}
 			case <-ctx.Done():
-				// 上下文已取消
-				fmt.Fprintf(w, "data: {\"status\": \"日志流已关闭\"}\n\n")
+				// Context has been canceled
+				fmt.Fprintf(w, "data: {\"status\": \"Log stream closed\"}\n\n")
 				return false
 			}
 			return false
@@ -279,37 +291,41 @@ func (h *PodHandler) StreamPodLogs(c *gin.Context) {
 
 		line := scanner.Text()
 
-		// 发送日志行作为SSE事件
+		// Send log line as SSE event
 		fmt.Fprintf(w, "data: %s\n\n", line)
 
-		// 刷新缓冲区确保数据被发送
+		// Flush the buffer to ensure data is sent
 		c.Writer.Flush()
 
 		return true
 	})
 }
 
-// GetPodsBySelector 根据标签选择器获取Pod列表
+// GetPodsBySelector
 func (h *PodHandler) GetPodsBySelector(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
+	logger.Infof("Get pods by selector for cluster: %s, namespace: %s", clusterName, namespace)
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		logger.Errorf("Failed to get pods by selector: cluster name cannot be empty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "命名空间不能为空")
+		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		logger.Errorf("Failed to get pods by selector: namespace cannot be empty")
 		return
 	}
 
 	var selector map[string]string
 	if err := c.ShouldBindJSON(&selector); err != nil {
-		ResponseError(c, http.StatusBadRequest, "无效的标签选择器")
+		ResponseError(c, http.StatusBadRequest, "invalid label selector")
 		return
 	}
 
 	pods, err := h.service.GetPodsBySelector(context.Background(), clusterName, namespace, selector)
 	if err != nil {
+		logger.Errorf("Failed to get pods by selector: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -319,70 +335,73 @@ func (h *PodHandler) GetPodsBySelector(c *gin.Context) {
 	})
 }
 
-// CheckPodExists 检查Pod是否存在及其状态
+// CheckPodExists 
 func (h *PodHandler) CheckPodExists(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	podName := c.Param("pod")
 
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		logger.Errorf("Failed to check pod existence: cluster name cannot be empty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "命名空间不能为空")
+		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		logger.Errorf("Failed to check pod existence: namespace cannot be empty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "Pod名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Pod name cannot be empty")
+		logger.Errorf("Failed to check pod existence: pod name cannot be empty")
 		return
 	}
 
-	// 尝试获取Pod详情
 	pod, err := h.service.GetPodDetails(context.Background(), clusterName, namespace, podName)
 	if err != nil {
-		// 检查是否为"未找到"错误
 		if k8s.IsNotFoundError(err) {
 			ResponseSuccess(c, gin.H{
 				"exists":  false,
-				"message": "Pod不存在",
+				"message": "Pod does not exist",
 			})
 			return
 		}
 
-		// 其他错误
+		logger.Errorf("Failed to check pod existence: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// Pod存在，返回详情和状态
+	// Pod exists, return details and status	
 	ResponseSuccess(c, gin.H{
 		"exists": true,
 		"pod":    pod,
 	})
 }
 
-// GetPodEvents 获取Pod相关的事件
+// GetPodEvents 
 func (h *PodHandler) GetPodEvents(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	podName := c.Param("pod")
-
+	logger.Infof("Get pod events for cluster: %s, namespace: %s, pod: %s", clusterName, namespace, podName)
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "命名空间不能为空")
+		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "Pod名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Pod name cannot be empty")
+		logger.Errorf("Failed to get pod events: pod name cannot be empty")
 		return
 	}
 
 	events, err := h.service.GetPodEvents(context.Background(), clusterName, namespace, podName)
 	if err != nil {
+		logger.Errorf("Failed to get pod events: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

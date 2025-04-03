@@ -4,40 +4,39 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-
+	"kube-tide/internal/utils/logger"
 	"kube-tide/internal/core/k8s"
 
 	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"
 )
 
-// NodeHandler 节点管理处理器
+// NodeHandler node management handler
 type NodeHandler struct {
 	service *k8s.NodeService
 }
 
-// NewNodeHandler 创建节点管理处理器
+// NewNodeHandler create a new NodeHandler
 func NewNodeHandler(service *k8s.NodeService) *NodeHandler {
 	return &NodeHandler{
 		service: service,
 	}
 }
 
-// ListNodes 获取节点列表
+// ListNodes get all nodes in the specified cluster
 func (h *NodeHandler) ListNodes(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
 		return
 	}
 
-	// 解析分页参数
 	page := 1
-	limit := 10 // 默认每页10条记录
+	limit := 10 
 
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
-
+	logger.Infof("page: %s, limit: %s", pageStr, limitStr)
 	var err error
 	if page, err = strconv.Atoi(pageStr); err != nil || page < 1 {
 		page = 1
@@ -47,45 +46,47 @@ func (h *NodeHandler) ListNodes(c *gin.Context) {
 		limit = 10
 	}
 
-	// 最大限制，避免一次请求过多数据
+	// max limit
 	if limit > 100 {
 		limit = 100
 	}
 
-	// 获取分页节点数据
+	// max limit for pagination nodes data
 	nodes, total, err := h.service.GetNodes(context.Background(), clusterName, limit, page)
 	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		logger.Errorf("Failed to get nodes: %s", err.Error())
+		ResponseError(c, http.StatusInternalServerError, "Failed to retrieve nodes: "+err.Error())
 		return
 	}
 
-	// 返回分页数据
 	ResponseSuccess(c, gin.H{
 		"nodes": nodes,
 		"pagination": gin.H{
 			"total": total,
 			"page":  page,
 			"limit": limit,
-			"pages": (total + limit - 1) / limit, // 计算总页数
+			"pages": (total + limit - 1) / limit, 
 		},
 	})
 }
 
-// GetNodeDetails 获取节点详情
+// GetNodeDetails get node details
 func (h *NodeHandler) GetNodeDetails(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
+	logger.Infof("Getting node details for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
 		return
 	}
 	if nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Node name cannot be empty")
 		return
 	}
 
 	node, err := h.service.GetNodeDetails(context.Background(), clusterName, nodeName)
 	if err != nil {
+		logger.Errorf("Failed to get node details: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -95,10 +96,11 @@ func (h *NodeHandler) GetNodeDetails(c *gin.Context) {
 	})
 }
 
-// GetNodeMetrics 获取节点指标
+// GetNodeMetrics get node metrics
 func (h *NodeHandler) GetNodeMetrics(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
+	logger.Infof("Getting node metrics for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" {
 		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
 		return
@@ -110,6 +112,7 @@ func (h *NodeHandler) GetNodeMetrics(c *gin.Context) {
 
 	metrics, err := h.service.GetNodeMetrics(context.Background(), clusterName, nodeName)
 	if err != nil {
+		logger.Errorf("Failed to get node metrics: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -119,12 +122,13 @@ func (h *NodeHandler) GetNodeMetrics(c *gin.Context) {
 	})
 }
 
-// DrainNode 对节点进行排水操作
+// DrainNode node drain
 func (h *NodeHandler) DrainNode(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
+	logger.Infof("Draining node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "cluster name or node name cannot be empty")
 		return
 	}
 
@@ -135,13 +139,13 @@ func (h *NodeHandler) DrainNode(c *gin.Context) {
 	}
 
 	if err := c.BindJSON(&params); err != nil {
-		ResponseError(c, http.StatusBadRequest, "请求参数不正确: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
 		return
 	}
 
-	// 设置默认值
+	// Set default values
 	if params.GracePeriodSeconds <= 0 {
-		params.GracePeriodSeconds = 300 // 默认5分钟
+		params.GracePeriodSeconds = 300 // Default 5 minutes
 	}
 
 	err := h.service.DrainNode(
@@ -153,41 +157,44 @@ func (h *NodeHandler) DrainNode(c *gin.Context) {
 		params.IgnoreDaemonSets,
 	)
 	if err != nil {
+		logger.Errorf("Failed to drain node: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "节点排水操作执行成功",
+		"message": "Node drained successfully",
 	})
 }
 
-// CordonNode 将节点设置为不可调度
+// CordonNode set node to unschedulable
 func (h *NodeHandler) CordonNode(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
+	logger.Infof("Cordoning node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
 		return
 	}
 
 	err := h.service.CordonNode(context.Background(), clusterName, nodeName)
 	if err != nil {
+		logger.Errorf("Failed to cordon node: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "节点已设置为不可调度",
+		"message": "Node cordoned successfully",
 	})
 }
 
-// UncordonNode 将节点设置为可调度
+// UncordonNode set node to schedulable
 func (h *NodeHandler) UncordonNode(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
 		return
 	}
 
@@ -198,16 +205,16 @@ func (h *NodeHandler) UncordonNode(c *gin.Context) {
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "节点已设置为可调度",
+		"message": "Node uncordoned successfully",
 	})
 }
 
-// 获取节点污点
+// get node taints
 func (h *NodeHandler) GetNodeTaints(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
 		return
 	}
 
@@ -222,12 +229,13 @@ func (h *NodeHandler) GetNodeTaints(c *gin.Context) {
 	})
 }
 
-// 添加节点污点
+// add node taint
 func (h *NodeHandler) AddNodeTaint(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
+	logger.Infof("Adding taint to node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
 		return
 	}
 
@@ -238,7 +246,7 @@ func (h *NodeHandler) AddNodeTaint(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		ResponseError(c, http.StatusBadRequest, "请求参数不正确: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
 		return
 	}
 
@@ -249,21 +257,23 @@ func (h *NodeHandler) AddNodeTaint(c *gin.Context) {
 	}
 
 	if err := h.service.AddNodeTaint(context.Background(), clusterName, nodeName, taint); err != nil {
+		logger.Errorf("Failed to add taint to node: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "污点添加成功",
+		"message": "Taint added successfully",
 	})
 }
 
-// 删除节点污点
+// delete node taint
 func (h *NodeHandler) RemoveNodeTaint(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
+	logger.Infof("Removing taint from node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
 		return
 	}
 
@@ -273,7 +283,7 @@ func (h *NodeHandler) RemoveNodeTaint(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		ResponseError(c, http.StatusBadRequest, "请求参数不正确: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
 		return
 	}
 
@@ -283,21 +293,23 @@ func (h *NodeHandler) RemoveNodeTaint(c *gin.Context) {
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "污点删除成功",
+		"message": "Taint removed successfully",
 	})
 }
 
-// 获取节点标签
+// get node labels
 func (h *NodeHandler) GetNodeLabels(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
+	logger.Infof("Getting labels for node in cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
 		return
 	}
 
 	labels, err := h.service.GetNodeLabels(context.Background(), clusterName, nodeName)
 	if err != nil {
+		logger.Errorf("Failed to get node labels: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -307,12 +319,13 @@ func (h *NodeHandler) GetNodeLabels(c *gin.Context) {
 	})
 }
 
-// 添加或更新节点标签
+// add or update node label
 func (h *NodeHandler) AddNodeLabel(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
+	logger.Infof("Adding label to node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
 		return
 	}
 
@@ -322,26 +335,29 @@ func (h *NodeHandler) AddNodeLabel(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		ResponseError(c, http.StatusBadRequest, "请求参数不正确: "+err.Error())
+		logger.Errorf("Failed to bind JSON: %s", err.Error())
+		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
 		return
 	}
 
 	if err := h.service.AddNodeLabel(context.Background(), clusterName, nodeName, req.Key, req.Value); err != nil {
+		logger.Errorf("Failed to add label to node: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "标签添加成功",
+		"message": "Label added successfully",
 	})
 }
 
-// 删除节点标签
+// delete node label
 func (h *NodeHandler) RemoveNodeLabel(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
+	logger.Infof("Removing label from node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "cluster name or node name cannot be empty")
 		return
 	}
 
@@ -350,35 +366,36 @@ func (h *NodeHandler) RemoveNodeLabel(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		ResponseError(c, http.StatusBadRequest, "请求参数不正确: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
 		return
 	}
 
 	if err := h.service.RemoveNodeLabel(context.Background(), clusterName, nodeName, req.Key); err != nil {
+		logger.Errorf("Failed to remove label from node: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "标签删除成功",
+		"message": "Label removed successfully",
 	})
 }
 
-// AddNode 添加新节点
+// AddNode 
 func (h *NodeHandler) AddNode(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
 		return
 	}
 
 	var nodeConfig k8s.NodeConfig
 	if err := c.ShouldBindJSON(&nodeConfig); err != nil {
-		ResponseError(c, http.StatusBadRequest, "请求参数不正确: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
 		return
 	}
 
-	// 设置默认值
+	
 	if nodeConfig.SSHPort == 0 {
 		nodeConfig.SSHPort = 22
 	}
@@ -386,22 +403,22 @@ func (h *NodeHandler) AddNode(c *gin.Context) {
 		nodeConfig.SSHUser = "root"
 	}
 	if nodeConfig.AuthType == "" {
-		nodeConfig.AuthType = "key" // 默认使用密钥方式
+		nodeConfig.AuthType = "key" 
 	}
 
-	// 验证认证方式
+	// validate authentication method
 	if nodeConfig.AuthType != "key" && nodeConfig.AuthType != "password" {
-		ResponseError(c, http.StatusBadRequest, "认证方式不正确，必须是 'key' 或 'password'")
+		ResponseError(c, http.StatusBadRequest, "Authentication method is incorrect, must be 'key' or 'password'")
 		return
 	}
 
-	// 根据认证方式验证必要参数
+	// validate necessary parameters based on authentication method
 	if nodeConfig.AuthType == "key" && nodeConfig.SSHKeyFile == "" {
-		ResponseError(c, http.StatusBadRequest, "使用密钥认证时，SSH密钥文件路径不能为空")
+		ResponseError(c, http.StatusBadRequest, "SSH key file path cannot be empty when using key authentication")
 		return
 	}
 	if nodeConfig.AuthType == "password" && nodeConfig.SSHPassword == "" {
-		ResponseError(c, http.StatusBadRequest, "使用密码认证时，SSH密码不能为空")
+		ResponseError(c, http.StatusBadRequest, "SSH password cannot be empty when using password authentication")
 		return
 	}
 
@@ -412,16 +429,16 @@ func (h *NodeHandler) AddNode(c *gin.Context) {
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "节点添加成功",
+		"message": "Node added successfully",
 	})
 }
 
-// RemoveNode 移除节点
+// RemoveNode 
 func (h *NodeHandler) RemoveNode(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
 		return
 	}
 
@@ -430,7 +447,7 @@ func (h *NodeHandler) RemoveNode(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&params); err != nil {
-		params.Force = false // 默认非强制删除
+		params.Force = false // Default to non-force delete
 	}
 
 	err := h.service.RemoveNode(context.Background(), clusterName, nodeName, params.Force)
@@ -440,21 +457,22 @@ func (h *NodeHandler) RemoveNode(c *gin.Context) {
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "节点移除成功",
+		"message": "Node removed successfully",
 	})
 }
 
-// GetNodePods 获取节点上运行的Pod列表
+// GetNodePods get pods on the node
 func (h *NodeHandler) GetNodePods(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
 		return
 	}
 
 	pods, err := h.service.GetNodePods(context.Background(), clusterName, nodeName)
 	if err != nil {
+		logger.Errorf("Failed to get pods on node: %s", err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

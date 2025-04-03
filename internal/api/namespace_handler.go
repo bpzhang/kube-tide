@@ -2,45 +2,47 @@ package api
 
 import (
 	"net/http"
-
+	"kube-tide/internal/utils/logger"
 	"github.com/gin-gonic/gin"
 
 	"kube-tide/internal/core/k8s"
 )
 
-// NamespaceHandler 处理命名空间相关的API请求
+// NamespaceHandler namespace management handler
 type NamespaceHandler struct {
 	namespaceService *k8s.NamespaceService
 }
 
-// NewNamespaceHandler 创建新的命名空间处理器
+// NewNamespaceHandler create a new NamespaceHandler
 func NewNamespaceHandler(namespaceService *k8s.NamespaceService) *NamespaceHandler {
 	return &NamespaceHandler{
 		namespaceService: namespaceService,
 	}
 }
 
-// ListNamespaces 获取指定集群的命名空间列表
-// @Summary 获取命名空间列表
-// @Description 获取指定集群中的所有命名空间
-// @Tags 命名空间
+// ListNamespaces Get the list of namespaces for the specified cluster
+// @Summary Get namespaces list
+// @Description Retrieve all namespaces in the specified cluster
+// @Tags Namespace
 // @Accept json
 // @Produce json
-// @Param clusterName path string true "集群名称"
-// @Success 200 {object} Response{data=ListNamespacesResponse} "成功获取命名空间列表"
-// @Failure 400 {object} Response "请求错误"
-// @Failure 500 {object} Response "服务器内部错误"
+// @Param clusterName path string true "Cluster name"
+// @Success 200 {object} Response{data=ListNamespacesResponse} "Successfully retrieved namespaces list"
+// @Failure 400 {object} Response "Bad request"
+// @Failure 500 {object} Response "Internal server error"
 // @Router /api/v1/clusters/{clusterName}/namespaces [get]
 func (h *NamespaceHandler) ListNamespaces(c *gin.Context) {
 	clusterName := c.Param("cluster")
+	logger.Info("Listing namespaces for cluster: " + clusterName)
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
 		return
 	}
 
 	namespaces, err := h.namespaceService.ListNamespaces(clusterName)
 	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, "获取命名空间列表失败: "+err.Error())
+		logger.Error("Failed to list namespaces: " + err.Error())
+		ResponseError(c, http.StatusInternalServerError, "Failed to retrieve namespaces list: "+err.Error())
 		return
 	}
 
@@ -49,7 +51,7 @@ func (h *NamespaceHandler) ListNamespaces(c *gin.Context) {
 	})
 }
 
-// ListNamespacesResponse 获取命名空间列表的响应
+// ListNamespacesResponse is the response structure for listing namespaces
 type ListNamespacesResponse struct {
 	Namespaces []string `json:"namespaces"`
 }

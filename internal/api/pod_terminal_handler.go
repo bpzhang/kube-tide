@@ -16,18 +16,18 @@ import (
 )
 
 var upgradeOptions = websocket.AcceptOptions{
-	InsecureSkipVerify: true, // 在生产环境中应该适当设置
-	// nhooyr.io/websocket 没有直接的 HandshakeTimeout 选项
+	InsecureSkipVerify: true, // It should be set appropriately in production environment
+	// nhooyr.io/websocket There is no direct HandshakeTimeout option
 }
 
-// TerminalMessage 定义终端消息格式
+// TerminalMessage Define terminal message format
 type TerminalMessage struct {
 	Type    string      `json:"type"`
 	Data    interface{} `json:"data,omitempty"`
 	Message string      `json:"message,omitempty"`
 }
 
-// TerminalSession 包装了 websocket 连接和 终端大小信息
+// TerminalSession 
 type TerminalSession struct {
 	wsConn   *websocket.Conn
 	sizeChan chan remotecommand.TerminalSize
@@ -35,8 +35,8 @@ type TerminalSession struct {
 	ctx      context.Context
 }
 
-// TerminalSize 实现 remotecommand.TerminalSizeQueue 接口的 Next 方法
-// Next 返回终端的大小
+// TerminalSize implementation of remotecommand.TerminalSize
+// Next returns the next terminal size
 func (t *TerminalSession) Next() *remotecommand.TerminalSize {
 	select {
 	case size := <-t.sizeChan:
@@ -46,14 +46,16 @@ func (t *TerminalSession) Next() *remotecommand.TerminalSize {
 	}
 }
 
-// Read 从 websocket 连接读取数据，实现 io.Reader 接口
+// Read data from websocket connection
+// Read implements io.Reader interface
 func (t *TerminalSession) Read(p []byte) (int, error) {
 	messageType, message, err := t.wsConn.Read(t.ctx)
 	if err != nil {
+		logger.Errorf("Failed to read from websocket: %s", err.Error())
 		return 0, err
 	}
 
-	// 处理调整终端大小的消息
+	// process ping message 
 	if messageType == websocket.MessageText && len(message) > 1 && message[0] == '{' {
 		var msg TerminalMessage
 		if err := json.Unmarshal(message, &msg); err == nil {
@@ -69,7 +71,7 @@ func (t *TerminalSession) Read(p []byte) (int, error) {
 					return 0, nil
 				}
 			} else if msg.Type == "ping" {
-				// 处理心跳ping消息，不需要进一步操作
+				// process heartbeat ping message, no further action needed
 				return 0, nil
 			}
 		}
@@ -79,34 +81,41 @@ func (t *TerminalSession) Read(p []byte) (int, error) {
 	return len(message), nil
 }
 
-// Write 向 websocket 连接写入数据，实现 io.Writer 接口
+// Write data to websocket connection
+// Write implements io.Writer interface
+// It sends binary data to the websocket connection
+// The data is expected to be in the format of a byte slice
+// The function returns the number of bytes written and any error encountered
+// If the write operation fails, it returns an error
+// If the write operation is successful, it returns the length of the byte slice
 func (t *TerminalSession) Write(p []byte) (int, error) {
 	err := t.wsConn.Write(t.ctx, websocket.MessageBinary, p)
 	if err != nil {
+		logger.Errorf("Failed to write to websocket: %s", err.Error())
 		return 0, err
 	}
 	return len(p), nil
 }
 
-// Close 关闭会话
+// Close closes the websocket connection
 func (t *TerminalSession) Close() error {
 	close(t.doneChan)
-	return t.wsConn.Close(websocket.StatusNormalClosure, "终端会话已关闭")
+	return t.wsConn.Close(websocket.StatusNormalClosure, "Terminal session closed")
 }
 
-// PodTerminalHandler Pod终端处理器
+// PodTerminalHandler Pod terminal handler
 type PodTerminalHandler struct {
 	service *k8s.PodService
 }
 
-// NewPodTerminalHandler 创建Pod终端处理器
+// NewPodTerminalHandler create a new PodTerminalHandler
 func NewPodTerminalHandler(service *k8s.PodService) *PodTerminalHandler {
 	return &PodTerminalHandler{
 		service: service,
 	}
 }
 
-// 发送错误消息到WebSocket客户端
+// Send error message to WebSocket client
 func sendErrorMessage(conn *websocket.Conn, ctx context.Context, errorType string, message string) {
 	msg := TerminalMessage{
 		Type:    "error",
@@ -116,40 +125,38 @@ func sendErrorMessage(conn *websocket.Conn, ctx context.Context, errorType strin
 
 	err := wsjson.Write(ctx, conn, msg)
 	if err != nil {
-		logger.Errorf("发送错误消息失败: %v", err)
+		logger.Errorf("Failed to send error message: %v", err)
 	}
 }
 
-// HandleTerminal 处理终端请求
+// HandleTerminal handles the terminal connection
 func (h *PodTerminalHandler) HandleTerminal(c *gin.Context) {
-	// 获取参数
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	podName := c.Param("pod")
 	containerName := c.Query("container")
 
-	// 验证参数
+	// Validate parameters
 	if clusterName == "" || namespace == "" || podName == "" || containerName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"code":    1,
-			"message": "缺少必要参数",
+			"message": "Missing required parameters",
 		})
 		return
 	}
 
-	// 升级HTTP连接为WebSocket
+	// Upgrade HTTP connection to WebSocket
 	wsConn, err := websocket.Accept(c.Writer, c.Request, &upgradeOptions)
 	if err != nil {
-		logger.Errorf("WebSocket升级失败: %v", err)
+		logger.Errorf("WebSocket upgrade failed: %v", err)
 		return
 	}
 
-	// 设置上下文和关闭处理
+	// Set context and close handling
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 1*time.Hour)
 	defer cancel()
-	defer wsConn.Close(websocket.StatusInternalError, "连接关闭")
+	defer wsConn.Close(websocket.StatusInternalError, "Connection closed")
 
-	// 创建终端会话
 	terminal := &TerminalSession{
 		wsConn:   wsConn,
 		sizeChan: make(chan remotecommand.TerminalSize),
@@ -157,20 +164,20 @@ func (h *PodTerminalHandler) HandleTerminal(c *gin.Context) {
 		ctx:      ctx,
 	}
 
-	// 发送连接成功消息
-	err = wsConn.Write(ctx, websocket.MessageText, []byte("WebSocket连接成功，正在连接到容器终端..."))
+	// Send connection success message
+	err = wsConn.Write(ctx, websocket.MessageText, []byte("WebSocket connection successful, connecting to container terminal..."))
 	if err != nil {
-		logger.Errorf("发送测试消息失败: %v", err)
+		logger.Errorf("Failed to send test message: %v", err)
 		return
 	}
 
-	// 启动执行终端
+	// Start executing terminal
 	if err := h.service.ExecToPod(clusterName, namespace, podName, containerName, terminal); err != nil {
-		logger.Errorf("连接到Pod终端失败: %v", err)
-		sendErrorMessage(wsConn, ctx, "exec_failed", "无法连接到Pod终端: "+err.Error())
+		logger.Errorf("Failed to connect to Pod terminal: %v", err)
+		sendErrorMessage(wsConn, ctx, "exec_failed", "Can not connect to Pod terminal: "+err.Error())
 		return
 	}
 
-	// 正常关闭
-	wsConn.Close(websocket.StatusNormalClosure, "会话已结束")
+	// Normal closure
+	wsConn.Close(websocket.StatusNormalClosure, "Session ended")
 }
