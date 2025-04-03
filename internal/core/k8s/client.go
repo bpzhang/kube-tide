@@ -3,19 +3,20 @@ package k8s
 import (
 	"fmt"
 	"sync"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// ClientManager 管理k8s客户端连接
+// ClientManager Manages k8s client connections
 type ClientManager struct {
 	clients map[string]*kubernetes.Clientset
 	configs map[string]*rest.Config
 	mutex   sync.RWMutex
 }
 
-// NewClientManager 创建客户端管理器
+// NewClientManager Create client manager
 func NewClientManager() *ClientManager {
 	return &ClientManager{
 		clients: make(map[string]*kubernetes.Clientset),
@@ -23,37 +24,37 @@ func NewClientManager() *ClientManager {
 	}
 }
 
-// AddCluster 添加集群
+// AddCluster Add cluster
 func (cm *ClientManager) AddCluster(clusterName, kubeconfigPath string) error {
 	cm.mutex.Lock()
 	defer cm.mutex.Unlock()
 
-	// 加载kubeconfig
+	// Load kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
-		return fmt.Errorf("无法构建kubeconfig: %w", err)
+		return fmt.Errorf("failed to build kubeconfig: %w", err)
 	}
 
-	// 创建客户端
+	// Create client
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return fmt.Errorf("无法创建kubernetes客户端: %w", err)
+		return fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 
-	// 测试连接
+	// Test connection
 	_, err = clientset.ServerVersion()
 	if err != nil {
-		return fmt.Errorf("无法连接到集群: %w", err)
+		return fmt.Errorf("failed to connect to cluster: %w", err)
 	}
 
-	// 存储客户端
+	// Store client
 	cm.clients[clusterName] = clientset
 	cm.configs[clusterName] = config
 
 	return nil
 }
 
-// RemoveCluster 移除集群
+// RemoveCluster Remove cluster
 func (cm *ClientManager) RemoveCluster(clusterName string) {
 	cm.mutex.Lock()
 	defer cm.mutex.Unlock()
@@ -62,31 +63,31 @@ func (cm *ClientManager) RemoveCluster(clusterName string) {
 	delete(cm.configs, clusterName)
 }
 
-// GetClient 获取指定集群的客户端
+// GetClient Get client for specified cluster
 func (cm *ClientManager) GetClient(clusterName string) (*kubernetes.Clientset, error) {
 	cm.mutex.RLock()
 	defer cm.mutex.RUnlock()
 
 	client, exists := cm.clients[clusterName]
 	if !exists {
-		return nil, fmt.Errorf("集群 %s 未找到", clusterName)
+		return nil, fmt.Errorf("cluster %s not found", clusterName)
 	}
 	return client, nil
 }
 
-// GetConfig 获取指定集群的配置
+// GetConfig Get configuration for specified cluster
 func (cm *ClientManager) GetConfig(clusterName string) (*rest.Config, error) {
 	cm.mutex.RLock()
 	defer cm.mutex.RUnlock()
 
 	config, exists := cm.configs[clusterName]
 	if !exists {
-		return nil, fmt.Errorf("集群 %s 未找到", clusterName)
+		return nil, fmt.Errorf("cluster %s not found", clusterName)
 	}
 	return config, nil
 }
 
-// ListClusters 列出所有集群
+// ListClusters List all clusters
 func (cm *ClientManager) ListClusters() []string {
 	cm.mutex.RLock()
 	defer cm.mutex.RUnlock()
@@ -98,7 +99,7 @@ func (cm *ClientManager) ListClusters() []string {
 	return clusters
 }
 
-// TestConnection 测试集群连接
+// TestConnection Test cluster connection
 func (cm *ClientManager) TestConnection(clusterName string) error {
 	client, err := cm.GetClient(clusterName)
 	if err != nil {
@@ -107,7 +108,7 @@ func (cm *ClientManager) TestConnection(clusterName string) error {
 
 	_, err = client.ServerVersion()
 	if err != nil {
-		return fmt.Errorf("连接测试失败: %w", err)
+		return fmt.Errorf("connection test failed: %w", err)
 	}
 
 	return nil

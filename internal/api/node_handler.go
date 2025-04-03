@@ -2,10 +2,10 @@ package api
 
 import (
 	"context"
+	"kube-tide/internal/core/k8s"
+	"kube-tide/internal/utils/logger"
 	"net/http"
 	"strconv"
-	"kube-tide/internal/utils/logger"
-	"kube-tide/internal/core/k8s"
 
 	"github.com/gin-gonic/gin"
 	corev1 "k8s.io/api/core/v1"
@@ -32,7 +32,7 @@ func (h *NodeHandler) ListNodes(c *gin.Context) {
 	}
 
 	page := 1
-	limit := 10 
+	limit := 10
 
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
@@ -65,7 +65,7 @@ func (h *NodeHandler) ListNodes(c *gin.Context) {
 			"total": total,
 			"page":  page,
 			"limit": limit,
-			"pages": (total + limit - 1) / limit, 
+			"pages": (total + limit - 1) / limit,
 		},
 	})
 }
@@ -102,11 +102,11 @@ func (h *NodeHandler) GetNodeMetrics(c *gin.Context) {
 	nodeName := c.Param("node")
 	logger.Infof("Getting node metrics for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
 		return
 	}
 	if nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "节点名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Node name cannot be empty")
 		return
 	}
 
@@ -381,7 +381,7 @@ func (h *NodeHandler) RemoveNodeLabel(c *gin.Context) {
 	})
 }
 
-// AddNode 
+// AddNode
 func (h *NodeHandler) AddNode(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	if clusterName == "" {
@@ -395,7 +395,6 @@ func (h *NodeHandler) AddNode(c *gin.Context) {
 		return
 	}
 
-	
 	if nodeConfig.SSHPort == 0 {
 		nodeConfig.SSHPort = 22
 	}
@@ -403,7 +402,7 @@ func (h *NodeHandler) AddNode(c *gin.Context) {
 		nodeConfig.SSHUser = "root"
 	}
 	if nodeConfig.AuthType == "" {
-		nodeConfig.AuthType = "key" 
+		nodeConfig.AuthType = "key"
 	}
 
 	// validate authentication method
@@ -433,7 +432,7 @@ func (h *NodeHandler) AddNode(c *gin.Context) {
 	})
 }
 
-// RemoveNode 
+// RemoveNode
 func (h *NodeHandler) RemoveNode(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
