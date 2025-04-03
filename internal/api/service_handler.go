@@ -12,23 +12,23 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceHandler Service管理处理器
+// ServiceHandler Service management handler
 type ServiceHandler struct {
 	manager *k8s.ServiceManager
 }
 
-// NewServiceHandler 创建Service管理处理器
+// NewServiceHandler Create Service management handler
 func NewServiceHandler(manager *k8s.ServiceManager) *ServiceHandler {
 	return &ServiceHandler{
 		manager: manager,
 	}
 }
 
-// ListServices 获取所有Service列表
+// ListServices Get all Services list
 func (h *ServiceHandler) ListServices(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
 		return
 	}
 
@@ -43,12 +43,12 @@ func (h *ServiceHandler) ListServices(c *gin.Context) {
 	})
 }
 
-// ListServicesByNamespace 获取指定命名空间的Service列表
+// ListServicesByNamespace Get Services list by namespace
 func (h *ServiceHandler) ListServicesByNamespace(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	if clusterName == "" || namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或命名空间不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name or namespace cannot be empty")
 		return
 	}
 
@@ -63,13 +63,13 @@ func (h *ServiceHandler) ListServicesByNamespace(c *gin.Context) {
 	})
 }
 
-// GetServiceDetails 获取Service详情
+// GetServiceDetails Get Service details
 func (h *ServiceHandler) GetServiceDetails(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	serviceName := c.Param("service")
 	if clusterName == "" || namespace == "" || serviceName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称、命名空间或服务名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name, namespace or service name cannot be empty")
 		return
 	}
 
@@ -84,12 +84,12 @@ func (h *ServiceHandler) GetServiceDetails(c *gin.Context) {
 	})
 }
 
-// CreateService 创建Service
+// CreateService Create Service
 func (h *ServiceHandler) CreateService(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	if clusterName == "" || namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称或命名空间不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name or namespace cannot be empty")
 		return
 	}
 
@@ -103,7 +103,7 @@ func (h *ServiceHandler) CreateService(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		ResponseError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "Invalid request parameters: "+err.Error())
 		return
 	}
 
@@ -127,17 +127,17 @@ func (h *ServiceHandler) CreateService(c *gin.Context) {
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "服务创建成功",
+		"message": "Service created successfully",
 	})
 }
 
-// UpdateService 更新Service
+// UpdateService Update Service
 func (h *ServiceHandler) UpdateService(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	serviceName := c.Param("service")
 	if clusterName == "" || namespace == "" || serviceName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称、命名空间或服务名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name, namespace or service name cannot be empty")
 		return
 	}
 
@@ -149,18 +149,18 @@ func (h *ServiceHandler) UpdateService(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		ResponseError(c, http.StatusBadRequest, "无效的请求参数: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "Invalid request parameters: "+err.Error())
 		return
 	}
 
-	// 获取现有的Service
+	// Get existing Service
 	existingService, err := h.manager.GetServiceDetails(context.Background(), clusterName, namespace, serviceName)
 	if err != nil {
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// 更新Service字段
+	// Update Service fields
 	if req.Labels != nil {
 		existingService.Labels = req.Labels
 	}
@@ -180,17 +180,17 @@ func (h *ServiceHandler) UpdateService(c *gin.Context) {
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "服务更新成功",
+		"message": "Service updated successfully",
 	})
 }
 
-// DeleteService 删除Service
+// DeleteService Delete Service
 func (h *ServiceHandler) DeleteService(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	serviceName := c.Param("service")
 	if clusterName == "" || namespace == "" || serviceName == "" {
-		ResponseError(c, http.StatusBadRequest, "集群名称、命名空间或服务名称不能为空")
+		ResponseError(c, http.StatusBadRequest, "Cluster name, namespace or service name cannot be empty")
 		return
 	}
 
@@ -200,11 +200,11 @@ func (h *ServiceHandler) DeleteService(c *gin.Context) {
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "服务删除成功",
+		"message": "Service deleted successfully",
 	})
 }
 
-// ServicePort Service端口配置
+// ServicePort Service port configuration
 type ServicePort struct {
 	Name       string `json:"name,omitempty"`
 	Port       int32  `json:"port"`
@@ -213,7 +213,7 @@ type ServicePort struct {
 	NodePort   int32  `json:"nodePort,omitempty"`
 }
 
-// convertToPorts 转换端口配置
+// convertToPorts Convert port configuration
 func convertToPorts(ports []ServicePort) []corev1.ServicePort {
 	result := make([]corev1.ServicePort, len(ports))
 	for i, port := range ports {
