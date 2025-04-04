@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Select, message, Space, Modal, Button, Pagination, Spin } from 'antd';
 import { ExclamationCircleOutlined, PlusOutlined, SettingOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { 
   getNodeList, 
   getNodeMetrics, 
@@ -21,6 +22,7 @@ import NodePoolsManager from '../components/k8s/node/NodePoolsManager';
 const { Option } = Select;
 
 const Nodes: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedCluster, setSelectedCluster] = useState<string>('');
   const [clusters, setClusters] = useState<string[]>([]);
   const [nodes, setNodes] = useState<any[]>([]);
@@ -48,12 +50,12 @@ const Nodes: React.FC = () => {
       if (response.data.code === 0) {
         setNodePools(response.data.data.pools || []);
       } else {
-        console.error('获取节点池失败:', response.data.message);
-        message.error(response.data.message || '获取节点池列表失败');
+        console.error(t('nodes.fetchFailed'), response.data.message);
+        message.error(response.data.message || t('nodes.fetchFailed'));
       }
     } catch (err) {
-      console.error('获取节点池失败:', err);
-      message.error('获取节点池列表失败');
+      console.error(t('nodes.fetchFailed'), err);
+      message.error(t('nodes.fetchFailed'));
     }
   };
 
@@ -69,7 +71,7 @@ const Nodes: React.FC = () => {
         }
       }
     } catch (err) {
-      message.error('获取集群列表失败');
+      message.error(t('clusters.fetchFailed'));
     }
   };
 
@@ -100,16 +102,16 @@ const Nodes: React.FC = () => {
               metricsData[node.metadata.name] = metricsResponse.data.data.metrics;
             }
           } catch (err) {
-            console.error(`获取节点 ${node.metadata.name} 的指标失败:`, err);
+            console.error(`${t('nodes.metricsError')}: ${node.metadata.name}`, err);
           }
         }
         setMetrics(metricsData);
       } else {
-        message.error(response.data.message || '获取节点列表失败');
+        message.error(response.data.message || t('nodes.fetchFailed'));
         setNodes([]);
       }
     } catch (err) {
-      message.error('获取节点列表失败');
+      message.error(t('nodes.fetchFailed'));
       setNodes([]);
     } finally {
       setLoading(false);
@@ -153,7 +155,7 @@ const Nodes: React.FC = () => {
   const handleDrainNode = async (nodeName: string) => {
     try {
       setActionLoading(true);
-      message.loading({ content: '正在执行节点排水操作...', key: 'drainNode', duration: 0 });
+      message.loading({ content: t('nodes.draining'), key: 'drainNode', duration: 0 });
       
       await drainNode(selectedCluster, nodeName, {
         gracePeriodSeconds: 300,
@@ -161,11 +163,14 @@ const Nodes: React.FC = () => {
         ignoreDaemonSets: true
       });
       
-      message.success({ content: `节点 ${nodeName} 排水操作已完成`, key: 'drainNode' });
+      message.success({ 
+        content: t('nodes.drainSuccess', { nodeName }), 
+        key: 'drainNode' 
+      });
       await fetchNodes(); // 刷新节点列表
     } catch (err) {
       message.error({ 
-        content: `节点排水失败: ${(err as Error).message}`, 
+        content: t('nodes.drainFailed', { message: (err as Error).message }), 
         key: 'drainNode'
       });
     } finally {
@@ -178,10 +183,10 @@ const Nodes: React.FC = () => {
     setActionLoading(true);
     try {
       await cordonNode(selectedCluster, nodeName);
-      message.success(`节点 ${nodeName} 已设置为不可调度`);
+      message.success(t('nodes.cordonSuccess', { nodeName }));
       fetchNodes(); // 刷新节点列表
     } catch (err) {
-      message.error(`设置节点为不可调度失败: ${(err as Error).message}`);
+      message.error(t('nodes.cordonFailed', { message: (err as Error).message }));
     } finally {
       setActionLoading(false);
     }
@@ -192,10 +197,10 @@ const Nodes: React.FC = () => {
     setActionLoading(true);
     try {
       await uncordonNode(selectedCluster, nodeName);
-      message.success(`节点 ${nodeName} 已恢复调度功能`);
+      message.success(t('nodes.uncordonSuccess', { nodeName }));
       fetchNodes(); // 刷新节点列表
     } catch (err) {
-      message.error(`恢复节点调度功能失败: ${(err as Error).message}`);
+      message.error(t('nodes.uncordonFailed', { message: (err as Error).message }));
     } finally {
       setActionLoading(false);
     }
@@ -204,29 +209,29 @@ const Nodes: React.FC = () => {
   // 处理删除节点
   const handleRemoveNode = (nodeName: string) => {
     Modal.confirm({
-      title: '确认删除节点',
+      title: t('nodes.deleteConfirm'),
       icon: <ExclamationCircleOutlined />,
       content: (
         <div>
-          <p>您确定要删除节点 <strong>{nodeName}</strong> 吗？</p>
-          <p>此操作将从集群中移除该节点。如果节点上还有Pod运行，您可以选择强制删除。</p>
-          <p>强制删除将：</p>
+          <p dangerouslySetInnerHTML={{ __html: t('nodes.deleteConfirmMessage', { nodeName }) }} />
+          <p>{t('nodes.deleteWarning')}</p>
+          <p>{t('nodes.deleteForceExplanation')}</p>
           <ul>
-            <li>设置节点为不可调度</li>
-            <li>驱逐节点上的所有Pod</li>
-            <li>从集群中删除节点</li>
+            <li>{t('nodes.deleteForceCordon')}</li>
+            <li>{t('nodes.deleteForceEvict')}</li>
+            <li>{t('nodes.deleteForceRemove')}</li>
           </ul>
         </div>
       ),
-      okText: '强制删除',
-      cancelText: '取消',
+      okText: t('nodes.deleteForce'),
+      cancelText: t('common.cancel'),
       onOk: async () => {
         try {
           await removeNode(selectedCluster, nodeName, { force: true });
-          message.success(`节点 ${nodeName} 删除成功`);
+          message.success(t('nodes.deleteSuccess', { nodeName }));
           fetchNodes(); // 刷新节点列表
         } catch (err) {
-          message.error(`删除节点失败: ${(err as Error).message}`);
+          message.error(t('nodes.deleteFailed', { message: (err as Error).message }));
         }
       }
     });
@@ -249,7 +254,7 @@ const Nodes: React.FC = () => {
             style={{ width: 200 }}
             value={selectedCluster}
             onChange={handleClusterChange}
-            placeholder="选择集群"
+            placeholder={t('nodes.selectCluster')}
           >
             {clusters.map(cluster => (
               <Option key={cluster} value={cluster}>{cluster}</Option>
@@ -261,14 +266,14 @@ const Nodes: React.FC = () => {
             onClick={() => setAddModalVisible(true)}
             disabled={!selectedCluster}
           >
-            添加节点
+            {t('nodes.addNode')}
           </Button>
           <Button
             icon={<SettingOutlined />}
             onClick={() => setNodePoolManagerVisible(true)}
             disabled={!selectedCluster}
           >
-            节点池管理
+            {t('nodes.nodePoolManagement')}
           </Button>
         </Space>
       </div>
@@ -281,7 +286,7 @@ const Nodes: React.FC = () => {
               <NodeStatus 
                 node={{
                   name: node.metadata?.name || '',
-                  status: node.status?.conditions?.find((c: any) => c.type === 'Ready')?.status === 'True' ? 'Ready' : 'NotReady',
+                  status: node.status?.conditions?.find((c: any) => c.type === 'Ready')?.status === 'True' ? t('nodes.ready') : t('nodes.notReady'),
                   ip: node.status?.addresses?.find((addr: any) => addr.type === 'InternalIP')?.address || '',
                   os: node.status?.nodeInfo?.osImage || '',
                   kernelVersion: node.status?.nodeInfo?.kernelVersion || '',
@@ -309,7 +314,7 @@ const Nodes: React.FC = () => {
               pageSize={pageSize}
               total={total}
               onChange={handlePageChange}
-              showTotal={(total) => `共 ${total} 个节点`}
+              showTotal={(total) => t('nodes.totalCount', { total })}
               showSizeChanger
               pageSizeOptions={['4', '8', '12', '16']}
             />

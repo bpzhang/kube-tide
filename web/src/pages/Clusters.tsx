@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Button, Modal, Form, Input, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { getClusterList, addCluster } from '../api/cluster';
 import type { ClusterResponse } from '../api/cluster';
 import ClusterCard from '../components/k8s/cluster/ClusterCard';
 
 const Clusters: React.FC = () => {
+  const { t } = useTranslation();
   const [clusters, setClusters] = useState<string[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,11 +20,11 @@ const Clusters: React.FC = () => {
       if (response.data.code === 0) {
         setClusters(response.data.data.clusters);
       } else {
-        message.error(response.data.message || '获取集群列表失败');
+        message.error(response.data.message || t('clusters.fetchFailed'));
         setClusters([]);
       }
     } catch (err) {
-      message.error('获取集群列表失败');
+      message.error(t('clusters.fetchFailed'));
       setClusters([]);
     } finally {
       setLoading(false);
@@ -37,15 +39,15 @@ const Clusters: React.FC = () => {
     try {
       const response = await addCluster(values);
       if (response.data.code === 0) {
-        message.success('添加集群成功');
+        message.success(t('clusters.addSuccess'));
         setIsModalVisible(false);
         form.resetFields();
         fetchClusters();
       } else {
-        message.error(response.data.message || '添加集群失败');
+        message.error(response.data.message || t('clusters.addFailed'));
       }
     } catch (err) {
-      message.error('添加集群失败');
+      message.error(t('clusters.addFailed'));
     }
   };
 
@@ -58,7 +60,7 @@ const Clusters: React.FC = () => {
           onClick={() => setIsModalVisible(true)}
           loading={loading}
         >
-          添加集群
+          {t('clusters.addCluster')}
         </Button>
       </div>
 
@@ -74,7 +76,7 @@ const Clusters: React.FC = () => {
       </Row>
 
       <Modal
-        title="添加集群"
+        title={t('clusters.addCluster')}
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
@@ -87,17 +89,17 @@ const Clusters: React.FC = () => {
         >
           <Form.Item
             name="name"
-            label="集群名称"
-            rules={[{ required: true, message: '请输入集群名称' }]}
+            label={t('clusters.clusterName')}
+            rules={[{ required: true, message: t('clusters.pleaseInputName') }]}
           >
-            <Input placeholder="请输入集群名称" />
+            <Input placeholder={t('clusters.clusterNamePlaceholder')} />
           </Form.Item>
           <Form.Item
             name="kubeconfigPath"
-            label="Kubeconfig路径"
-            rules={[{ required: true, message: '请输入Kubeconfig文件路径' }]}
+            label={t('clusters.kubeconfigPath')}
+            rules={[{ required: true, message: t('clusters.pleaseInputKubeconfigPath') }]}
           >
-            <Input placeholder="请输入Kubeconfig文件的完整路径" />
+            <Input placeholder={t('clusters.kubeconfigPathPlaceholder')} />
           </Form.Item>
         </Form>
       </Modal>

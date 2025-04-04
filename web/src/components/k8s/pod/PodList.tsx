@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Table, Tag, Button, Popconfirm, message, Space, Input, Select, Card, Row, Col, Tooltip } from 'antd';
 import { EyeOutlined, SearchOutlined, FilterOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { deletePod, getPodsByNamespace } from '@/api/pod';
 
 const { Option } = Select;
@@ -27,6 +28,7 @@ interface ProcessedPod {
 }
 
 const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefresh, isParamChange = false }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [filteredPods, setFilteredPods] = useState<ProcessedPod[]>([]);
   const [searchText, setSearchText] = useState('');
@@ -152,23 +154,23 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
         setLocalPods(response.data.data.pods || []);
         // 不重置筛选条件，保持当前筛选状态
       } else {
-        message.error(response.data.message || '获取Pod列表失败');
+        message.error(response.data.message || t('pods.fetchFailed'));
       }
     } catch (err) {
-      message.error('获取Pod列表失败');
+      message.error(t('pods.fetchFailed'));
     } finally {
       setIsRefreshing(false);
     }
-  }, [clusterName, namespace]);
+  }, [clusterName, namespace, t]);
 
   const handleDelete = async (podName: string) => {
     try {
       await deletePod(clusterName, namespace, podName);
-      message.success('Pod删除成功');
+      message.success(t('pods.deleteSuccess'));
       // 在本地刷新数据，而不是调用父组件的onRefresh
       refreshPodList();
     } catch (err) {
-      message.error('Pod删除失败');
+      message.error(t('pods.deleteFailed'));
     }
   };
 
@@ -213,7 +215,7 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
   // 使用 useMemo 优化表格配置，避免不必要的重新渲染
   const columns = useMemo(() => [
     {
-      title: '名称',
+      title: t('pods.name'),
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record: ProcessedPod) => (
@@ -222,12 +224,12 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
       sorter: (a: ProcessedPod, b: ProcessedPod) => a.name.localeCompare(b.name),
     },
     {
-      title: '命名空间',
+      title: t('pods.namespace'),
       dataIndex: 'namespace',
       key: 'namespace',
     },
     {
-      title: '状态',
+      title: t('pods.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => (
@@ -236,18 +238,18 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
       sorter: (a: ProcessedPod, b: ProcessedPod) => a.status.localeCompare(b.status),
     },
     {
-      title: 'IP',
+      title: t('pods.ip'),
       dataIndex: 'podIP',
       key: 'podIP',
     },
     {
-      title: '节点',
+      title: t('pods.node'),
       dataIndex: 'nodeName',
       key: 'nodeName',
       sorter: (a: ProcessedPod, b: ProcessedPod) => a.nodeName.localeCompare(b.nodeName),
     },
     {
-      title: '创建时间',
+      title: t('clusters.createdAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (time: string) => new Date(time).toLocaleString(),
@@ -255,7 +257,7 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
       defaultSortOrder: 'descend',
     },
     {
-      title: '标签',
+      title: t('deployments.labels'),
       key: 'labels',
       render: (_: any, record: ProcessedPod) => (
         <div style={{ maxWidth: 200, maxHeight: 80, overflow: 'auto' }}>
@@ -266,7 +268,7 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
       ),
     },
     {
-      title: '操作',
+      title: t('common.details'),
       key: 'action',
       render: (_: any, record: ProcessedPod) => (
         <Space>
@@ -275,20 +277,20 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
             icon={<EyeOutlined />}
             onClick={() => handleViewDetails(record.name, record.namespace)}
           >
-            详情
+            {t('pods.viewDetails')}
           </Button>
           <Popconfirm
-            title="确定要删除这个Pod吗?"
+            title={t('pods.deleteConfirm')}
             onConfirm={() => handleDelete(record.name)}
-            okText="确定"
-            cancelText="取消"
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
           >
-            <Button type="link" danger>删除</Button>
+            <Button type="link" danger>{t('common.delete')}</Button>
           </Popconfirm>
         </Space>
       ),
     },
-  ], [clusterName, handleDelete, handleViewDetails]);
+  ], [clusterName, handleDelete, handleViewDetails, t]);
 
   return (
     <>
@@ -296,7 +298,7 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
         <Row gutter={[16, 16]}>
           <Col span={6}>
             <Input 
-              placeholder="搜索Pod名称或标签" 
+              placeholder={t('pods.name')} 
               value={searchText}
               onChange={e => setSearchText(e.target.value)}
               prefix={<SearchOutlined />}
@@ -306,7 +308,7 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
           <Col span={5}>
             <Select
               mode="multiple"
-              placeholder="筛选状态"
+              placeholder={t('pods.status')}
               value={statusFilter}
               onChange={setStatusFilter}
               style={{ width: '100%' }}
@@ -322,7 +324,7 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
           <Col span={5}>
             <Select
               mode="multiple"
-              placeholder="筛选节点"
+              placeholder={t('pods.node')}
               value={nodeFilter}
               onChange={setNodeFilter}
               style={{ width: '100%' }}
@@ -335,7 +337,7 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
           </Col>
           <Col span={4}>
             <Input 
-              placeholder="筛选IP" 
+              placeholder={t('pods.ip')} 
               value={ipFilter}
               onChange={e => setIpFilter(e.target.value)}
               allowClear
@@ -343,14 +345,14 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
           </Col>
           <Col span={4}>
             <Space>
-              <Tooltip title="重置筛选条件">
+              <Tooltip title={t('common.filter')}>
                 <Button icon={<FilterOutlined />} onClick={resetFilters}>
-                  重置
+                  {t('common.filter')}
                 </Button>
               </Tooltip>
-              <Tooltip title="刷新Pod列表">
+              <Tooltip title={t('common.refresh')}>
                 <Button type="primary" icon={<ReloadOutlined />} onClick={handleRefresh} loading={isRefreshing}>
-                  刷新
+                  {t('common.refresh')}
                 </Button>
               </Tooltip>
             </Space>
@@ -366,7 +368,7 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
           pageSize: tableState.pageSize,
           current: tableState.current,
           showSizeChanger: true,
-          showTotal: total => `共 ${total} 个Pod`,
+          showTotal: total => t('pods.totalCount', { total }),
           pageSizeOptions: ['10', '20', '50', '100']
         }}
         scroll={{ x: 'max-content' }}
@@ -374,6 +376,7 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
         onChange={handleTableChange}
         // 保留当前排序状态
         sortDirections={['ascend', 'descend']}
+        locale={{ emptyText: t('pods.noPodsFound') }}
       />
     </>
   );

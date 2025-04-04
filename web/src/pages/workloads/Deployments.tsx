@@ -26,6 +26,7 @@ import {
   SyncOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { 
   listDeploymentsByNamespace, 
   restartDeployment, 
@@ -54,6 +55,7 @@ interface DeploymentType {
 }
 
 const DeploymentsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedCluster, setSelectedCluster] = useState<string>('');
   const [clusters, setClusters] = useState<string[]>([]);
   const [namespace, setNamespace] = useState<string>('default');
@@ -80,7 +82,7 @@ const DeploymentsPage: React.FC = () => {
         }
       }
     } catch (err) {
-      message.error('获取集群列表失败');
+      message.error(t('clusters.fetchFailed'));
     }
   };
 
@@ -94,11 +96,11 @@ const DeploymentsPage: React.FC = () => {
       if (response.data.code === 0) {
         setDeployments(response.data.data.deployments || []);
       } else {
-        message.error(response.data.message || '获取Deployment列表失败');
+        message.error(response.data.message || t('deployments.fetchFailed'));
         setDeployments([]);
       }
     } catch (err) {
-      message.error('获取Deployment列表失败');
+      message.error(t('deployments.fetchFailed'));
       setDeployments([]);
     } finally {
       setLoading(false);
@@ -115,11 +117,11 @@ const DeploymentsPage: React.FC = () => {
       if (response.data.code === 0) {
         setCurrentDeploymentDetail(response.data.data.deployment);
       } else {
-        message.error(response.data.message || '获取Deployment详情失败');
+        message.error(response.data.message || t('deployments.fetchDetailFailed'));
         setCurrentDeploymentDetail(null);
       }
     } catch (err) {
-      message.error('获取Deployment详情失败');
+      message.error(t('deployments.fetchDetailFailed'));
       setCurrentDeploymentDetail(null);
     } finally {
       setDetailLoading(false);
@@ -189,14 +191,14 @@ const DeploymentsPage: React.FC = () => {
       );
       
       if (response.data.code === 0) {
-        message.success(`成功将 ${currentDeployment.name} 的副本数调整为 ${replicaCount}`);
+        message.success(t('deployments.scaleSuccess', { name: currentDeployment.name, count: replicaCount }));
         handleScaleCancel();
         fetchDeployments();
       } else {
-        message.error(response.data.message || '调整副本数失败');
+        message.error(response.data.message || t('deployments.scaleFailed'));
       }
     } catch (err) {
-      message.error('调整副本数失败');
+      message.error(t('deployments.scaleFailed'));
     }
   };
 
@@ -205,13 +207,13 @@ const DeploymentsPage: React.FC = () => {
     try {
       const response = await restartDeployment(selectedCluster, namespace, deploymentName);
       if (response.data.code === 0) {
-        message.success(`成功重启 ${deploymentName}`);
+        message.success(t('deployments.restartSuccess', { name: deploymentName }));
         fetchDeployments();
       } else {
-        message.error(response.data.message || '重启失败');
+        message.error(response.data.message || t('deployments.restartFailed'));
       }
     } catch (err) {
-      message.error('重启失败');
+      message.error(t('deployments.restartFailed'));
     }
   };
 
@@ -244,21 +246,21 @@ const DeploymentsPage: React.FC = () => {
     try {
       const response = await createDeployment(selectedCluster, namespace, values);
       if (response.data.code === 0) {
-        message.success('Deployment创建成功');
+        message.success(t('deployments.createSuccess'));
         handleCreateCancel();
         fetchDeployments();
       } else {
-        message.error(response.data.message || 'Deployment创建失败');
+        message.error(response.data.message || t('deployments.createFailed'));
       }
     } catch (err) {
-      message.error('Deployment创建失败');
+      message.error(t('deployments.createFailed'));
     }
   };
 
   // 表格列定义
   const columns = [
     {
-      title: '名称',
+      title: t('deployments.name'),
       dataIndex: 'name',
       key: 'name',
       render: (text: string) => (
@@ -266,12 +268,12 @@ const DeploymentsPage: React.FC = () => {
       ),
     },
     {
-      title: '命名空间',
+      title: t('deployments.namespace'),
       dataIndex: 'namespace',
       key: 'namespace',
     },
     {
-      title: '标签',
+      title: t('deployments.labels'),
       dataIndex: 'labels',
       key: 'labels',
       render: (labels: { [key: string]: string }) => (
@@ -283,7 +285,7 @@ const DeploymentsPage: React.FC = () => {
       ),
     },
     {
-      title: '副本',
+      title: t('deployments.replicas'),
       key: 'replicas',
       render: (text: string, record: DeploymentType) => (
         <Space>
@@ -295,17 +297,17 @@ const DeploymentsPage: React.FC = () => {
       ),
     },
     {
-      title: '创建时间',
+      title: t('deployments.createdAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (time: string) => formatDate(time),
     },
     {
-      title: '操作',
+      title: t('deployments.actions'),
       key: 'action',
       render: (text: string, record: DeploymentType) => (
         <Space>
-          <Tooltip title="查看详情">
+          <Tooltip title={t('deployments.viewDetails')}>
             <Button
               type="link"
               icon={<EyeOutlined />}
@@ -313,7 +315,7 @@ const DeploymentsPage: React.FC = () => {
               onClick={() => handleShowDetail(record.name)}
             />
           </Tooltip>
-          <Tooltip title="调整副本数">
+          <Tooltip title={t('deployments.scaleReplicas')}>
             <Button
               type="link"
               icon={<ScissorOutlined />}
@@ -321,12 +323,12 @@ const DeploymentsPage: React.FC = () => {
               onClick={() => showScaleModal(record)}
             />
           </Tooltip>
-          <Tooltip title="重启">
+          <Tooltip title={t('deployments.restart')}>
             <Popconfirm
-              title="确定要重启这个Deployment吗?"
+              title={t('deployments.restartConfirm')}
               onConfirm={() => handleRestart(record.name)}
-              okText="确定"
-              cancelText="取消"
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
             >
               <Button icon={<SyncOutlined />} size="small" />
             </Popconfirm>
@@ -342,7 +344,7 @@ const DeploymentsPage: React.FC = () => {
         <Row justify="space-between" align="middle">
           <Col>
             <Title level={4} style={{ marginBottom: 0 }}>
-              Deployments 管理
+              {t('deployments.management')}
             </Title>
           </Col>
           <Col>
@@ -351,14 +353,14 @@ const DeploymentsPage: React.FC = () => {
               icon={<PlusOutlined />}
               onClick={showCreateModal}
             >
-              创建 Deployment
+              {t('deployments.createDeployment')}
             </Button>
           </Col>
         </Row>
       }
       extra={
         <Space>
-          <span>集群:</span>
+          <span>{t('pods.cluster')}</span>
           <Select
             // 确保值不为null
             value={selectedCluster || ''}
@@ -370,7 +372,7 @@ const DeploymentsPage: React.FC = () => {
               <Option key={`cluster-${index}`} value={cluster}>{cluster}</Option>
             ))}
           </Select>
-          <span>命名空间:</span>
+          <span>{t('pods.namespace')}:</span>
           <NamespaceSelector
             clusterName={selectedCluster}
             value={namespace}
@@ -378,14 +380,14 @@ const DeploymentsPage: React.FC = () => {
             width={180}
           />
           <Input
-            placeholder="搜索Deployments"
+            placeholder={t('deployments.search')}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             prefix={<SearchOutlined />}
             allowClear
             style={{ width: 200 }}
           />
-          <Tooltip title="刷新">
+          <Tooltip title={t('common.refresh')}>
             <Button
               type="primary"
               icon={<ReloadOutlined />}
@@ -402,38 +404,39 @@ const DeploymentsPage: React.FC = () => {
         rowKey="name"
         loading={loading}
         pagination={{ pageSize: 10 }}
+        locale={{ emptyText: t('deployments.noData') }}
       />
 
       {/* 缩放模态框 */}
       <Modal
-        title={`调整副本数: ${currentDeployment?.name}`}
+        title={t('deployments.scaleTitle', { name: currentDeployment?.name })}
         open={scaleModalVisible}
         onCancel={handleScaleCancel}
         onOk={handleScaleSubmit}
       >
         <div style={{ marginBottom: 16 }}>
-          <p>当前副本数: {currentDeployment?.replicas}</p>
-          <p>就绪副本数: {currentDeployment?.readyReplicas}</p>
+          <p>{t('deployments.currentReplicas')}: {currentDeployment?.replicas}</p>
+          <p>{t('deployments.readyReplicas')}: {currentDeployment?.readyReplicas}</p>
         </div>
         <InputNumber
           min={0}
           value={replicaCount}
           onChange={(value) => setReplicaCount(value || 0)}
           style={{ width: '100%' }}
-          placeholder="请输入目标副本数"
+          placeholder={t('deployments.targetReplicas')}
         />
       </Modal>
 
       {/* 详情抽屉 */}
       <Drawer
-        title={`Deployment 详情: ${currentDeploymentDetail?.name}`}
+        title={t('deployments.details') + ': ' + currentDeploymentDetail?.name}
         placement="right"
         width={800}
         onClose={handleDetailClose}
         open={detailVisible}
       >
         {detailLoading ? (
-          <div style={{ textAlign: 'center', padding: '20px' }}>加载中...</div>
+          <div style={{ textAlign: 'center', padding: '20px' }}>{t('deployments.loading')}</div>
         ) : currentDeploymentDetail ? (
           <DeploymentDetail 
             deployment={currentDeploymentDetail} 
@@ -444,7 +447,7 @@ const DeploymentsPage: React.FC = () => {
             }}
           />
         ) : (
-          <div style={{ textAlign: 'center', padding: '20px' }}>暂无数据</div>
+          <div style={{ textAlign: 'center', padding: '20px' }}>{t('deployments.noData')}</div>
         )}
       </Drawer>
 

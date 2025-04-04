@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Select, Space, Card, message, Spin } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { getPodsByNamespace } from '../../api/pod';
 import { getClusterList } from '../../api/cluster';
 import PodList from '../../components/k8s/pod/PodList';
@@ -8,6 +9,7 @@ import NamespaceSelector from '../../components/k8s/common/NamespaceSelector';
 const { Option } = Select;
 
 const Pods: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedCluster, setSelectedCluster] = useState<string>('');
   const [clusters, setClusters] = useState<string[]>([]);
   const [namespace, setNamespace] = useState<string>('default');
@@ -26,7 +28,7 @@ const Pods: React.FC = () => {
         }
       }
     } catch (err) {
-      message.error('获取集群列表失败');
+      message.error(t('clusters.fetchFailed'));
     }
   };
 
@@ -42,16 +44,16 @@ const Pods: React.FC = () => {
       if (response.data.code === 0) {
         setPods(response.data.data.pods || []);
       } else {
-        message.error(response.data.message || '获取Pod列表失败');
+        message.error(response.data.message || t('pods.fetchFailed'));
         setPods([]);
       }
     } catch (err) {
-      message.error('获取Pod列表失败');
+      message.error(t('pods.fetchFailed'));
       setPods([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedCluster, namespace]);
+  }, [selectedCluster, namespace, t]);
 
   // 初始化加载
   useEffect(() => {
@@ -86,10 +88,10 @@ const Pods: React.FC = () => {
 
   return (
     <Card
-      title="Pod管理"
+      title={t('pods.management')}
       extra={
         <Space>
-          <span>集群:</span>
+          <span>{t('pods.cluster')}</span>
           <Select
             value={selectedCluster}
             onChange={handleClusterChange}
@@ -100,7 +102,7 @@ const Pods: React.FC = () => {
               <Option key={cluster} value={cluster}>{cluster}</Option>
             ))}
           </Select>
-          <span>命名空间:</span>
+          <span>{t('pods.namespace')}:</span>
           <NamespaceSelector
             clusterName={selectedCluster}
             value={namespace}
@@ -112,7 +114,7 @@ const Pods: React.FC = () => {
       {/* 只有在初始加载时显示整体加载状态 */}
       {loading && pods.length === 0 ? (
         <div style={{ padding: '40px 0', textAlign: 'center' }}>
-          <Spin size="large" tip="加载中..." />
+          <Spin size="large" tip={t('pods.loading')} />
         </div>
       ) : (
         <PodList

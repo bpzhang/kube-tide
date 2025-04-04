@@ -15,12 +15,14 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { getClusterList, getClusterMetrics } from '../api/cluster';
 
 // 定义颜色常量
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const Dashboard: React.FC = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [clusterList, setClusterList] = useState<string[]>([]);
   const [selectedCluster, setSelectedCluster] = useState<string>('');
@@ -110,35 +112,35 @@ const Dashboard: React.FC = () => {
   return (
     <div>
       <Card
-        title="集群监控仪表盘"
+        title={t('dashboard.clusterMonitoring')}
         extra={
           <Space>
             <Select
-              placeholder="请选择集群"
+              placeholder={t('dashboard.selectClusterPlaceholder')}
               style={{ width: 200 }}
               value={selectedCluster}
               onChange={handleClusterChange}
               options={clusterList.map(cluster => ({ value: cluster, label: cluster }))}
             />
             <Button type="primary" onClick={handleRefresh}>
-              刷新
+              {t('common.refresh')}
             </Button>
           </Space>
         }
       >
         {!selectedCluster ? (
           <div style={{ textAlign: 'center', padding: '20px' }}>
-            请选择一个集群查看监控数据
+            {t('dashboard.selectClusterView')}
           </div>
         ) : loading ? (
           <div style={{ textAlign: 'center', padding: '20px' }}>
             <Spin spinning={true}>
-              <div style={{ padding: '30px', textAlign: 'center' }}>加载数据中...</div>
+              <div style={{ padding: '30px', textAlign: 'center' }}>{t('dashboard.loadingData')}</div>
             </Spin>
           </div>
         ) : !metrics ? (
           <div style={{ textAlign: 'center', padding: '20px' }}>
-            暂无数据
+            {t('common.noData')}
           </div>
         ) : (
           <Tabs
@@ -147,14 +149,14 @@ const Dashboard: React.FC = () => {
             items={[
               {
                 key: 'overview',
-                label: '概览',
+                label: t('dashboard.overview'),
                 children: (
                   <div>
                     <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
                       <Col span={6}>
                         <Card>
                           <Statistic
-                            title="集群CPU使用率"
+                            title={t('dashboard.cpuUsage')}
                             value={metrics?.cpuUsage || 0}
                             suffix="%"
                             precision={1}
@@ -173,7 +175,7 @@ const Dashboard: React.FC = () => {
                       <Col span={6}>
                         <Card>
                           <Statistic
-                            title="集群内存使用率"
+                            title={t('dashboard.memoryUsage')}
                             value={metrics?.memoryUsage || 0}
                             suffix="%"
                             precision={1}
@@ -192,7 +194,7 @@ const Dashboard: React.FC = () => {
                       <Col span={6}>
                         <Card>
                           <Statistic
-                            title="Pod总数"
+                            title={t('dashboard.podCount')}
                             value={metrics?.podCount || 0}
                           />
                         </Card>
@@ -200,7 +202,7 @@ const Dashboard: React.FC = () => {
                       <Col span={6}>
                         <Card>
                           <Statistic
-                            title="Deployment可用率"
+                            title={t('dashboard.deploymentAvailability')}
                             value={metrics?.deploymentReadiness?.available || 0}
                             suffix={`/${metrics?.deploymentReadiness?.total || 0}`}
                           />
@@ -216,7 +218,7 @@ const Dashboard: React.FC = () => {
 
                     <Row gutter={[16, 16]}>
                       <Col span={12}>
-                        <Card title="CPU使用率历史趋势">
+                        <Card title={t('dashboard.cpuUsageHistory')}>
                           <ResponsiveContainer width="100%" height={300}>
                             <LineChart
                               data={metrics?.historicalData?.cpuUsage?.map((item: any) => ({
@@ -233,7 +235,7 @@ const Dashboard: React.FC = () => {
                               <Line
                                 type="monotone"
                                 dataKey="value"
-                                name="CPU使用率"
+                                name={t('dashboard.cpuUsage')}
                                 stroke="#8884d8"
                                 activeDot={{ r: 8 }}
                               />
@@ -242,7 +244,7 @@ const Dashboard: React.FC = () => {
                         </Card>
                       </Col>
                       <Col span={12}>
-                        <Card title="内存使用率历史趋势">
+                        <Card title={t('dashboard.memoryUsageHistory')}>
                           <ResponsiveContainer width="100%" height={300}>
                             <LineChart
                               data={metrics?.historicalData?.memoryUsage?.map((item: any) => ({
@@ -259,7 +261,7 @@ const Dashboard: React.FC = () => {
                               <Line
                                 type="monotone"
                                 dataKey="value"
-                                name="内存使用率"
+                                name={t('dashboard.memoryUsage')}
                                 stroke="#82ca9d"
                                 activeDot={{ r: 8 }}
                               />
@@ -273,18 +275,18 @@ const Dashboard: React.FC = () => {
               },
               {
                 key: 'resources',
-                label: '资源分配',
+                label: t('dashboard.resources'),
                 children: (
                   <div>
                     <Row gutter={[16, 16]}>
                       <Col span={12}>
-                        <Card title="CPU资源分配">
+                        <Card title={t('dashboard.cpuResourceAllocation')}>
                           <ResponsiveContainer width="100%" height={300}>
                             <BarChart
                               data={[
-                                { name: '已请求', value: metrics?.cpuRequestsPercentage || 0 },
-                                { name: '已限制', value: metrics?.cpuLimitsPercentage || 0 },
-                                { name: '已使用', value: metrics?.cpuUsage || 0 },
+                                { name: t('dashboard.requested'), value: metrics?.cpuRequestsPercentage || 0 },
+                                { name: t('dashboard.limited'), value: metrics?.cpuLimitsPercentage || 0 },
+                                { name: t('dashboard.used'), value: metrics?.cpuUsage || 0 },
                               ]}
                               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                             >
@@ -293,19 +295,19 @@ const Dashboard: React.FC = () => {
                               <YAxis unit="%" />
                               <Tooltip />
                               <Legend />
-                              <Bar dataKey="value" name="百分比" fill="#8884d8" />
+                              <Bar dataKey="value" name={t('common.percentage')} fill="#8884d8" />
                             </BarChart>
                           </ResponsiveContainer>
                         </Card>
                       </Col>
                       <Col span={12}>
-                        <Card title="内存资源分配">
+                        <Card title={t('dashboard.memoryResourceAllocation')}>
                           <ResponsiveContainer width="100%" height={300}>
                             <BarChart
                               data={[
-                                { name: '已请求', value: metrics?.memoryRequestsPercentage || 0 },
-                                { name: '已限制', value: metrics?.memoryLimitsPercentage || 0 },
-                                { name: '已使用', value: metrics?.memoryUsage || 0 },
+                                { name: t('dashboard.requested'), value: metrics?.memoryRequestsPercentage || 0 },
+                                { name: t('dashboard.limited'), value: metrics?.memoryLimitsPercentage || 0 },
+                                { name: t('dashboard.used'), value: metrics?.memoryUsage || 0 },
                               ]}
                               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                             >
@@ -314,7 +316,7 @@ const Dashboard: React.FC = () => {
                               <YAxis unit="%" />
                               <Tooltip />
                               <Legend />
-                              <Bar dataKey="value" name="百分比" fill="#82ca9d" />
+                              <Bar dataKey="value" name={t('common.percentage')} fill="#82ca9d" />
                             </BarChart>
                           </ResponsiveContainer>
                         </Card>
@@ -322,13 +324,13 @@ const Dashboard: React.FC = () => {
                     </Row>
                     <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                       <Col span={12}>
-                        <Card title="节点状态分布">
+                        <Card title={t('dashboard.nodeStatusDistribution')}>
                           <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
                               <Pie
                                 data={[
-                                  { name: '正常节点', value: metrics?.nodeCounts?.ready || 0 },
-                                  { name: '异常节点', value: metrics?.nodeCounts?.notReady || 0 },
+                                  { name: t('dashboard.healthyNodes'), value: metrics?.nodeCounts?.ready || 0 },
+                                  { name: t('dashboard.unhealthyNodes'), value: metrics?.nodeCounts?.notReady || 0 },
                                 ]}
                                 cx="50%"
                                 cy="50%"
@@ -340,19 +342,19 @@ const Dashboard: React.FC = () => {
                                 label={({ name, percent = 0 }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
                               >
                                 {[
-                                  { name: '正常节点', value: metrics?.nodeCounts?.ready || 0 },
-                                  { name: '异常节点', value: metrics?.nodeCounts?.notReady || 0 },
+                                  { name: t('dashboard.healthyNodes'), value: metrics?.nodeCounts?.ready || 0 },
+                                  { name: t('dashboard.unhealthyNodes'), value: metrics?.nodeCounts?.notReady || 0 },
                                 ].map((_entry, index) => (
                                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
                               </Pie>
-                              <Tooltip formatter={(value) => [`${value}个节点`, '数量']} />
+                              <Tooltip formatter={(value) => [`${value}${t('dashboard.nodeCount')}`, t('common.details')]} />
                             </PieChart>
                           </ResponsiveContainer>
                         </Card>
                       </Col>
                       <Col span={12}>
-                        <Card title="Pod数量历史趋势">
+                        <Card title={t('dashboard.podCountHistory')}>
                           <ResponsiveContainer width="100%" height={300}>
                             <LineChart
                               data={metrics?.historicalData?.podCount?.map((item: any) => ({
@@ -369,7 +371,7 @@ const Dashboard: React.FC = () => {
                               <Line
                                 type="monotone"
                                 dataKey="value"
-                                name="Pod数量"
+                                name={t('dashboard.podCount')}
                                 stroke="#FF8042"
                                 activeDot={{ r: 8 }}
                               />
