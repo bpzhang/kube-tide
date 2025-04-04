@@ -2,6 +2,7 @@ package api
 
 import (
 	"kube-tide/configs"
+	"kube-tide/internal/api/middleware"
 	"kube-tide/pkg/embed"
 
 	"github.com/gin-contrib/cors"
@@ -27,6 +28,9 @@ func InitRouter(app *App) *gin.Engine {
 
 	// Cross-origin configuration
 	router.Use(cors.Default())
+
+	// Add language detection middleware
+	router.Use(middleware.DetectLanguage())
 
 	// Configure static resources
 	if configs.IsDevMode() {

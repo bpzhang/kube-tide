@@ -1,8 +1,9 @@
 package api
 
 import (
-	"net/http"
 	"kube-tide/internal/utils/logger"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 
 	"kube-tide/internal/core/k8s"

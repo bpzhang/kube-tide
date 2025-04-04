@@ -16,6 +16,33 @@ type ClientManager struct {
 	mutex   sync.RWMutex
 }
 
+func (cm *ClientManager) ValidateKubeconfig(path string) error {
+	// Load kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("", path)
+	if err != nil {
+		return fmt.Errorf("failed to build kubeconfig: %w", err)
+	}
+
+	// Create client
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return fmt.Errorf("failed to create kubernetes client: %w", err)
+	}
+
+	// Test connection
+	_, err = clientset.ServerVersion()
+	if err != nil {
+		return fmt.Errorf("failed to connect to cluster: %w", err)
+	}
+
+	return nil
+}
+
+type Cluster struct {
+	Name           string `json:"name"`
+	KubeconfigPath string `json:"kubeconfigPath"`
+}
+
 // NewClientManager Create client manager
 func NewClientManager() *ClientManager {
 	return &ClientManager{
@@ -55,12 +82,18 @@ func (cm *ClientManager) AddCluster(clusterName, kubeconfigPath string) error {
 }
 
 // RemoveCluster Remove cluster
-func (cm *ClientManager) RemoveCluster(clusterName string) {
+// RemoveCluster Remove cluster
+func (cm *ClientManager) RemoveCluster(clusterName string) error {
 	cm.mutex.Lock()
 	defer cm.mutex.Unlock()
 
+	if _, exists := cm.clients[clusterName]; !exists {
+		return fmt.Errorf("cluster %s not found", clusterName)
+	}
+
 	delete(cm.clients, clusterName)
 	delete(cm.configs, clusterName)
+	return nil
 }
 
 // GetClient Get client for specified cluster

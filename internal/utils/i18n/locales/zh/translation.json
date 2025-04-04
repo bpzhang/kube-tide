@@ -1,0 +1,105 @@
+{
+  "common": {
+    "success": "操作成功",
+    "error": "发生错误",
+    "notFound": "资源未找到",
+    "unauthorized": "未授权",
+    "forbidden": "访问被禁止",
+    "badRequest": "错误的请求",
+    "internalError": "内部服务器错误",
+    "serviceUnavailable": "服务不可用"
+  },
+  "cluster": {
+    "notFound": "集群未找到",
+    "clusterNameEmpty": "集群名称不能为空",
+    "fetchFailed": "获取集群信息失败",
+    "addSuccess": "集群添加成功",
+    "addFailed": "添加集群失败",
+    "updateSuccess": "集群更新成功",
+    "updateFailed": "更新集群失败",
+    "deleteSuccess": "集群删除成功",
+    "deleteFailed": "删除集群失败",
+    "invalidKubeconfig": "无效的kubeconfig文件",
+    "kubeconfigPathEmpty": "kubeconfig路径不能为空"
+  },
+  "node": {
+    "notFound": "节点未找到",
+    "nodeNameEmpty": "节点名称不能为空",
+    "fetchFailed": "获取节点信息失败",
+    "addSuccess": "节点添加成功",
+    "addFailed": "添加节点失败",
+    "cordonSuccess": "节点已成功隔离",
+    "cordonFailed": "隔离节点失败",
+    "uncordonSuccess": "节点已成功恢复调度",
+    "uncordonFailed": "恢复节点调度失败",
+    "drainSuccess": "节点排空成功",
+    "drainFailed": "节点排空失败",
+    "deleteSuccess": "节点删除成功",
+    "deleteFailed": "删除节点失败",
+    "invalidAuth": "认证方法不正确，必须是'key'或'password'"
+  },
+  "pod": {
+    "notFound": "Pod未找到",
+    "podNameEmpty": "Pod名称不能为空",
+    "fetchFailed": "获取Pod信息失败",
+    "deleteSuccess": "Pod删除成功",
+    "deleteFailed": "删除Pod失败",
+    "logFailed": "获取Pod日志失败",
+    "execFailed": "在Pod中执行命令失败",
+    "terminalConnectFailed": "连接Pod终端失败"
+  },
+  "deployment": {
+    "notFound": "部署未找到",
+    "deploymentNameEmpty": "部署名称不能为空",
+    "fetchFailed": "获取部署信息失败",
+    "createSuccess": "部署创建成功",
+    "createFailed": "创建部署失败",
+    "updateSuccess": "部署更新成功",
+    "updateFailed": "更新部署失败",
+    "deleteSuccess": "部署删除成功",
+    "deleteFailed": "删除部署失败",
+    "scaleSuccess": "部署扩缩容成功",
+    "scaleFailed": "部署扩缩容失败",
+    "restartSuccess": "部署重启成功",
+    "restartFailed": "部署重启失败"
+  },
+  "service": {
+    "notFound": "服务未找到",
+    "serviceNameEmpty": "服务名称不能为空",
+    "fetchFailed": "获取服务信息失败",
+    "createSuccess": "服务创建成功",
+    "createFailed": "创建服务失败",
+    "updateSuccess": "服务更新成功",
+    "updateFailed": "更新服务失败",
+    "deleteSuccess": "服务删除成功",
+    "deleteFailed": "删除服务失败"
+  },
+  "namespace": {
+    "notFound": "命名空间未找到",
+    "namespaceNameEmpty": "命名空间名称不能为空",
+    "fetchFailed": "获取命名空间信息失败",
+    "createSuccess": "命名空间创建成功",
+    "createFailed": "创建命名空间失败",
+    "updateSuccess": "命名空间更新成功",
+    "updateFailed": "更新命名空间失败",
+    "deleteSuccess": "命名空间删除成功",
+    "deleteFailed": "删除命名空间失败"
+  },
+  "api": {
+    "invalidJSON": "无效的JSON数据",
+    "parametersMissing": "缺少必需参数",
+    "invalidParameters": "无效的参数：{0}",
+    "methodNotAllowed": "方法不允许",
+    "noAuth": "未提供认证信息",
+    "invalidRequest": "无效请求",
+    "parameterMissing": "缺少必需参数"
+  },
+  "system": {
+    "healthCheck": "系统运行正常",
+    "serverStarting": "服务器正在启动",
+    "listeningOn": "监听于 {0}",
+    "apiDocs": "API文档位于 {0}",
+    "webInterface": "Web界面位于 {0}",
+    "notReady": "系统未就绪"
+  }
+}

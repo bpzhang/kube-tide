@@ -5,10 +5,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"kube-tide/internal/utils/logger"
 	"net/http"
 	"strconv"
 	"time"
-	"kube-tide/internal/utils/logger"
 
 	"kube-tide/internal/core/k8s"
 
@@ -79,23 +79,27 @@ func (h *PodHandler) GetPodDetails(c *gin.Context) {
 	namespace := c.Param("namespace")
 	podName := c.Param("pod")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
 		logger.Errorf("Failed to get pod details: namespace cannot be empty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "pod name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "pod.podNameEmpty")
 		logger.Errorf("Failed to get pod details: pod name cannot be empty")
 		return
 	}
 
 	pod, err := h.service.GetPodDetails(context.Background(), clusterName, namespace, podName)
 	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		if k8s.IsNotFoundError(err) {
+			ResponseError(c, http.StatusNotFound, "pod.notFound")
+			return
+		}
+		FailWithError(c, http.StatusInternalServerError, "pod.fetchFailed", err)
 		return
 	}
 
@@ -104,68 +108,67 @@ func (h *PodHandler) GetPodDetails(c *gin.Context) {
 	})
 }
 
-// DeletePod delete pod
+// DeletePod Delete a Pod
 func (h *PodHandler) DeletePod(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	podName := c.Param("pod")
+
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
-		logger.Errorf("Failed to delete pod: namespace cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "pod name cannot be empty")
-		logger.Errorf("Failed to delete pod: pod name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "pod.podNameEmpty")
 		return
 	}
 
+	// Run deletion operation
 	err := h.service.DeletePod(context.Background(), clusterName, namespace, podName)
 	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		logger.Errorf("Failed to delete pod %s/%s: %v", namespace, podName, err)
+		FailWithError(c, http.StatusInternalServerError, "pod.deleteFailed", err)
 		return
 	}
 
-	ResponseSuccess(c, nil)
+	ResponseSuccess(c, gin.H{
+		"message": "pod.deleteSuccess",
+	})
 }
 
-// GetPodLogs get pod logs
+// GetPodLogs Get Pod logs
 func (h *PodHandler) GetPodLogs(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	podName := c.Param("pod")
-	containerName := c.Query("container")
-	tailLines := c.Query("tailLines")
+	container := c.DefaultQuery("container", "")
+	tailLines := c.DefaultQuery("tailLines", "100")
 
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
-		logger.Errorf("Failed to get pod logs: namespace cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "pod name cannot be empty")
-		logger.Errorf("Failed to get pod logs: pod name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "pod.podNameEmpty")
 		return
 	}
 
-	var lines int64 = 100 
-	if tailLines != "" {
-		if l, err := strconv.ParseInt(tailLines, 10, 64); err == nil {
-			lines = l
-		}
-	}
+	// Convert tailLines to int
+	tailInt, _ := strconv.ParseInt(tailLines, 10, 64)
 
-	logs, err := h.service.GetPodLogs(context.Background(), clusterName, namespace, podName, containerName, lines)
+	// Get logs
+	logs, err := h.service.GetPodLogs(context.Background(), clusterName, namespace, podName, container, tailInt)
 	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		logger.Errorf("Failed to get pod logs %s/%s: %v", namespace, podName, err)
+		FailWithError(c, http.StatusInternalServerError, "pod.logFailed", err)
 		return
 	}
 
@@ -335,51 +338,37 @@ func (h *PodHandler) GetPodsBySelector(c *gin.Context) {
 	})
 }
 
-// CheckPodExists 
+// CheckPodExists Check if a Pod exists
 func (h *PodHandler) CheckPodExists(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	podName := c.Param("pod")
 
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
-		logger.Errorf("Failed to check pod existence: cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
-		logger.Errorf("Failed to check pod existence: namespace cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "Pod name cannot be empty")
-		logger.Errorf("Failed to check pod existence: pod name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "pod.podNameEmpty")
 		return
 	}
 
-	pod, err := h.service.GetPodDetails(context.Background(), clusterName, namespace, podName)
+	_, exists, err := h.service.CheckPodExists(context.Background(), clusterName, namespace, podName)
 	if err != nil {
-		if k8s.IsNotFoundError(err) {
-			ResponseSuccess(c, gin.H{
-				"exists":  false,
-				"message": "Pod does not exist",
-			})
-			return
-		}
-
-		logger.Errorf("Failed to check pod existence: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "pod.fetchFailed", err)
 		return
 	}
 
-	// Pod exists, return details and status	
 	ResponseSuccess(c, gin.H{
-		"exists": true,
-		"pod":    pod,
+		"exists": exists,
 	})
 }
 
-// GetPodEvents 
+// GetPodEvents
 func (h *PodHandler) GetPodEvents(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")

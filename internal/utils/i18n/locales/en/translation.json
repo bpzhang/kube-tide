@@ -1,0 +1,105 @@
+{
+  "common": {
+    "success": "Operation successful",
+    "error": "Error occurred",
+    "notFound": "Resource not found",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Access forbidden",
+    "badRequest": "Bad request",
+    "internalError": "Internal server error",
+    "serviceUnavailable": "Service Unavailable"
+  },
+  "cluster": {
+    "notFound": "Cluster not found",
+    "clusterNameEmpty": "Cluster name cannot be empty",
+    "fetchFailed": "Failed to fetch cluster information",
+    "addSuccess": "Cluster added successfully",
+    "addFailed": "Failed to add cluster",
+    "updateSuccess": "Cluster updated successfully",
+    "updateFailed": "Failed to update cluster",
+    "deleteSuccess": "Cluster deleted successfully",
+    "deleteFailed": "Failed to delete cluster",
+    "invalidKubeconfig": "Invalid kubeconfig file",
+    "kubeconfigPathEmpty": "Kubeconfig path cannot be empty"
+  },
+  "node": {
+    "notFound": "Node not found",
+    "nodeNameEmpty": "Node name cannot be empty",
+    "fetchFailed": "Failed to fetch node information",
+    "addSuccess": "Node added successfully",
+    "addFailed": "Failed to add node",
+    "cordonSuccess": "Node cordoned successfully",
+    "cordonFailed": "Failed to cordon node",
+    "uncordonSuccess": "Node uncordoned successfully",
+    "uncordonFailed": "Failed to uncordon node",
+    "drainSuccess": "Node drained successfully",
+    "drainFailed": "Failed to drain node",
+    "deleteSuccess": "Node deleted successfully",
+    "deleteFailed": "Failed to delete node",
+    "invalidAuth": "Authentication method is incorrect, must be 'key' or 'password'"
+  },
+  "pod": {
+    "notFound": "Pod not found",
+    "podNameEmpty": "Pod name cannot be empty",
+    "fetchFailed": "Failed to fetch pod information",
+    "deleteSuccess": "Pod deleted successfully",
+    "deleteFailed": "Failed to delete pod",
+    "logFailed": "Failed to fetch pod logs",
+    "execFailed": "Failed to execute command in pod",
+    "terminalConnectFailed": "Failed to connect to pod terminal"
+  },
+  "deployment": {
+    "notFound": "Deployment not found",
+    "deploymentNameEmpty": "Deployment name cannot be empty",
+    "fetchFailed": "Failed to fetch deployment information",
+    "createSuccess": "Deployment created successfully",
+    "createFailed": "Failed to create deployment",
+    "updateSuccess": "Deployment updated successfully",
+    "updateFailed": "Failed to update deployment",
+    "deleteSuccess": "Deployment deleted successfully",
+    "deleteFailed": "Failed to delete deployment",
+    "scaleSuccess": "Deployment scaled successfully",
+    "scaleFailed": "Failed to scale deployment",
+    "restartSuccess": "Deployment restarted successfully",
+    "restartFailed": "Failed to restart deployment"
+  },
+  "service": {
+    "notFound": "Service not found",
+    "serviceNameEmpty": "Service name cannot be empty",
+    "fetchFailed": "Failed to fetch service information",
+    "createSuccess": "Service created successfully",
+    "createFailed": "Failed to create service",
+    "updateSuccess": "Service updated successfully",
+    "updateFailed": "Failed to update service",
+    "deleteSuccess": "Service deleted successfully",
+    "deleteFailed": "Failed to delete service"
+  },
+  "namespace": {
+    "notFound": "Namespace not found",
+    "namespaceNameEmpty": "Namespace name cannot be empty",
+    "fetchFailed": "Failed to fetch namespace information",
+    "createSuccess": "Namespace created successfully",
+    "createFailed": "Failed to create namespace",
+    "updateSuccess": "Namespace updated successfully",
+    "updateFailed": "Failed to update namespace",
+    "deleteSuccess": "Namespace deleted successfully",
+    "deleteFailed": "Failed to delete namespace"
+  },
+  "api": {
+    "invalidJSON": "Invalid JSON data",
+    "parametersMissing": "Required parameters missing",
+    "invalidParameters": "Invalid parameters: {0}",
+    "methodNotAllowed": "Method not allowed",
+    "noAuth": "No authentication information provided",
+    "invalidRequest": "Invalid request",
+    "parameterMissing": "Required parameter missing"
+  },
+  "system": {
+    "healthCheck": "System is running healthy",
+    "serverStarting": "Server is starting",
+    "listeningOn": "Listening on {0}",
+    "apiDocs": "API docs at {0}",
+    "webInterface": "Web UI at {0}",
+    "notReady": "System not ready"
+  }
+}

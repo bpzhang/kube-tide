@@ -3,6 +3,9 @@ package api
 import (
 	"net/http"
 
+	"kube-tide/internal/api/middleware"
+	"kube-tide/internal/utils/i18n"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,33 +18,50 @@ type Response struct {
 
 // ResponseSuccess Success response
 func ResponseSuccess(c *gin.Context, data interface{}) {
+	// Get language from context
+	lang := middleware.GetLanguage(c)
+
 	c.JSON(http.StatusOK, Response{
 		Code:    0,
-		Message: "success",
+		Message: i18n.GetInstance().Translate(lang, "common.success"),
 		Data:    data,
 	})
 }
 
 // ResponseError Error response
-func ResponseError(c *gin.Context, code int, message string) {
+func ResponseError(c *gin.Context, code int, messageKey string, args ...interface{}) {
+	// Get language from context
+	lang := middleware.GetLanguage(c)
+
 	c.JSON(code, Response{
 		Code:    code,
-		Message: message,
+		Message: i18n.GetInstance().Translate(lang, messageKey, args...),
 	})
 }
 
 // Fail Returns a failure response
-func Fail(c *gin.Context, httpCode int, message string) {
+func Fail(c *gin.Context, httpCode int, messageKey string, args ...interface{}) {
+	// Get language from context
+	lang := middleware.GetLanguage(c)
+
 	c.JSON(httpCode, Response{
 		Code:    httpCode,
-		Message: message,
+		Message: i18n.GetInstance().Translate(lang, messageKey, args...),
 	})
 }
 
 // FailWithError Returns a failure response with error
-func FailWithError(c *gin.Context, httpCode int, message string, err error) {
+func FailWithError(c *gin.Context, httpCode int, messageKey string, err error, args ...interface{}) {
+	// Get language from context
+	lang := middleware.GetLanguage(c)
+
+	message := i18n.GetInstance().Translate(lang, messageKey, args...)
 	if err != nil {
 		message = message + ": " + err.Error()
 	}
-	Fail(c, httpCode, message)
+
+	c.JSON(httpCode, Response{
+		Code:    httpCode,
+		Message: message,
+	})
 }

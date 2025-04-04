@@ -101,69 +101,69 @@ func (h *DeploymentHandler) GetDeploymentDetails(c *gin.Context) {
 	})
 }
 
-// ScaleDeployment Adjust Deployment replica count
+// ScaleDeployment scales a deployment
 func (h *DeploymentHandler) ScaleDeployment(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	deploymentName := c.Param("deployment")
-	logger.Info("Scaling deployment for cluster: " + clusterName + ", namespace: " + namespace + ", deployment: " + deploymentName)
+
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "Namespace cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
 		return
 	}
 	if deploymentName == "" {
-		ResponseError(c, http.StatusBadRequest, "Deployment name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "deployment.deploymentNameEmpty")
 		return
 	}
 
-	var requestBody struct {
-		Replicas int32 `json:"replicas" binding:"required,min=0"`
+	// Parse request body
+	var req struct {
+		Replicas int32 `json:"replicas" binding:"required"`
 	}
-
-	if err := c.ShouldBindJSON(&requestBody); err != nil {
-		logger.Error("Failed to bind JSON: " + err.Error())
-		ResponseError(c, http.StatusBadRequest, "Invalid request parameters: "+err.Error())
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ResponseError(c, http.StatusBadRequest, "api.invalidJSON")
 		return
 	}
 
-	err := h.service.ScaleDeployment(clusterName, namespace, deploymentName, requestBody.Replicas)
+	// Scale the deployment
+	err := h.service.ScaleDeployment(clusterName, namespace, deploymentName, req.Replicas)
 	if err != nil {
-		logger.Error("Failed to scale deployment: " + err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		logger.Errorf("Failed to scale deployment %s: %v", deploymentName, err)
+		FailWithError(c, http.StatusInternalServerError, "deployment.scaleFailed", err)
 		return
 	}
 
 	ResponseSuccess(c, nil)
 }
 
-// RestartDeployment Restart Deployment
+// RestartDeployment restarts a deployment by patching its template annotations
 func (h *DeploymentHandler) RestartDeployment(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	deploymentName := c.Param("deployment")
-	logger.Info("Restarting deployment for cluster: " + clusterName + ", namespace: " + namespace + ", deployment: " + deploymentName)
 
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "Namespace cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
 		return
 	}
 	if deploymentName == "" {
-		ResponseError(c, http.StatusBadRequest, "Deployment name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "deployment.deploymentNameEmpty")
 		return
 	}
 
+	// Restart the deployment
 	err := h.service.RestartDeployment(clusterName, namespace, deploymentName)
 	if err != nil {
-		logger.Error("Failed to restart deployment: " + err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		logger.Errorf("Failed to restart deployment %s: %v", deploymentName, err)
+		FailWithError(c, http.StatusInternalServerError, "deployment.restartFailed", err)
 		return
 	}
 

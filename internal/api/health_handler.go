@@ -1,26 +1,20 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
-// HealthCheckHandler health check handler
+// HealthCheckHandler Health check handler
 type HealthCheckHandler struct{}
 
-// NewHealthCheckHandler creates a new health check handler
+// NewHealthCheckHandler Create health check handler
 func NewHealthCheckHandler() *HealthCheckHandler {
 	return &HealthCheckHandler{}
 }
 
-// CheckHealth health check endpoint
-// @Summary Health check endpoint
-// @Description Returns the health status of the service
-// @Tags System
-// @Produce json
-// @Success 200 {object} Response
-// @Router /health [get]
+// CheckHealth Check system health
 func (h *HealthCheckHandler) CheckHealth(c *gin.Context) {
-	ResponseError(c, http.StatusOK, "Service is running normally")
+	ResponseSuccess(c, gin.H{
+		"status": "system.healthCheck",
+	})
 }
