@@ -2,6 +2,7 @@ import { type FC } from 'react';
 import { Card, Descriptions, Space, Row, Col, Button, Dropdown, Modal } from "antd";
 import { CloudServerOutlined, MoreOutlined, ExclamationCircleOutlined, EyeOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import type { MenuProps } from 'antd';
 
 interface NodeInfo {
@@ -66,6 +67,7 @@ const NodeStatus: FC<NodeStatusProps> = ({
   onDelete
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleViewDetails = () => {
     navigate(`/nodes/${clusterName}/${node.name}`);
@@ -73,27 +75,27 @@ const NodeStatus: FC<NodeStatusProps> = ({
 
   const handleDrain = () => {
     Modal.confirm({
-      title: '节点排水确认',
+      title: t('nodeDetail.operations.drainConfirmTitle'),
       icon: <ExclamationCircleOutlined style={{ color: '#1677ff' }} />,
       content: (
         <div>
-          <p>确定要对节点 <strong>{node.name}</strong> 进行排水操作吗？</p>
-          <p>此操作将：</p>
+          <p>{t('nodeDetail.operations.drainConfirmMessage', { nodeName: node.name })}</p>
+          <p>{t('nodeDetail.operations.drainExplanation')}</p>
           <ul>
-            <li>将节点标记为不可调度</li>
-            <li>安全地驱逐该节点上的所有Pod（DaemonSet除外）</li>
-            <li>等待所有Pod迁移完成</li>
+            <li>{t('nodeDetail.operations.drainSetUnschedulable')}</li>
+            <li>{t('nodeDetail.operations.drainEvictPods')}</li>
+            <li>{t('nodeDetail.operations.drainWaitMigration')}</li>
           </ul>
-          <p>配置选项：</p>
+          <p>{t('nodeDetail.operations.drainOptions')}</p>
           <ul>
-            <li>忽略DaemonSet：是</li>
-            <li>删除本地数据：否</li>
-            <li>宽限期：300秒</li>
+            <li>{t('nodeDetail.operations.drainOptionDaemonSet')}</li>
+            <li>{t('nodeDetail.operations.drainOptionLocalData')}</li>
+            <li>{t('nodeDetail.operations.drainOptionGracePeriod')}</li>
           </ul>
         </div>
       ),
-      okText: "确认排水",
-      cancelText: "取消",
+      okText: t('nodeDetail.operations.confirmDrain'),
+      cancelText: t('common.cancel'),
       onOk: () => onDrain?.(node.name),
     });
   };
@@ -108,7 +110,7 @@ const NodeStatus: FC<NodeStatusProps> = ({
           </Space>
         }
       >
-        <div>加载中...</div>
+        <div>{t('common.loading')}</div>
       </Card>
     );
   }
@@ -116,36 +118,36 @@ const NodeStatus: FC<NodeStatusProps> = ({
   const items: MenuProps['items'] = [
     {
       key: 'view-details',
-      label: "查看详情",
+      label: t('nodeDetail.operations.viewDetails'),
       onClick: handleViewDetails,
     },
     {
       key: 'drain',
-      label: "排水(Drain)",
+      label: t('nodeDetail.operations.drain'),
       onClick: handleDrain,
       disabled: !node.status || node.unschedulable,
       danger: true,
     },
     {
       key: 'cordon',
-      label: "禁止调度(Cordon)",
+      label: t('nodeDetail.operations.cordon'),
       onClick: () => onCordon?.(node.name),
       disabled: node.unschedulable,
     },
     {
       key: 'uncordon',
-      label: "允许调度(Uncordon)",
+      label: t('nodeDetail.operations.uncordon'),
       onClick: () => onUncordon?.(node.name),
       disabled: !node.unschedulable,
     },
     {
       key: 'taint-management',
-      label: "污点管理",
+      label: t('nodeDetail.operations.manageTaints'),
       onClick: () => onManageTaints?.(node.name),
     },
     {
       key: 'label-management',
-      label: "标签管理",
+      label: t('nodeDetail.operations.manageLabels'),
       onClick: () => onManageLabels?.(node.name),
     },
     {
@@ -153,14 +155,14 @@ const NodeStatus: FC<NodeStatusProps> = ({
     },
     {
       key: 'delete',
-      label: "删除节点",
+      label: t('nodeDetail.operations.delete'),
       danger: true,
       onClick: () => onDelete?.(node.name),
     },
   ];
 
   // Get node pool name from labels
-  const nodePool = node.labels?.['k8s.io/pool-name'] || '未分配';
+  const nodePool = node.labels?.['k8s.io/pool-name'] || t('nodeDetail.nodePool.unassigned');
 
   return (
     <Card
@@ -177,38 +179,38 @@ const NodeStatus: FC<NodeStatusProps> = ({
       }
     >
       <Descriptions column={2} size="small">
-        <Descriptions.Item label="状态">
+        <Descriptions.Item label={t('nodeDetail.basicInfo.status')}>
           <Space>
             <span style={{ color: node.status === 'Ready' ? '#52c41a' : '#ff4d4f' }}>
               {node.status}
             </span>
             {node.unschedulable && (
-              <span style={{ color: '#faad14' }}>(不可调度)</span>
+              <span style={{ color: '#faad14' }}>({t('nodeDetail.basicInfo.unschedulable')})</span>
             )}
           </Space>
         </Descriptions.Item>
-        <Descriptions.Item label="IP地址">{node.ip}</Descriptions.Item>
-        <Descriptions.Item label="容器运行时">{node.containerRuntime}</Descriptions.Item>
-        <Descriptions.Item label="系统版本">{node.os}</Descriptions.Item>
-        <Descriptions.Item label="节点池">{nodePool}</Descriptions.Item>
+        <Descriptions.Item label={t('nodeDetail.basicInfo.ipAddress')}>{node.ip}</Descriptions.Item>
+        <Descriptions.Item label={t('nodeDetail.basicInfo.containerRuntime')}>{node.containerRuntime}</Descriptions.Item>
+        <Descriptions.Item label={t('nodeDetail.basicInfo.os')}>{node.os}</Descriptions.Item>
+        <Descriptions.Item label={t('nodeDetail.nodePool.title')}>{nodePool}</Descriptions.Item>
       </Descriptions>
 
       <div style={{ marginTop: 16 }}>
         <Row gutter={[16, 16]}>
           <Col span={24}>
-            <Card size="small" title="CPU资源信息" styles={{body: { display: 'flex', justifyContent: 'space-between' }}}>
-              <span>总量: {formatCPU(metrics?.cpu_capacity)}</span>
-              <span>已用: {formatCPU(metrics?.cpu_usage)}</span>
-              <span>请求: {formatCPU(metrics?.cpu_requests)}</span>
-              <span>限制: {formatCPU(metrics?.cpu_limits)}</span>
+            <Card size="small" title={t('nodeDetail.resourceUsage.cpu.title')} styles={{body: { display: 'flex', justifyContent: 'space-between' }}}>
+              <span>{t('nodeDetail.resourceUsage.totalCapacity')}: {formatCPU(metrics?.cpu_capacity)}</span>
+              <span>{t('nodeDetail.resourceUsage.used')}: {formatCPU(metrics?.cpu_usage)}</span>
+              <span>{t('nodeDetail.resourceUsage.requested')}: {formatCPU(metrics?.cpu_requests)}</span>
+              <span>{t('nodeDetail.resourceUsage.limited')}: {formatCPU(metrics?.cpu_limits)}</span>
             </Card>
           </Col>
           <Col span={24}>
-            <Card size="small" title="内存资源信息" styles={{body: { display: 'flex', justifyContent: 'space-between' }}}>
-              <span>总量: {formatMemorySize(metrics?.memory_capacity)}</span>
-              <span>已用: {formatMemorySize(metrics?.memory_usage)}</span>
-              <span>请求: {formatMemorySize(metrics?.memory_requests)}</span>
-              <span>限制: {formatMemorySize(metrics?.memory_limits)}</span>
+            <Card size="small" title={t('nodeDetail.resourceUsage.memory.title')} styles={{body: { display: 'flex', justifyContent: 'space-between' }}}>
+              <span>{t('nodeDetail.resourceUsage.totalCapacity')}: {formatMemorySize(metrics?.memory_capacity)}</span>
+              <span>{t('nodeDetail.resourceUsage.used')}: {formatMemorySize(metrics?.memory_usage)}</span>
+              <span>{t('nodeDetail.resourceUsage.requested')}: {formatMemorySize(metrics?.memory_requests)}</span>
+              <span>{t('nodeDetail.resourceUsage.limited')}: {formatMemorySize(metrics?.memory_limits)}</span>
             </Card>
           </Col>
           <Col span={24} style={{ textAlign: 'right' }}>
@@ -217,7 +219,7 @@ const NodeStatus: FC<NodeStatusProps> = ({
               icon={<EyeOutlined />} 
               onClick={handleViewDetails}
             >
-              查看详情
+              {t('nodeDetail.operations.viewDetails')}
             </Button>
           </Col>
         </Row>

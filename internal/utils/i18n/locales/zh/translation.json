@@ -45,7 +45,29 @@
     "taintAddSuccess": "节点污点添加成功",
     "taintRemoveSuccess": "节点污点删除成功",
     "sshKeyFileEmpty": "SSH密钥文件路径不能为空",
-    "sshPasswordEmpty": "SSH密码不能为空"
+    "sshPasswordEmpty": "SSH密码不能为空",
+    "list": {
+      "operation": "列出节点",
+      "success": "成功获取节点列表",
+      "failed": "获取节点列表失败"
+    },
+    "metrics": {
+      "operation": "获取节点指标",
+      "success": "成功获取节点指标",
+      "failed": "获取节点 {0} 的指标失败"
+    },
+    "status": {
+      "ready": "就绪",
+      "notReady": "未就绪",
+      "unknown": "未知",
+      "schedulingDisabled": "已禁止调度"
+    },
+    "conditions": {
+      "diskPressure": "磁盘压力",
+      "memoryPressure": "内存压力",
+      "pidPressure": "进程数压力",
+      "networkUnavailable": "网络不可用"
+    }
   },
   "pod": {
     "notFound": "Pod未找到",

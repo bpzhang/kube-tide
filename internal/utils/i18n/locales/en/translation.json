@@ -45,7 +45,29 @@
     "taintAddSuccess": "Node taint added successfully",
     "taintRemoveSuccess": "Node taint removed successfully",
     "sshKeyFileEmpty": "SSH key file path cannot be empty",
-    "sshPasswordEmpty": "SSH password cannot be empty"
+    "sshPasswordEmpty": "SSH password cannot be empty",
+    "list": {
+      "operation": "List nodes",
+      "success": "Successfully retrieved node list",
+      "failed": "Failed to retrieve node list"
+    },
+    "metrics": {
+      "operation": "Get node metrics",
+      "success": "Successfully retrieved node metrics",
+      "failed": "Failed to retrieve node metrics for node: {0}"
+    },
+    "status": {
+      "ready": "Ready",
+      "notReady": "Not Ready",
+      "unknown": "Unknown",
+      "schedulingDisabled": "Scheduling Disabled"
+    },
+    "conditions": {
+      "diskPressure": "Disk Pressure",
+      "memoryPressure": "Memory Pressure",
+      "pidPressure": "PID Pressure",
+      "networkUnavailable": "Network Unavailable"
+    }
   },
   "pod": {
     "notFound": "Pod not found",

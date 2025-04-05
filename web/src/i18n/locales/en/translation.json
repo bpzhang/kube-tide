@@ -126,7 +126,78 @@
     "manageTaints": "Manage Taints",
     "manageLabels": "Manage Labels",
     "ready": "Ready",
-    "notReady": "Not Ready"
+    "notReady": "Not Ready",
+    "conditions": {
+      "title": "Node Conditions",
+      "diskPressure": "Disk Pressure",
+      "memoryPressure": "Memory Pressure",
+      "pidPressure": "PID Pressure",
+      "networkUnavailable": "Network Unavailable"
+    },
+    "metrics": {
+      "cpuUsage": "CPU Usage",
+      "memoryUsage": "Memory Usage",
+      "podUsage": "Pod Usage",
+      "diskUsage": "Disk Usage",
+      "networkReceive": "Network Receive",
+      "networkTransmit": "Network Transmit"
+    },
+    "roles": {
+      "master": "Master",
+      "worker": "Worker",
+      "edge": "Edge"
+    },
+    "table": {
+      "columns": {
+        "status": "Status",
+        "name": "Name",
+        "roles": "Roles",
+        "version": "Version",
+        "internalIP": "Internal IP",
+        "externalIP": "External IP",
+        "pods": "Pods",
+        "cpu": "CPU",
+        "memory": "Memory",
+        "age": "Age",
+        "conditions": "Conditions"
+      }
+    },
+    "filters": {
+      "status": "Filter by Status",
+      "role": "Filter by Role",
+      "search": "Search nodes..."
+    },
+    "nodePool": {
+      "title": "Node Pool",
+      "unassigned": "Unassigned",
+      "manage": "Manage Node Pools",
+      "addPool": "Add Node Pool",
+      "editPool": "Edit Node Pool",
+      "deletePool": "Delete Node Pool",
+      "poolName": "Pool Name",
+      "nodeCount": "Node Count"
+    },
+    "operations": {
+      "viewDetails": "View Details",
+      "viewMetrics": "View Metrics",
+      "viewPods": "View Pods",
+      "viewEvents": "View Events",
+      "confirmOperation": "Confirm Operation",
+      "operationSuccess": "Operation completed successfully",
+      "operationFailed": "Operation failed: {message}"
+    },
+    "resourceMetrics": {
+      "usageRate": "Usage Rate",
+      "requestRate": "Request Rate",
+      "limitRate": "Limit Rate",
+      "available": "Available",
+      "total": "Total",
+      "unit": {
+        "cpu": "Cores",
+        "memory": "GB",
+        "pods": "Pods"
+      }
+    }
   },
   "pods": {
     "title": "Pods",
@@ -282,6 +353,42 @@
         "podIP": "Pod IP",
         "creationTime": "Creation Time",
         "containers": "Containers"
+      }
+    },
+    "operations": {
+      "viewDetails": "View Details",
+      "drain": "Drain Node",
+      "drainConfirmTitle": "Confirm Drain Node",
+      "drainConfirmMessage": "Are you sure you want to drain node {nodeName}?",
+      "drainExplanation": "Draining a node will:",
+      "drainSetUnschedulable": "Mark the node as unschedulable",
+      "drainEvictPods": "Safely evict all pods from the node",
+      "drainWaitMigration": "Wait for pod migration to complete",
+      "drainOptions": "The following options will be applied:",
+      "drainOptionDaemonSet": "Ignore DaemonSet pods",
+      "drainOptionLocalData": "Do not delete pods with local storage",
+      "drainOptionGracePeriod": "Grace period: 300 seconds",
+      "confirmDrain": "Drain Node",
+      "cordon": "Cordon Node",
+      "uncordon": "Uncordon Node",
+      "manageTaints": "Manage Taints",
+      "manageLabels": "Manage Labels",
+      "delete": "Delete Node"
+    },
+    "nodePool": {
+      "title": "Node Pool",
+      "unassigned": "Unassigned"
+    },
+    "resourceUsage": {
+      "totalCapacity": "Total",
+      "used": "Used",
+      "requested": "Requested",
+      "limited": "Limited",
+      "cpu": {
+        "title": "CPU Usage"
+      },
+      "memory": {
+        "title": "Memory Usage"
       }
     }
   },

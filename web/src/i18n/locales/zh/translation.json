@@ -126,7 +126,78 @@
     "manageTaints": "管理污点",
     "manageLabels": "管理标签",
     "ready": "就绪",
-    "notReady": "未就绪"
+    "notReady": "未就绪",
+    "conditions": {
+      "title": "节点状况",
+      "diskPressure": "磁盘压力",
+      "memoryPressure": "内存压力",
+      "pidPressure": "进程数压力",
+      "networkUnavailable": "网络不可用"
+    },
+    "metrics": {
+      "cpuUsage": "CPU 使用率",
+      "memoryUsage": "内存使用率",
+      "podUsage": "Pod 使用量",
+      "diskUsage": "磁盘使用率",
+      "networkReceive": "网络接收",
+      "networkTransmit": "网络发送"
+    },
+    "roles": {
+      "master": "主节点",
+      "worker": "工作节点",
+      "edge": "边缘节点"
+    },
+    "table": {
+      "columns": {
+        "status": "状态",
+        "name": "名称",
+        "roles": "角色",
+        "version": "版本",
+        "internalIP": "内部IP",
+        "externalIP": "外部IP",
+        "pods": "Pod数量",
+        "cpu": "CPU",
+        "memory": "内存",
+        "age": "运行时间",
+        "conditions": "状况"
+      }
+    },
+    "filters": {
+      "status": "按状态筛选",
+      "role": "按角色筛选",
+      "search": "搜索节点..."
+    },
+    "nodePool": {
+      "title": "节点池",
+      "unassigned": "未分配",
+      "manage": "管理节点池",
+      "addPool": "添加节点池",
+      "editPool": "编辑节点池",
+      "deletePool": "删除节点池",
+      "poolName": "节点池名称",
+      "nodeCount": "节点数量"
+    },
+    "operations": {
+      "viewDetails": "查看详情",
+      "viewMetrics": "查看指标",
+      "viewPods": "查看Pod",
+      "viewEvents": "查看事件",
+      "confirmOperation": "确认操作",
+      "operationSuccess": "操作成功完成",
+      "operationFailed": "操作失败：{message}"
+    },
+    "resourceMetrics": {
+      "usageRate": "使用率",
+      "requestRate": "请求率",
+      "limitRate": "限制率",
+      "available": "可用",
+      "total": "总量",
+      "unit": {
+        "cpu": "核心",
+        "memory": "GB",
+        "pods": "个Pod"
+      }
+    }
   },
   "pods": {
     "title": "Pod",
@@ -282,6 +353,42 @@
         "podIP": "Pod IP",
         "creationTime": "创建时间",
         "containers": "容器"
+      }
+    },
+    "operations": {
+      "viewDetails": "查看详情",
+      "drain": "排空节点",
+      "drainConfirmTitle": "确认排空节点",
+      "drainConfirmMessage": "您确定要排空节点 {nodeName} 吗？",
+      "drainExplanation": "排空节点将会：",
+      "drainSetUnschedulable": "将节点标记为不可调度",
+      "drainEvictPods": "安全驱逐节点上的所有Pod",
+      "drainWaitMigration": "等待Pod迁移完成",
+      "drainOptions": "将应用以下选项：",
+      "drainOptionDaemonSet": "忽略DaemonSet的Pod",
+      "drainOptionLocalData": "不删除具有本地存储的Pod",
+      "drainOptionGracePeriod": "优雅退出时间：300秒",
+      "confirmDrain": "确认排空",
+      "cordon": "禁止调度",
+      "uncordon": "恢复调度",
+      "manageTaints": "管理污点",
+      "manageLabels": "管理标签",
+      "delete": "删除节点"
+    },
+    "nodePool": {
+      "title": "节点池",
+      "unassigned": "未分配"
+    },
+    "resourceUsage": {
+      "totalCapacity": "总量",
+      "used": "已使用",
+      "requested": "已请求",
+      "limited": "已限制",
+      "cpu": {
+        "title": "CPU使用情况"
+      },
+      "memory": {
+        "title": "内存使用情况"
       }
     }
   },
