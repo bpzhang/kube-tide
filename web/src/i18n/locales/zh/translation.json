@@ -315,25 +315,48 @@
     },
     "resourceUsage": {
       "title": "资源使用情况",
+      "totalCapacity": "总容量",
+      "used": "已使用",
+      "requested": "已请求",
+      "limited": "已限制",
       "cpu": {
         "title": "CPU使用情况",
-        "usageRate": "使用率",
         "totalCapacity": "总容量",
+        "usageRate": "使用率",
         "used": "已使用",
         "requested": "已请求",
         "limited": "已限制",
-        "usagePercent": "使用率",
-        "requestPercent": "请求率"
+        "capacity": "容量",
+        "usagePercent": "使用百分比",
+        "requestPercent": "请求百分比",
+        "allocatable": "可分配",
+        "format": "{value} 核心"
       },
       "memory": {
         "title": "内存使用情况",
-        "usageRate": "使用率",
         "totalCapacity": "总容量",
+        "usageRate": "使用率",
         "used": "已使用",
         "requested": "已请求",
         "limited": "已限制",
-        "usagePercent": "使用率",
-        "requestPercent": "请求率"
+        "capacity": "容量",
+        "usagePercent": "使用百分比",
+        "requestPercent": "请求百分比",
+        "allocatable": "可分配",
+        "format": "{value} GB"
+      },
+      "disk": {
+        "title": "磁盘使用情况",
+        "totalCapacity": "总容量",
+        "used": "已用空间",
+        "available": "可用空间",
+        "usagePercent": "使用百分比"
+      },
+      "network": {
+        "title": "网络使用情况",
+        "receive": "入站流量",
+        "transmit": "出站流量",
+        "format": "{value}/秒"
       }
     },
     "taints": {
@@ -378,18 +401,6 @@
     "nodePool": {
       "title": "节点池",
       "unassigned": "未分配"
-    },
-    "resourceUsage": {
-      "totalCapacity": "总量",
-      "used": "已使用",
-      "requested": "已请求",
-      "limited": "已限制",
-      "cpu": {
-        "title": "CPU使用情况"
-      },
-      "memory": {
-        "title": "内存使用情况"
-      }
     }
   },
   "clusterDetail": {

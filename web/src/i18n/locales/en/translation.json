@@ -315,25 +315,48 @@
     },
     "resourceUsage": {
       "title": "Resource Usage",
+      "totalCapacity": "Total Capacity",
+      "used": "Used",
+      "requested": "Requested",
+      "limited": "Limited",
       "cpu": {
         "title": "CPU Usage",
-        "usageRate": "Usage Rate",
         "totalCapacity": "Total Capacity",
+        "usageRate": "Usage Rate",
         "used": "Used",
         "requested": "Requested",
         "limited": "Limited",
-        "usagePercent": "Usage",
-        "requestPercent": "Request"
+        "capacity": "Capacity",
+        "usagePercent": "Usage Percentage",
+        "requestPercent": "Request Percentage",
+        "allocatable": "Allocatable",
+        "format": "{value} Cores"
       },
       "memory": {
         "title": "Memory Usage",
-        "usageRate": "Usage Rate",
         "totalCapacity": "Total Capacity",
+        "usageRate": "Usage Rate",
         "used": "Used",
         "requested": "Requested",
         "limited": "Limited",
-        "usagePercent": "Usage",
-        "requestPercent": "Request"
+        "capacity": "Capacity",
+        "usagePercent": "Usage Percentage",
+        "requestPercent": "Request Percentage",
+        "allocatable": "Allocatable",
+        "format": "{value} GB"
+      },
+      "disk": {
+        "title": "Disk Usage",
+        "totalCapacity": "Total Capacity",
+        "used": "Used Space",
+        "available": "Available Space",
+        "usagePercent": "Usage Percentage"
+      },
+      "network": {
+        "title": "Network Usage",
+        "receive": "Incoming Traffic",
+        "transmit": "Outgoing Traffic",
+        "format": "{value}/s"
       }
     },
     "taints": {
@@ -378,18 +401,6 @@
     "nodePool": {
       "title": "Node Pool",
       "unassigned": "Unassigned"
-    },
-    "resourceUsage": {
-      "totalCapacity": "Total",
-      "used": "Used",
-      "requested": "Requested",
-      "limited": "Limited",
-      "cpu": {
-        "title": "CPU Usage"
-      },
-      "memory": {
-        "title": "Memory Usage"
-      }
     }
   },
   "clusterDetail": {
