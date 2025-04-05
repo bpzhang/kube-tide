@@ -22,7 +22,8 @@
     "details": "Details",
     "noData": "No data",
     "selectCluster": "Please select a cluster",
-    "percentage": "Percentage"
+    "percentage": "Percentage",
+    "operations": "Actions"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -175,28 +176,60 @@
       "editPool": "Edit Node Pool",
       "deletePool": "Delete Node Pool",
       "poolName": "Pool Name",
-      "nodeCount": "Node Count"
-    },
-    "operations": {
-      "viewDetails": "View Details",
-      "viewMetrics": "View Metrics",
-      "viewPods": "View Pods",
-      "viewEvents": "View Events",
-      "confirmOperation": "Confirm Operation",
-      "operationSuccess": "Operation completed successfully",
-      "operationFailed": "Operation failed: {message}"
-    },
-    "resourceMetrics": {
-      "usageRate": "Usage Rate",
-      "requestRate": "Request Rate",
-      "limitRate": "Limit Rate",
-      "available": "Available",
-      "total": "Total",
-      "unit": {
-        "cpu": "Cores",
-        "memory": "GB",
-        "pods": "Pods"
+      "nodeCount": "Node Count",
+      "createPool": "Create Node Pool",
+      "updatePool": "Update Node Pool",
+      "createSuccess": "Node pool created successfully",
+      "updateSuccess": "Node pool updated successfully",
+      "deleteSuccess": "Node pool deleted successfully",
+      "operationFailed": "Operation failed: {message}",
+      "confirmDelete": "Are you sure you want to delete this node pool?",
+      "labels": "Labels",
+      "taints": "Taints",
+      "addLabel": "Add Label",
+      "addTaint": "Add Taint",
+      "labelKey": "Label Key",
+      "labelValue": "Label Value",
+      "taintKey": "Taint Key",
+      "taintValue": "Taint Value (Optional)",
+      "taintEffect": "Taint Effect",
+      "pleaseEnterPoolName": "Please enter node pool name",
+      "pleaseEnterLabelKey": "Please enter label key",
+      "pleaseEnterLabelValue": "Please enter label value",
+      "pleaseEnterTaintKey": "Please enter taint key",
+      "pleaseSelectEffect": "Please select an effect",
+      "taintEffects": {
+        "NoSchedule": "NoSchedule (Do not schedule new pods on the node)",
+        "PreferNoSchedule": "PreferNoSchedule (Try not to schedule new pods on the node)",
+        "NoExecute": "NoExecute (Do not schedule new pods and evict existing ones)"
       }
+    },
+    "addNodeModal": {
+      "title": "Add Node",
+      "nodeName": "Node Name",
+      "nodeNamePlaceholder": "e.g. worker-1",
+      "pleaseEnterNodeName": "Please enter node name",
+      "nodeIP": "Node IP Address",
+      "nodeIPPlaceholder": "e.g. 192.168.1.100",
+      "pleaseEnterNodeIP": "Please enter node IP address",
+      "nodePool": "Node Pool",
+      "selectNodePool": "Select node pool (optional)",
+      "sshPort": "SSH Port",
+      "pleaseEnterSSHPort": "Please enter SSH port",
+      "sshUser": "SSH Username",
+      "pleaseEnterSSHUser": "Please enter SSH username",
+      "authType": "Authentication Method",
+      "pleaseEnterAuthType": "Please select authentication method",
+      "sshKey": "SSH Key",
+      "password": "Password",
+      "sshKeyFile": "SSH Key File Path",
+      "sshKeyFilePlaceholder": "e.g. /root/.ssh/id_rsa",
+      "pleaseEnterSSHKeyFile": "Please enter SSH key file path",
+      "sshPassword": "SSH Password",
+      "pleaseEnterSSHPassword": "Please enter SSH password",
+      "addNode": "Add Node",
+      "addSuccess": "Node added successfully",
+      "addFailed": "Failed to add node: {message}"
     }
   },
   "pods": {

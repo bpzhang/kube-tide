@@ -22,7 +22,8 @@
     "details": "详情",
     "noData": "暂无数据",
     "selectCluster": "请选择集群",
-    "percentage": "百分比"
+    "percentage": "百分比",
+    "operations": "操作"
   },
   "navigation": {
     "dashboard": "仪表盘",
@@ -175,28 +176,60 @@
       "editPool": "编辑节点池",
       "deletePool": "删除节点池",
       "poolName": "节点池名称",
-      "nodeCount": "节点数量"
-    },
-    "operations": {
-      "viewDetails": "查看详情",
-      "viewMetrics": "查看指标",
-      "viewPods": "查看Pod",
-      "viewEvents": "查看事件",
-      "confirmOperation": "确认操作",
-      "operationSuccess": "操作成功完成",
-      "operationFailed": "操作失败：{message}"
-    },
-    "resourceMetrics": {
-      "usageRate": "使用率",
-      "requestRate": "请求率",
-      "limitRate": "限制率",
-      "available": "可用",
-      "total": "总量",
-      "unit": {
-        "cpu": "核心",
-        "memory": "GB",
-        "pods": "个Pod"
+      "nodeCount": "节点数量",
+      "createPool": "创建节点池",
+      "updatePool": "更新节点池",
+      "createSuccess": "节点池创建成功",
+      "updateSuccess": "节点池更新成功",
+      "deleteSuccess": "节点池删除成功",
+      "operationFailed": "操作失败: {message}",
+      "confirmDelete": "确定要删除此节点池吗？",
+      "labels": "标签",
+      "taints": "污点",
+      "addLabel": "添加标签",
+      "addTaint": "添加污点",
+      "labelKey": "标签键",
+      "labelValue": "标签值",
+      "taintKey": "污点键",
+      "taintValue": "污点值（可选）",
+      "taintEffect": "污点效果",
+      "pleaseEnterPoolName": "请输入节点池名称",
+      "pleaseEnterLabelKey": "请输入标签键",
+      "pleaseEnterLabelValue": "请输入标签值",
+      "pleaseEnterTaintKey": "请输入污点键",
+      "pleaseSelectEffect": "请选择污点效果",
+      "taintEffects": {
+        "NoSchedule": "NoSchedule (不允许新Pod调度到节点)",
+        "PreferNoSchedule": "PreferNoSchedule (尽量避免新Pod调度到节点)",
+        "NoExecute": "NoExecute (不允许新Pod调度且驱逐现有Pod)"
       }
+    },
+    "addNodeModal": {
+      "title": "添加节点",
+      "nodeName": "节点名称",
+      "nodeNamePlaceholder": "例如: worker-1",
+      "pleaseEnterNodeName": "请输入节点名称",
+      "nodeIP": "节点IP地址",
+      "nodeIPPlaceholder": "例如: 192.168.1.100",
+      "pleaseEnterNodeIP": "请输入节点IP地址",
+      "nodePool": "节点池",
+      "selectNodePool": "选择节点池（可选）",
+      "sshPort": "SSH端口",
+      "pleaseEnterSSHPort": "请输入SSH端口",
+      "sshUser": "SSH用户名",
+      "pleaseEnterSSHUser": "请输入SSH用户名",
+      "authType": "认证方式",
+      "pleaseEnterAuthType": "请选择认证方式",
+      "sshKey": "SSH密钥",
+      "password": "密码",
+      "sshKeyFile": "SSH密钥文件路径",
+      "sshKeyFilePlaceholder": "例如: /root/.ssh/id_rsa",
+      "pleaseEnterSSHKeyFile": "请输入SSH密钥文件路径",
+      "sshPassword": "SSH密码",
+      "pleaseEnterSSHPassword": "请输入SSH密码",
+      "addNode": "添加节点",
+      "addSuccess": "节点添加成功",
+      "addFailed": "添加节点失败: {message}"
     }
   },
   "pods": {
