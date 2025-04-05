@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Form, Input, Button, Space, Table, Typography, message, Popconfirm, Select } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { NodePool } from '@/api/nodepool';
 import { createNodePool, updateNodePool, deleteNodePool } from '@/api/nodepool';
 
@@ -27,6 +28,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
   nodePools,
   onSuccess,
 }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm<NodePoolFormData>();
   const [editingPool, setEditingPool] = useState<NodePool | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,10 +52,10 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
 
       if (editingPool) {
         await updateNodePool(clusterName, editingPool.name, pool);
-        message.success('节点池更新成功');
+        message.success(t('nodes.nodePool.updateSuccess'));
       } else {
         await createNodePool(clusterName, pool);
-        message.success('节点池创建成功');
+        message.success(t('nodes.nodePool.createSuccess'));
       }
 
       form.resetFields();
@@ -61,7 +63,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
       setShowForm(false);
       onSuccess();
     } catch (err) {
-      message.error(`操作失败: ${(err as Error).message}`);
+      message.error(t('nodes.nodePool.operationFailed', { message: (err as Error).message }));
     } finally {
       setLoading(false);
     }
@@ -85,10 +87,10 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
   const handleDelete = async (poolName: string) => {
     try {
       await deleteNodePool(clusterName, poolName);
-      message.success('节点池删除成功');
+      message.success(t('nodes.nodePool.deleteSuccess'));
       onSuccess();
     } catch (err) {
-      message.error(`删除失败: ${(err as Error).message}`);
+      message.error(t('nodes.nodePool.operationFailed', { message: (err as Error).message }));
     }
   };
 
@@ -100,12 +102,12 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
 
   const columns = [
     {
-      title: '名称',
+      title: t('nodes.nodePool.poolName'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: '标签',
+      title: t('nodes.nodePool.labels'),
       dataIndex: 'labels',
       key: 'labels',
       render: (labels: Record<string, string>) => (
@@ -119,7 +121,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
       ),
     },
     {
-      title: '污点',
+      title: t('nodes.nodePool.taints'),
       dataIndex: 'taints',
       key: 'taints',
       render: (taints: NodePool['taints']) => (
@@ -133,7 +135,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
       ),
     },
     {
-      title: '操作',
+      title: t('common.operations'),
       key: 'action',
       render: (_: any, record: NodePool) => (
         <Space>
@@ -142,20 +144,20 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           >
-            编辑
+            {t('common.edit')}
           </Button>
           <Popconfirm
-            title="确定要删除此节点池吗？"
+            title={t('nodes.nodePool.confirmDelete')}
             onConfirm={() => handleDelete(record.name)}
-            okText="确定"
-            cancelText="取消"
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
           >
             <Button
               type="text"
               danger
               icon={<DeleteOutlined />}
             >
-              删除
+              {t('common.delete')}
             </Button>
           </Popconfirm>
         </Space>
@@ -165,7 +167,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
 
   return (
     <Modal
-      title="节点池管理"
+      title={t('nodes.nodePool.manage')}
       open={visible}
       onCancel={onClose}
       width={800}
@@ -181,7 +183,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
             setShowForm(true);
           }}
         >
-          创建节点池
+          {t('nodes.nodePool.createPool')}
         </Button>
       </div>
 
@@ -193,7 +195,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
       />
 
       <Modal
-        title={editingPool ? '编辑节点池' : '创建节点池'}
+        title={editingPool ? t('nodes.nodePool.editPool') : t('nodes.nodePool.addPool')}
         open={showForm}
         onCancel={handleCloseForm}
         footer={null}
@@ -209,10 +211,10 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
         >
           <Form.Item
             name="name"
-            label="节点池名称"
-            rules={[{ required: true, message: '请输入节点池名称' }]}
+            label={t('nodes.nodePool.poolName')}
+            rules={[{ required: true, message: t('nodes.nodePool.pleaseEnterPoolName') }]}
           >
-            <Input placeholder="请输入节点池名称" disabled={!!editingPool} />
+            <Input placeholder={t('nodes.nodePool.pleaseEnterPoolName')} disabled={!!editingPool} />
           </Form.Item>
 
           <Form.List name="labels">
@@ -223,23 +225,23 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
                     <Form.Item
                       {...restField}
                       name={[name, 'key']}
-                      rules={[{ required: true, message: '请输入标签键' }]}
+                      rules={[{ required: true, message: t('nodes.nodePool.pleaseEnterLabelKey') }]}
                     >
-                      <Input placeholder="标签键" />
+                      <Input placeholder={t('nodes.nodePool.labelKey')} />
                     </Form.Item>
                     <Form.Item
                       {...restField}
                       name={[name, 'value']}
-                      rules={[{ required: true, message: '请输入标签值' }]}
+                      rules={[{ required: true, message: t('nodes.nodePool.pleaseEnterLabelValue') }]}
                     >
-                      <Input placeholder="标签值" />
+                      <Input placeholder={t('nodes.nodePool.labelValue')} />
                     </Form.Item>
-                    <Button type="text" onClick={() => remove(name)}>删除</Button>
+                    <Button type="text" onClick={() => remove(name)}>{t('common.delete')}</Button>
                   </Space>
                 ))}
                 <Form.Item>
                   <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                    添加标签
+                    {t('nodes.nodePool.addLabel')}
                   </Button>
                 </Form.Item>
               </>
@@ -254,33 +256,33 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
                     <Form.Item
                       {...restField}
                       name={[name, 'key']}
-                      rules={[{ required: true, message: '请输入污点键' }]}
+                      rules={[{ required: true, message: t('nodes.nodePool.pleaseEnterTaintKey') }]}
                     >
-                      <Input placeholder="污点键" />
+                      <Input placeholder={t('nodes.nodePool.taintKey')} />
                     </Form.Item>
                     <Form.Item
                       {...restField}
                       name={[name, 'value']}
                     >
-                      <Input placeholder="污点值（可选）" />
+                      <Input placeholder={t('nodes.nodePool.taintValue')} />
                     </Form.Item>
                     <Form.Item
                       {...restField}
                       name={[name, 'effect']}
-                      rules={[{ required: true, message: '请选择污点效果' }]}
+                      rules={[{ required: true, message: t('nodes.nodePool.pleaseSelectEffect') }]}
                     >
-                      <Select placeholder="选择效果">
-                        <Select.Option value="NoSchedule">NoSchedule (不允许新Pod调度到节点)</Select.Option>
-                        <Select.Option value="PreferNoSchedule">PreferNoSchedule (尽量避免新Pod调度到节点)</Select.Option>
-                        <Select.Option value="NoExecute">NoExecute (不允许新Pod调度且驱逐现有Pod)</Select.Option>
+                      <Select placeholder={t('nodes.nodePool.pleaseSelectEffect')}>
+                        <Select.Option value="NoSchedule">{t('nodes.nodePool.taintEffects.NoSchedule')}</Select.Option>
+                        <Select.Option value="PreferNoSchedule">{t('nodes.nodePool.taintEffects.PreferNoSchedule')}</Select.Option>
+                        <Select.Option value="NoExecute">{t('nodes.nodePool.taintEffects.NoExecute')}</Select.Option>
                       </Select>
                     </Form.Item>
-                    <Button type="text" onClick={() => remove(name)}>删除</Button>
+                    <Button type="text" onClick={() => remove(name)}>{t('common.delete')}</Button>
                   </Space>
                 ))}
                 <Form.Item>
                   <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                    添加污点
+                    {t('nodes.nodePool.addTaint')}
                   </Button>
                 </Form.Item>
               </>
@@ -290,10 +292,10 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
           <Form.Item>
             <Space>
               <Button onClick={handleCloseForm}>
-                取消
+                {t('common.cancel')}
               </Button>
               <Button type="primary" htmlType="submit" loading={loading}>
-                {editingPool ? '更新' : '创建'}
+                {editingPool ? t('common.update') : t('common.create')}
               </Button>
             </Space>
           </Form.Item>
