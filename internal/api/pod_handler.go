@@ -31,14 +31,14 @@ func NewPodHandler(service *k8s.PodService) *PodHandler {
 func (h *PodHandler) ListPods(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
 	pods, err := h.service.GetPods(context.Background(), clusterName)
 	if err != nil {
 		logger.Errorf("Failed to get pods: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "pod.fetchFailed", err)
 		return
 	}
 
@@ -52,11 +52,11 @@ func (h *PodHandler) ListPodsByNamespace(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
 		logger.Errorf("Failed to list pods by namespace: namespace cannot be empty")
 		return
 	}
@@ -64,7 +64,7 @@ func (h *PodHandler) ListPodsByNamespace(c *gin.Context) {
 	pods, err := h.service.GetPodsByNamespace(context.Background(), clusterName, namespace)
 	if err != nil {
 		logger.Errorf("Failed to get pods by namespace: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "pod.fetchFailed", err)
 		return
 	}
 
@@ -187,16 +187,16 @@ func (h *PodHandler) StreamPodLogs(c *gin.Context) {
 	followStr := c.DefaultQuery("follow", "true")
 
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
 		logger.Errorf("Failed to stream pod logs: namespace cannot be empty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "pod name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "pod.podNameEmpty")
 		logger.Errorf("Failed to stream pod logs: pod name cannot be empty")
 		return
 	}
@@ -310,26 +310,26 @@ func (h *PodHandler) GetPodsBySelector(c *gin.Context) {
 	namespace := c.Param("namespace")
 	logger.Infof("Get pods by selector for cluster: %s, namespace: %s", clusterName, namespace)
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		logger.Errorf("Failed to get pods by selector: cluster name cannot be empty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
 		logger.Errorf("Failed to get pods by selector: namespace cannot be empty")
 		return
 	}
 
 	var selector map[string]string
 	if err := c.ShouldBindJSON(&selector); err != nil {
-		ResponseError(c, http.StatusBadRequest, "invalid label selector")
+		ResponseError(c, http.StatusBadRequest, "api.invalidJSON")
 		return
 	}
 
 	pods, err := h.service.GetPodsBySelector(context.Background(), clusterName, namespace, selector)
 	if err != nil {
 		logger.Errorf("Failed to get pods by selector: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "pod.fetchFailed", err)
 		return
 	}
 
@@ -357,7 +357,7 @@ func (h *PodHandler) CheckPodExists(c *gin.Context) {
 		return
 	}
 
-	_, exists, err := h.service.CheckPodExists(context.Background(), clusterName, namespace, podName)
+	podDetail, exists, err := h.service.CheckPodExists(context.Background(), clusterName, namespace, podName)
 	if err != nil {
 		FailWithError(c, http.StatusInternalServerError, "pod.fetchFailed", err)
 		return
@@ -365,6 +365,7 @@ func (h *PodHandler) CheckPodExists(c *gin.Context) {
 
 	ResponseSuccess(c, gin.H{
 		"exists": exists,
+		"pod": podDetail,
 	})
 }
 
@@ -375,15 +376,15 @@ func (h *PodHandler) GetPodEvents(c *gin.Context) {
 	podName := c.Param("pod")
 	logger.Infof("Get pod events for cluster: %s, namespace: %s, pod: %s", clusterName, namespace, podName)
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "namespace cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
 		return
 	}
 	if podName == "" {
-		ResponseError(c, http.StatusBadRequest, "Pod name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "pod.podNameEmpty")
 		logger.Errorf("Failed to get pod events: pod name cannot be empty")
 		return
 	}
@@ -391,7 +392,7 @@ func (h *PodHandler) GetPodEvents(c *gin.Context) {
 	events, err := h.service.GetPodEvents(context.Background(), clusterName, namespace, podName)
 	if err != nil {
 		logger.Errorf("Failed to get pod events: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "pod.eventsFetchFailed", err)
 		return
 	}
 

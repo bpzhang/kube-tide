@@ -36,7 +36,16 @@
     "drainFailed": "节点排空失败",
     "deleteSuccess": "节点删除成功",
     "deleteFailed": "删除节点失败",
-    "invalidAuth": "认证方法不正确，必须是'key'或'password'"
+    "invalidAuth": "认证方法不正确，必须是'key'或'password'",
+    "podsFetchFailed": "获取节点上的Pod失败",
+    "labelAddSuccess": "节点标签添加成功",
+    "labelAddFailed": "添加节点标签失败",
+    "labelRemoveSuccess": "节点标签删除成功",
+    "labelRemoveFailed": "删除节点标签失败",
+    "taintAddSuccess": "节点污点添加成功",
+    "taintRemoveSuccess": "节点污点删除成功",
+    "sshKeyFileEmpty": "SSH密钥文件路径不能为空",
+    "sshPasswordEmpty": "SSH密码不能为空"
   },
   "pod": {
     "notFound": "Pod未找到",
@@ -46,7 +55,8 @@
     "deleteFailed": "删除Pod失败",
     "logFailed": "获取Pod日志失败",
     "execFailed": "在Pod中执行命令失败",
-    "terminalConnectFailed": "连接Pod终端失败"
+    "terminalConnectFailed": "连接Pod终端失败",
+    "eventsFetchFailed": "获取Pod事件失败"
   },
   "deployment": {
     "notFound": "部署未找到",

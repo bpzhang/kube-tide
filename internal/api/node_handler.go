@@ -27,7 +27,7 @@ func NewNodeHandler(service *k8s.NodeService) *NodeHandler {
 func (h *NodeHandler) ListNodes(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
@@ -55,7 +55,7 @@ func (h *NodeHandler) ListNodes(c *gin.Context) {
 	nodes, total, err := h.service.GetNodes(context.Background(), clusterName, limit, page)
 	if err != nil {
 		logger.Errorf("Failed to get nodes: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, "Failed to retrieve nodes: "+err.Error())
+		ResponseError(c, http.StatusInternalServerError, "node.fetchFailed")
 		return
 	}
 
@@ -76,18 +76,18 @@ func (h *NodeHandler) GetNodeDetails(c *gin.Context) {
 	nodeName := c.Param("node")
 	logger.Infof("Getting node details for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 	if nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "Node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "node.nodeNameEmpty")
 		return
 	}
 
 	node, err := h.service.GetNodeDetails(context.Background(), clusterName, nodeName)
 	if err != nil {
 		logger.Errorf("Failed to get node details: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.fetchFailed", err)
 		return
 	}
 
@@ -102,18 +102,18 @@ func (h *NodeHandler) GetNodeMetrics(c *gin.Context) {
 	nodeName := c.Param("node")
 	logger.Infof("Getting node metrics for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 	if nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "Node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "node.nodeNameEmpty")
 		return
 	}
 
 	metrics, err := h.service.GetNodeMetrics(context.Background(), clusterName, nodeName)
 	if err != nil {
 		logger.Errorf("Failed to get node metrics: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.fetchFailed", err)
 		return
 	}
 
@@ -128,7 +128,7 @@ func (h *NodeHandler) DrainNode(c *gin.Context) {
 	nodeName := c.Param("node")
 	logger.Infof("Draining node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name or node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
@@ -139,7 +139,7 @@ func (h *NodeHandler) DrainNode(c *gin.Context) {
 	}
 
 	if err := c.BindJSON(&params); err != nil {
-		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "api.invalidJSON")
 		return
 	}
 
@@ -158,12 +158,12 @@ func (h *NodeHandler) DrainNode(c *gin.Context) {
 	)
 	if err != nil {
 		logger.Errorf("Failed to drain node: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.drainFailed", err)
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "Node drained successfully",
+		"message": "node.drainSuccess",
 	})
 }
 
@@ -173,19 +173,19 @@ func (h *NodeHandler) CordonNode(c *gin.Context) {
 	nodeName := c.Param("node")
 	logger.Infof("Cordoning node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
 	err := h.service.CordonNode(context.Background(), clusterName, nodeName)
 	if err != nil {
 		logger.Errorf("Failed to cordon node: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.cordonFailed", err)
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "Node cordoned successfully",
+		"message": "node.cordonSuccess",
 	})
 }
 
@@ -194,18 +194,19 @@ func (h *NodeHandler) UncordonNode(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
 	err := h.service.UncordonNode(context.Background(), clusterName, nodeName)
 	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		logger.Errorf("Failed to uncordon node: %s", err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.uncordonFailed", err)
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "Node uncordoned successfully",
+		"message": "node.uncordonSuccess",
 	})
 }
 
@@ -214,13 +215,14 @@ func (h *NodeHandler) GetNodeTaints(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
 	taints, err := h.service.GetNodeTaints(context.Background(), clusterName, nodeName)
 	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		logger.Errorf("Failed to get node taints: %s", err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.fetchFailed", err)
 		return
 	}
 
@@ -235,7 +237,7 @@ func (h *NodeHandler) AddNodeTaint(c *gin.Context) {
 	nodeName := c.Param("node")
 	logger.Infof("Adding taint to node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
@@ -246,7 +248,7 @@ func (h *NodeHandler) AddNodeTaint(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "api.invalidJSON")
 		return
 	}
 
@@ -258,12 +260,12 @@ func (h *NodeHandler) AddNodeTaint(c *gin.Context) {
 
 	if err := h.service.AddNodeTaint(context.Background(), clusterName, nodeName, taint); err != nil {
 		logger.Errorf("Failed to add taint to node: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.cordonFailed", err)
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "Taint added successfully",
+		"message": "node.taintAddSuccess",
 	})
 }
 
@@ -273,7 +275,7 @@ func (h *NodeHandler) RemoveNodeTaint(c *gin.Context) {
 	nodeName := c.Param("node")
 	logger.Infof("Removing taint from node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
@@ -283,17 +285,18 @@ func (h *NodeHandler) RemoveNodeTaint(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "api.invalidJSON")
 		return
 	}
 
 	if err := h.service.RemoveNodeTaint(context.Background(), clusterName, nodeName, req.Key, req.Effect); err != nil {
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		logger.Errorf("Failed to remove taint from node: %s", err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.cordonFailed", err)
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "Taint removed successfully",
+		"message": "node.taintRemoveSuccess",
 	})
 }
 
@@ -303,14 +306,14 @@ func (h *NodeHandler) GetNodeLabels(c *gin.Context) {
 	nodeName := c.Param("node")
 	logger.Infof("Getting labels for node in cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
 	labels, err := h.service.GetNodeLabels(context.Background(), clusterName, nodeName)
 	if err != nil {
 		logger.Errorf("Failed to get node labels: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.fetchFailed", err)
 		return
 	}
 
@@ -325,7 +328,7 @@ func (h *NodeHandler) AddNodeLabel(c *gin.Context) {
 	nodeName := c.Param("node")
 	logger.Infof("Adding label to node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
@@ -336,18 +339,18 @@ func (h *NodeHandler) AddNodeLabel(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Errorf("Failed to bind JSON: %s", err.Error())
-		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "api.invalidJSON")
 		return
 	}
 
 	if err := h.service.AddNodeLabel(context.Background(), clusterName, nodeName, req.Key, req.Value); err != nil {
 		logger.Errorf("Failed to add label to node: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.labelAddFailed", err)
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "Label added successfully",
+		"message": "node.labelAddSuccess",
 	})
 }
 
@@ -357,7 +360,7 @@ func (h *NodeHandler) RemoveNodeLabel(c *gin.Context) {
 	nodeName := c.Param("node")
 	logger.Infof("Removing label from node for cluster: %s, node: %s", clusterName, nodeName)
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name or node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
@@ -366,18 +369,18 @@ func (h *NodeHandler) RemoveNodeLabel(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "api.invalidJSON")
 		return
 	}
 
 	if err := h.service.RemoveNodeLabel(context.Background(), clusterName, nodeName, req.Key); err != nil {
 		logger.Errorf("Failed to remove label from node: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.labelRemoveFailed", err)
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "Label removed successfully",
+		"message": "node.labelRemoveSuccess",
 	})
 }
 
@@ -385,13 +388,13 @@ func (h *NodeHandler) RemoveNodeLabel(c *gin.Context) {
 func (h *NodeHandler) AddNode(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
 	var nodeConfig k8s.NodeConfig
 	if err := c.ShouldBindJSON(&nodeConfig); err != nil {
-		ResponseError(c, http.StatusBadRequest, "Request parameters are incorrect: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "api.invalidJSON")
 		return
 	}
 
@@ -407,28 +410,29 @@ func (h *NodeHandler) AddNode(c *gin.Context) {
 
 	// validate authentication method
 	if nodeConfig.AuthType != "key" && nodeConfig.AuthType != "password" {
-		ResponseError(c, http.StatusBadRequest, "Authentication method is incorrect, must be 'key' or 'password'")
+		ResponseError(c, http.StatusBadRequest, "node.invalidAuth")
 		return
 	}
 
 	// validate necessary parameters based on authentication method
 	if nodeConfig.AuthType == "key" && nodeConfig.SSHKeyFile == "" {
-		ResponseError(c, http.StatusBadRequest, "SSH key file path cannot be empty when using key authentication")
+		ResponseError(c, http.StatusBadRequest, "node.sshKeyFileEmpty")
 		return
 	}
 	if nodeConfig.AuthType == "password" && nodeConfig.SSHPassword == "" {
-		ResponseError(c, http.StatusBadRequest, "SSH password cannot be empty when using password authentication")
+		ResponseError(c, http.StatusBadRequest, "node.sshPasswordEmpty")
 		return
 	}
 
 	err := h.service.AddNode(context.Background(), clusterName, nodeConfig)
 	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		logger.Errorf("Failed to add node: %s", err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.addFailed", err)
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "Node added successfully",
+		"message": "node.addSuccess",
 	})
 }
 
@@ -437,7 +441,7 @@ func (h *NodeHandler) RemoveNode(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
@@ -451,12 +455,13 @@ func (h *NodeHandler) RemoveNode(c *gin.Context) {
 
 	err := h.service.RemoveNode(context.Background(), clusterName, nodeName, params.Force)
 	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		logger.Errorf("Failed to remove node: %s", err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.deleteFailed", err)
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "Node removed successfully",
+		"message": "node.deleteSuccess",
 	})
 }
 
@@ -465,14 +470,14 @@ func (h *NodeHandler) GetNodePods(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	nodeName := c.Param("node")
 	if clusterName == "" || nodeName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name or node name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
 	pods, err := h.service.GetNodePods(context.Background(), clusterName, nodeName)
 	if err != nil {
 		logger.Errorf("Failed to get pods on node: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		FailWithError(c, http.StatusInternalServerError, "node.podsFetchFailed", err)
 		return
 	}
 

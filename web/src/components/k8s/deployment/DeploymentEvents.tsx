@@ -250,7 +250,7 @@ const EventsTable: React.FC<EventsTableProps> = ({ events, columns, loading }) =
     );
   }
   
-  if (events.length === 0) {
+  if (events && events.length === 0) {
     return <Empty description="没有找到相关事件" />;
   }
   

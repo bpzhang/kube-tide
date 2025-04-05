@@ -36,7 +36,16 @@
     "drainFailed": "Failed to drain node",
     "deleteSuccess": "Node deleted successfully",
     "deleteFailed": "Failed to delete node",
-    "invalidAuth": "Authentication method is incorrect, must be 'key' or 'password'"
+    "invalidAuth": "Authentication method is incorrect, must be 'key' or 'password'",
+    "podsFetchFailed": "Failed to fetch pods on node",
+    "labelAddSuccess": "Node label added successfully",
+    "labelAddFailed": "Failed to add node label",
+    "labelRemoveSuccess": "Node label removed successfully",
+    "labelRemoveFailed": "Failed to remove node label",
+    "taintAddSuccess": "Node taint added successfully",
+    "taintRemoveSuccess": "Node taint removed successfully",
+    "sshKeyFileEmpty": "SSH key file path cannot be empty",
+    "sshPasswordEmpty": "SSH password cannot be empty"
   },
   "pod": {
     "notFound": "Pod not found",
@@ -46,7 +55,8 @@
     "deleteFailed": "Failed to delete pod",
     "logFailed": "Failed to fetch pod logs",
     "execFailed": "Failed to execute command in pod",
-    "terminalConnectFailed": "Failed to connect to pod terminal"
+    "terminalConnectFailed": "Failed to connect to pod terminal",
+    "eventsFetchFailed": "Failed to fetch pod events"
   },
   "deployment": {
     "notFound": "Deployment not found",

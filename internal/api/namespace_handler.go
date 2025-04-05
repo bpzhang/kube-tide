@@ -36,14 +36,14 @@ func (h *NamespaceHandler) ListNamespaces(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	logger.Info("Listing namespaces for cluster: " + clusterName)
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
 
 	namespaces, err := h.namespaceService.ListNamespaces(clusterName)
 	if err != nil {
 		logger.Error("Failed to list namespaces: " + err.Error())
-		ResponseError(c, http.StatusInternalServerError, "Failed to retrieve namespaces list: "+err.Error())
+		FailWithError(c, http.StatusInternalServerError, "namespace.fetchFailed", err)
 		return
 	}
 
