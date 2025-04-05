@@ -7,7 +7,7 @@ interface K8sEventsProps {
   clusterName: string;
   namespace: string;
   resourceName: string;
-  resourceKind: 'Pod' | 'Deployment';
+  resourceKind: 'Pod' | 'Deployment' | 'Cluster';
   fetchEvents: (clusterName: string, namespace: string, resourceName: string) => Promise<any>;
 }
 
@@ -111,7 +111,7 @@ const K8sEvents: React.FC<K8sEventsProps> = ({
 
   return (
     <Card 
-      title="事件" 
+      title={`${resourceKind}事件`}
       extra={
         <Button
           icon={<SyncOutlined />}

@@ -79,7 +79,11 @@
     "clusterNamePlaceholder": "Please enter cluster name",
     "kubeconfigPath": "Kubeconfig Path",
     "pleaseInputKubeconfigPath": "Please enter Kubeconfig file path",
-    "kubeconfigPathPlaceholder": "Please enter the full path of the Kubeconfig file"
+    "kubeconfigPathPlaceholder": "Please enter the full path of the Kubeconfig file",
+    "deleteConfirm": "Delete Cluster",
+    "deleteConfirmMessage": "Are you sure you want to delete cluster {name}?",
+    "deleteSuccess": "Cluster {name} deleted successfully",
+    "deleteFailed": "Failed to delete cluster"
   },
   "nodes": {
     "title": "Nodes",
@@ -221,5 +225,123 @@
     "internalServer": "Internal server error",
     "badRequest": "Bad request",
     "connectionFailed": "Connection failed"
+  },
+  "nodeDetail": {
+    "title": "Node Details",
+    "backToList": "Back to Node List",
+    "nodeNotFound": "Node Not Found",
+    "basicInfo": {
+      "title": "Basic Information",
+      "name": "Name",
+      "ipAddress": "IP Address",
+      "status": "Status",
+      "os": "Operating System",
+      "kernelVersion": "Kernel Version",
+      "containerRuntime": "Container Runtime",
+      "kubeletVersion": "Kubelet Version",
+      "creationTime": "Creation Time",
+      "unschedulable": "Unschedulable"
+    },
+    "resourceUsage": {
+      "title": "Resource Usage",
+      "cpu": {
+        "title": "CPU Usage",
+        "usageRate": "Usage Rate",
+        "totalCapacity": "Total Capacity",
+        "used": "Used",
+        "requested": "Requested",
+        "limited": "Limited",
+        "usagePercent": "Usage",
+        "requestPercent": "Request"
+      },
+      "memory": {
+        "title": "Memory Usage",
+        "usageRate": "Usage Rate",
+        "totalCapacity": "Total Capacity",
+        "used": "Used",
+        "requested": "Requested",
+        "limited": "Limited",
+        "usagePercent": "Usage",
+        "requestPercent": "Request"
+      }
+    },
+    "taints": {
+      "title": "Taints",
+      "noTaints": "No Taints"
+    },
+    "labels": {
+      "title": "Labels",
+      "noLabels": "No Labels"
+    },
+    "pods": {
+      "title": "Pod List",
+      "columns": {
+        "name": "Name",
+        "namespace": "Namespace",
+        "status": "Status",
+        "podIP": "Pod IP",
+        "creationTime": "Creation Time",
+        "containers": "Containers"
+      }
+    }
+  },
+  "clusterDetail": {
+    "title": "Cluster Details",
+    "backToList": "Back to Clusters",
+    "clusterName": "Cluster Name",
+    "connectionStatus": {
+      "connected": "Connected",
+      "failed": "Connection Failed",
+      "unknown": "Unknown"
+    },
+    "basicInfo": {
+      "title": "Basic Information",
+      "version": "Kubernetes Version",
+      "platform": "Platform",
+      "nodeCount": "Node Count",
+      "namespaceCount": "Namespace Count",
+      "totalCPU": "Total CPU Cores",
+      "totalMemory": "Total Memory"
+    },
+    "monitoring": {
+      "title": "Cluster Monitoring Dashboard",
+      "overview": "Overview",
+      "resources": "Resource Allocation",
+      "cpuUsage": "Cluster CPU Usage",
+      "memoryUsage": "Cluster Memory Usage",
+      "metrics": {
+        "podCount": "Total Pods",
+        "deploymentAvailability": "Deployment Availability",
+        "cpuTrend": "CPU Usage History",
+        "memoryTrend": "Memory Usage History",
+        "nodeStatus": "Node Status Distribution",
+        "podCountTrend": "Pod Count History",
+        "healthyNodes": "Healthy Nodes",
+        "unhealthyNodes": "Unhealthy Nodes",
+        "cpuAllocation": "CPU Resource Allocation",
+        "memoryAllocation": "Memory Resource Allocation",
+        "requested": "Requested",
+        "limited": "Limited",
+        "used": "Used"
+      }
+    },
+    "namespaces": {
+      "title": "Namespace List",
+      "columns": {
+        "name": "Name",
+        "status": "Status",
+        "creationTime": "Creation Time"
+      }
+    },
+    "events": {
+      "title": "Cluster Events"
+    },
+    "actions": {
+      "test": "Test Connection",
+      "testSuccess": "Cluster connection test successful",
+      "testFailed": "Cluster connection test failed",
+      "refresh": "Refresh"
+    },
+    "fetchMetricsFailed": "Failed to fetch cluster metrics"
   }
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Descriptions, Row, Col, Table, Tag, Button, Spin, Space, Progress, Tabs, Statistic } from 'antd';
 import { ArrowLeftOutlined, CloudServerOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { getNodeDetails, getNodeMetrics, getNodePods, getNodeTaints, getNodeLabels } from '../api/node';
 
 const { TabPane } = Tabs;
@@ -63,6 +64,7 @@ const calculateMemoryPercentage = (usage: string, capacity: string): number => {
 };
 
 const NodeDetail: React.FC = () => {
+  const { t } = useTranslation();
   const { clusterName, nodeName } = useParams<{ clusterName: string; nodeName: string }>();
   const navigate = useNavigate();
   
@@ -145,19 +147,19 @@ const NodeDetail: React.FC = () => {
   // Pod列表列定义
   const podColumns = [
     {
-      title: '名称',
+      title: t('nodeDetail.pods.columns.name'),
       dataIndex: 'metadata',
       key: 'name',
       render: (metadata: any) => metadata?.name || '-',
     },
     {
-      title: '命名空间',
+      title: t('nodeDetail.pods.columns.namespace'),
       dataIndex: 'metadata',
       key: 'namespace',
       render: (metadata: any) => metadata?.namespace || 'default',
     },
     {
-      title: '状态',
+      title: t('nodeDetail.pods.columns.status'),
       dataIndex: 'status',
       key: 'phase',
       render: (status: any) => (
@@ -165,13 +167,13 @@ const NodeDetail: React.FC = () => {
       ),
     },
     {
-      title: 'Pod IP',
+      title: t('nodeDetail.pods.columns.podIP'),
       dataIndex: 'status',
       key: 'podIP',
       render: (status: any) => status?.podIP || '-',
     },
     {
-      title: '创建时间',
+      title: t('nodeDetail.pods.columns.creationTime'),
       dataIndex: 'metadata',
       key: 'creationTimestamp',
       render: (metadata: any) => metadata?.creationTimestamp
@@ -184,7 +186,7 @@ const NodeDetail: React.FC = () => {
       },
     },
     {
-      title: '容器',
+      title: t('nodeDetail.pods.columns.containers'),
       dataIndex: 'spec',
       key: 'containers',
       render: (spec: any) => spec?.containers?.length || 0,
@@ -194,7 +196,7 @@ const NodeDetail: React.FC = () => {
   // 渲染污点标签
   const renderTaints = () => {
     if (!taints || taints.length === 0) {
-      return <div style={{ color: '#999' }}>无污点</div>;
+      return <div style={{ color: '#999' }}>{t('nodeDetail.taints.noTaints')}</div>;
     }
     
     return (
@@ -226,7 +228,7 @@ const NodeDetail: React.FC = () => {
   // 渲染标签列表
   const renderLabels = () => {
     if (!labels || Object.keys(labels).length === 0) {
-      return <div style={{ color: '#999' }}>无标签</div>;
+      return <div style={{ color: '#999' }}>{t('nodeDetail.labels.noLabels')}</div>;
     }
     
     return (
@@ -268,52 +270,52 @@ const NodeDetail: React.FC = () => {
     return (
       <Row gutter={[24, 24]}>
         <Col xs={24} md={12}>
-          <Card title="CPU使用情况" bordered={false}>
+          <Card title={t('nodeDetail.resourceUsage.cpu.title')} bordered={false}>
             <Statistic
-              title="使用率"
+              title={t('nodeDetail.resourceUsage.cpu.usageRate')}
               value={cpuUsagePercentage.toFixed(2)}
               suffix="%"
               valueStyle={{ color: cpuUsagePercentage > 80 ? '#cf1322' : '#3f8600' }}
             />
             <Descriptions column={1} size="small" style={{ marginTop: 16 }}>
-              <Descriptions.Item label="总容量">{formatCPU(metrics.cpu_capacity || '0')}</Descriptions.Item>
-              <Descriptions.Item label="已使用">{formatCPU(metrics.cpu_usage || '0')}</Descriptions.Item>
-              <Descriptions.Item label="已请求">{formatCPU(metrics.cpu_requests || '0')} ({cpuRequestPercentage.toFixed(2)}%)</Descriptions.Item>
-              <Descriptions.Item label="已限制">{formatCPU(metrics.cpu_limits || '0')}</Descriptions.Item>
+              <Descriptions.Item label={t('nodeDetail.resourceUsage.cpu.totalCapacity')}>{formatCPU(metrics.cpu_capacity || '0')}</Descriptions.Item>
+              <Descriptions.Item label={t('nodeDetail.resourceUsage.cpu.used')}>{formatCPU(metrics.cpu_usage || '0')}</Descriptions.Item>
+              <Descriptions.Item label={t('nodeDetail.resourceUsage.cpu.requested')}>{formatCPU(metrics.cpu_requests || '0')} ({cpuRequestPercentage.toFixed(2)}%)</Descriptions.Item>
+              <Descriptions.Item label={t('nodeDetail.resourceUsage.cpu.limited')}>{formatCPU(metrics.cpu_limits || '0')}</Descriptions.Item>
             </Descriptions>
             <div style={{ marginTop: 16 }}>
-              <div style={{ marginBottom: 8 }}>使用率</div>
+              <div style={{ marginBottom: 8 }}>{t('nodeDetail.resourceUsage.cpu.usagePercent')}</div>
               <Progress percent={Math.min(100, parseFloat(cpuUsagePercentage.toFixed(2)))} 
                         status={cpuUsagePercentage > 80 ? 'exception' : 'normal'} />
             </div>
             <div style={{ marginTop: 8 }}>
-              <div style={{ marginBottom: 8 }}>请求率</div>
+              <div style={{ marginBottom: 8 }}>{t('nodeDetail.resourceUsage.cpu.requestPercent')}</div>
               <Progress percent={Math.min(100, parseFloat(cpuRequestPercentage.toFixed(2)))} 
                         strokeColor="#1890ff" />
             </div>
           </Card>
         </Col>
         <Col xs={24} md={12}>
-          <Card title="内存使用情况" bordered={false}>
+          <Card title={t('nodeDetail.resourceUsage.memory.title')} bordered={false}>
             <Statistic
-              title="使用率"
+              title={t('nodeDetail.resourceUsage.memory.usageRate')}
               value={memoryUsagePercentage.toFixed(2)}
               suffix="%"
               valueStyle={{ color: memoryUsagePercentage > 80 ? '#cf1322' : '#3f8600' }}
             />
             <Descriptions column={1} size="small" style={{ marginTop: 16 }}>
-              <Descriptions.Item label="总容量">{formatMemorySize(metrics.memory_capacity || '0')}</Descriptions.Item>
-              <Descriptions.Item label="已使用">{formatMemorySize(metrics.memory_usage || '0')}</Descriptions.Item>
-              <Descriptions.Item label="已请求">{formatMemorySize(metrics.memory_requests || '0')} ({memoryRequestPercentage.toFixed(2)}%)</Descriptions.Item>
-              <Descriptions.Item label="已限制">{formatMemorySize(metrics.memory_limits || '0')}</Descriptions.Item>
+              <Descriptions.Item label={t('nodeDetail.resourceUsage.memory.totalCapacity')}>{formatMemorySize(metrics.memory_capacity || '0')}</Descriptions.Item>
+              <Descriptions.Item label={t('nodeDetail.resourceUsage.memory.used')}>{formatMemorySize(metrics.memory_usage || '0')}</Descriptions.Item>
+              <Descriptions.Item label={t('nodeDetail.resourceUsage.memory.requested')}>{formatMemorySize(metrics.memory_requests || '0')} ({memoryRequestPercentage.toFixed(2)}%)</Descriptions.Item>
+              <Descriptions.Item label={t('nodeDetail.resourceUsage.memory.limited')}>{formatMemorySize(metrics.memory_limits || '0')}</Descriptions.Item>
             </Descriptions>
             <div style={{ marginTop: 16 }}>
-              <div style={{ marginBottom: 8 }}>使用率</div>
+              <div style={{ marginBottom: 8 }}>{t('nodeDetail.resourceUsage.memory.usagePercent')}</div>
               <Progress percent={Math.min(100, parseFloat(memoryUsagePercentage.toFixed(2)))} 
                         status={memoryUsagePercentage > 80 ? 'exception' : 'normal'} />
             </div>
             <div style={{ marginTop: 8 }}>
-              <div style={{ marginBottom: 8 }}>请求率</div>
+              <div style={{ marginBottom: 8 }}>{t('nodeDetail.resourceUsage.memory.requestPercent')}</div>
               <Progress percent={Math.min(100, parseFloat(memoryRequestPercentage.toFixed(2)))} 
                         strokeColor="#1890ff" />
             </div>
@@ -337,9 +339,9 @@ const NodeDetail: React.FC = () => {
         <Card>
           <div style={{ textAlign: 'center' }}>
             <ExclamationCircleOutlined style={{ fontSize: 48, color: '#ff4d4f' }} />
-            <h2>未找到节点信息</h2>
+            <h2>{t('nodeDetail.nodeNotFound')}</h2>
             <Button type="primary" onClick={() => navigate('/nodes')}>
-              返回节点列表
+              {t('nodeDetail.backToList')}
             </Button>
           </div>
         </Card>
@@ -357,48 +359,50 @@ const NodeDetail: React.FC = () => {
   const tabItems = [
     {
       key: 'info',
-      label: '节点信息',
+      label: t('nodeDetail.basicInfo.title'),
       children: (
         <Row gutter={[24, 24]}>
           <Col span={24}>
-            <Card title="基本信息" bordered={false}>
+            <Card title={t('nodeDetail.basicInfo.title')} bordered={false}>
               <Descriptions bordered column={{ xs: 1, sm: 2, md: 3 }}>
-                <Descriptions.Item label="名称">{nodeName}</Descriptions.Item>
-                <Descriptions.Item label="IP地址">{nodeIP}</Descriptions.Item>
-                <Descriptions.Item label="状态">
+                <Descriptions.Item label={t('nodeDetail.basicInfo.name')}>{nodeName}</Descriptions.Item>
+                <Descriptions.Item label={t('nodeDetail.basicInfo.ipAddress')}>{nodeIP}</Descriptions.Item>
+                <Descriptions.Item label={t('nodeDetail.basicInfo.status')}>
                   <Space>
                     <span style={{ color: nodeStatus === 'Ready' ? '#52c41a' : '#ff4d4f' }}>
                       {nodeStatus}
                     </span>
                     {node.spec?.unschedulable && (
-                      <Tag color="orange">不可调度</Tag>
+                      <Tag color="orange">{t('nodeDetail.basicInfo.unschedulable')}</Tag>
                     )}
                   </Space>
                 </Descriptions.Item>
-                <Descriptions.Item label="操作系统">{node.status?.nodeInfo?.osImage}</Descriptions.Item>
-                <Descriptions.Item label="内核版本">{node.status?.nodeInfo?.kernelVersion}</Descriptions.Item>
-                <Descriptions.Item label="容器运行时">{node.status?.nodeInfo?.containerRuntimeVersion}</Descriptions.Item>
-                <Descriptions.Item label="Kubelet版本">{node.status?.nodeInfo?.kubeletVersion}</Descriptions.Item>
-                <Descriptions.Item label="创建时间">{node.metadata?.creationTimestamp ? new Date(node.metadata.creationTimestamp).toLocaleString() : '-'}</Descriptions.Item>
+                <Descriptions.Item label={t('nodeDetail.basicInfo.os')}>{node.status?.nodeInfo?.osImage}</Descriptions.Item>
+                <Descriptions.Item label={t('nodeDetail.basicInfo.kernelVersion')}>{node.status?.nodeInfo?.kernelVersion}</Descriptions.Item>
+                <Descriptions.Item label={t('nodeDetail.basicInfo.containerRuntime')}>{node.status?.nodeInfo?.containerRuntimeVersion}</Descriptions.Item>
+                <Descriptions.Item label={t('nodeDetail.basicInfo.kubeletVersion')}>{node.status?.nodeInfo?.kubeletVersion}</Descriptions.Item>
+                <Descriptions.Item label={t('nodeDetail.basicInfo.creationTime')}>
+                  {node.metadata?.creationTimestamp ? new Date(node.metadata.creationTimestamp).toLocaleString() : '-'}
+                </Descriptions.Item>
               </Descriptions>
             </Card>
           </Col>
           
           <Col span={24}>
-            <Card title="资源使用情况" bordered={false}>
+            <Card title={t('nodeDetail.resourceUsage.title')} bordered={false}>
               {renderResourceUsage()}
             </Card>
           </Col>
           
           <Col span={24}>
-            <Card title="污点" bordered={false}>
-              {renderTaints()}
+            <Card title={t('nodeDetail.taints.title')} bordered={false}>
+              {taints.length > 0 ? renderTaints() : <div style={{ color: '#999' }}>{t('nodeDetail.taints.noTaints')}</div>}
             </Card>
           </Col>
           
           <Col span={24}>
-            <Card title="标签" bordered={false}>
-              {renderLabels()}
+            <Card title={t('nodeDetail.labels.title')} bordered={false}>
+              {Object.keys(labels).length > 0 ? renderLabels() : <div style={{ color: '#999' }}>{t('nodeDetail.labels.noLabels')}</div>}
             </Card>
           </Col>
         </Row>
@@ -406,7 +410,7 @@ const NodeDetail: React.FC = () => {
     },
     {
       key: 'pods',
-      label: `Pod列表 (${pods.length})`,
+      label: `${t('nodeDetail.pods.title')} (${pods.length})`,
       children: (
         <Card bordered={false}>
           <Table 
@@ -427,7 +431,7 @@ const NodeDetail: React.FC = () => {
           icon={<ArrowLeftOutlined />} 
           onClick={() => navigate('/nodes')}
         >
-          返回节点列表
+          {t('nodeDetail.backToList')}
         </Button>
       </div>
       
@@ -437,7 +441,7 @@ const NodeDetail: React.FC = () => {
             <CloudServerOutlined />
             <span style={{ fontSize: 18 }}>{nodeName}</span>
             <Tag color={nodeStatus === 'Ready' ? 'green' : 'red'}>{nodeStatus}</Tag>
-            {node.spec?.unschedulable && <Tag color="orange">不可调度</Tag>}
+            {node.spec?.unschedulable && <Tag color="orange">{t('nodeDetail.basicInfo.unschedulable')}</Tag>}
           </Space>
         }
       >

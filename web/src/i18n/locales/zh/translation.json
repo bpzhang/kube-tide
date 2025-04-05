@@ -79,7 +79,11 @@
     "clusterNamePlaceholder": "请输入集群名称",
     "kubeconfigPath": "Kubeconfig路径",
     "pleaseInputKubeconfigPath": "请输入Kubeconfig文件路径",
-    "kubeconfigPathPlaceholder": "请输入Kubeconfig文件的完整路径"
+    "kubeconfigPathPlaceholder": "请输入Kubeconfig文件的完整路径",
+    "deleteConfirm": "删除集群",
+    "deleteConfirmMessage": "确定要删除集群 {name} 吗？",
+    "deleteSuccess": "集群 {name} 已成功删除",
+    "deleteFailed": "删除集群失败"
   },
   "nodes": {
     "title": "节点",
@@ -221,5 +225,123 @@
     "internalServer": "内部服务器错误",
     "badRequest": "请求无效",
     "connectionFailed": "连接失败"
+  },
+  "nodeDetail": {
+    "title": "节点详情",
+    "backToList": "返回节点列表",
+    "nodeNotFound": "未找到节点信息",
+    "basicInfo": {
+      "title": "基本信息",
+      "name": "名称",
+      "ipAddress": "IP地址",
+      "status": "状态",
+      "os": "操作系统",
+      "kernelVersion": "内核版本",
+      "containerRuntime": "容器运行时",
+      "kubeletVersion": "Kubelet版本",
+      "creationTime": "创建时间",
+      "unschedulable": "不可调度"
+    },
+    "resourceUsage": {
+      "title": "资源使用情况",
+      "cpu": {
+        "title": "CPU使用情况",
+        "usageRate": "使用率",
+        "totalCapacity": "总容量",
+        "used": "已使用",
+        "requested": "已请求",
+        "limited": "已限制",
+        "usagePercent": "使用率",
+        "requestPercent": "请求率"
+      },
+      "memory": {
+        "title": "内存使用情况",
+        "usageRate": "使用率",
+        "totalCapacity": "总容量",
+        "used": "已使用",
+        "requested": "已请求",
+        "limited": "已限制",
+        "usagePercent": "使用率",
+        "requestPercent": "请求率"
+      }
+    },
+    "taints": {
+      "title": "污点",
+      "noTaints": "无污点"
+    },
+    "labels": {
+      "title": "标签",
+      "noLabels": "无标签"
+    },
+    "pods": {
+      "title": "Pod列表",
+      "columns": {
+        "name": "名称",
+        "namespace": "命名空间",
+        "status": "状态",
+        "podIP": "Pod IP",
+        "creationTime": "创建时间",
+        "containers": "容器"
+      }
+    }
+  },
+  "clusterDetail": {
+    "title": "集群详情",
+    "backToList": "返回集群列表",
+    "clusterName": "集群名称",
+    "connectionStatus": {
+      "connected": "已连接",
+      "failed": "连接失败",
+      "unknown": "未知"
+    },
+    "basicInfo": {
+      "title": "基本信息",
+      "version": "Kubernetes版本",
+      "platform": "运行平台",
+      "nodeCount": "节点数量",
+      "namespaceCount": "命名空间数量",
+      "totalCPU": "总CPU核心数",
+      "totalMemory": "总内存"
+    },
+    "monitoring": {
+      "title": "集群监控仪表板",
+      "overview": "概览",
+      "resources": "资源分配",
+      "cpuUsage": "集群CPU使用率",
+      "memoryUsage": "集群内存使用率",
+      "metrics": {
+        "podCount": "Pod总数",
+        "deploymentAvailability": "Deployment可用率",
+        "cpuTrend": "CPU使用率历史趋势",
+        "memoryTrend": "内存使用率历史趋势",
+        "nodeStatus": "节点状态分布",
+        "podCountTrend": "Pod数量历史趋势",
+        "healthyNodes": "正常节点",
+        "unhealthyNodes": "异常节点",
+        "cpuAllocation": "CPU资源分配",
+        "memoryAllocation": "内存资源分配",
+        "requested": "已请求",
+        "limited": "已限制",
+        "used": "已使用"
+      }
+    },
+    "namespaces": {
+      "title": "命名空间列表",
+      "columns": {
+        "name": "名称",
+        "status": "状态",
+        "creationTime": "创建时间"
+      }
+    },
+    "events": {
+      "title": "集群事件"
+    },
+    "actions": {
+      "test": "测试连接",
+      "testSuccess": "集群连接测试成功",
+      "testFailed": "集群连接测试失败",
+      "refresh": "刷新"
+    },
+    "fetchMetricsFailed": "获取集群监控指标失败"
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Descriptions, Space, Button, message, Spin, Table, Tag, Tabs, Progress, Row, Col, Statistic } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   testClusterConnection,
   getClusterDetails,
@@ -47,6 +48,7 @@ const ClusterEvents: React.FC<{ clusterName: string }> = ({ clusterName }) => {
 };
 
 const ClusterDetailPage: React.FC = () => {
+  const { t } = useTranslation();
   const { clusterName } = useParams<{ clusterName: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -65,10 +67,10 @@ const ClusterDetailPage: React.FC = () => {
       if (response.data.code === 0) {
         setClusterInfo(response.data.data.cluster);
       } else {
-        message.error(response.data.message || '获取集群详情失败');
+        message.error(response.data.message || t('clusterDetail.fetchDetailFailed'));
       }
     } catch (err) {
-      message.error('获取集群详情失败');
+      message.error(t('clusterDetail.fetchDetailFailed'));
     } finally {
       setLoading(false);
     }
@@ -82,16 +84,14 @@ const ClusterDetailPage: React.FC = () => {
       const response = await testClusterConnection(clusterName);
       if (response.data.code === 0) {
         setConnectionStatus('connected');
-        // message.success('集群连接测试成功');
-        // 更新集群详情
         fetchClusterDetails();
       } else {
         setConnectionStatus('failed');
-        message.error(response.data.message || '集群连接测试失败');
+        message.error(response.data.message || t('clusterDetail.actions.testFailed'));
       }
     } catch (err) {
       setConnectionStatus('failed');
-      message.error('集群连接测试失败');
+      message.error(t('clusterDetail.actions.testFailed'));
     } finally {
       setLoading(false);
     }
@@ -107,10 +107,10 @@ const ClusterDetailPage: React.FC = () => {
       if (response.data.code === 0) {
         setMetrics(response.data.data.metrics);
       } else {
-        message.error(response.data.message || '获取集群监控指标失败');
+        message.error(response.data.message || t('clusterDetail.fetchMetricsFailed'));
       }
     } catch (err) {
-      message.error('获取集群监控指标失败');
+      message.error(t('clusterDetail.fetchMetricsFailed'));
     } finally {
       setMetricsLoading(false);
     }
@@ -134,18 +134,28 @@ const ClusterDetailPage: React.FC = () => {
   }, [clusterName]);
 
   if (!clusterName) {
-    return <div>集群名称不能为空</div>;
+    return <div>{t('clusterDetail.noClusterName')}</div>;
   }
 
+  // 节点状态分布的Pie图表数据
+  const getNodeStatusData = (metrics: ClusterMetrics | null) => {
+    if (!metrics) return [];
+    return [
+      { name: t('clusterDetail.monitoring.metrics.healthyNodes'), value: metrics.nodeCounts?.ready || 0 },
+      { name: t('clusterDetail.monitoring.metrics.unhealthyNodes'), value: metrics.nodeCounts?.notReady || 0 }
+    ];
+  };
+
+  // 命名空间列表列定义
   const namespaceColumns = [
     {
-      title: '名称',
+      title: t('clusterDetail.namespaces.columns.name'),
       dataIndex: 'metadata',
       key: 'name',
       render: (metadata: any) => metadata.name,
     },
     {
-      title: '状态',
+      title: t('clusterDetail.namespaces.columns.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: any) => (
@@ -155,7 +165,7 @@ const ClusterDetailPage: React.FC = () => {
       ),
     },
     {
-      title: '创建时间',
+      title: t('clusterDetail.namespaces.columns.creationTime'),
       dataIndex: 'metadata',
       key: 'creationTimestamp',
       render: (metadata: any) => new Date(metadata.creationTimestamp).toLocaleString(),
@@ -177,41 +187,41 @@ const ClusterDetailPage: React.FC = () => {
     <Spin spinning={loading}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Card
-          title="集群详情"
+          title={t('clusterDetail.title')}
           extra={
             <Space>
-              <Button onClick={() => navigate('/clusters')}>返回</Button>
+              <Button onClick={() => navigate('/clusters')}>{t('clusterDetail.backToList')}</Button>
               <Button type="primary" onClick={handleTestConnection}>
-                测试连接
+                {t('clusterDetail.actions.test')}
               </Button>
             </Space>
           }
         >
           <Descriptions bordered column={2}>
-            <Descriptions.Item label="集群名称" span={1}>
+            <Descriptions.Item label={t('clusterDetail.clusterName')} span={1}>
               {clusterInfo?.name}
             </Descriptions.Item>
-            <Descriptions.Item label="连接状态" span={1}>
-              {connectionStatus === 'connected' && <span style={{ color: '#52c41a' }}>已连接</span>}
-              {connectionStatus === 'failed' && <span style={{ color: '#ff4d4f' }}>连接失败</span>}
-              {connectionStatus === 'unknown' && <span style={{ color: '#faad14' }}>未知</span>}
+            <Descriptions.Item label="Status" span={1}>
+              {connectionStatus === 'connected' && <span style={{ color: '#52c41a' }}>{t('clusterDetail.connectionStatus.connected')}</span>}
+              {connectionStatus === 'failed' && <span style={{ color: '#ff4d4f' }}>{t('clusterDetail.connectionStatus.failed')}</span>}
+              {connectionStatus === 'unknown' && <span style={{ color: '#faad14' }}>{t('clusterDetail.connectionStatus.unknown')}</span>}
             </Descriptions.Item>
-            <Descriptions.Item label="Kubernetes版本">
+            <Descriptions.Item label={t('clusterDetail.basicInfo.version')}>
               {clusterInfo?.version}
             </Descriptions.Item>
-            <Descriptions.Item label="运行平台">
+            <Descriptions.Item label={t('clusterDetail.basicInfo.platform')}>
               {clusterInfo?.platform}
             </Descriptions.Item>
-            <Descriptions.Item label="节点数量">
+            <Descriptions.Item label={t('clusterDetail.basicInfo.nodeCount')}>
               {clusterInfo?.totalNodes}
             </Descriptions.Item>
-            <Descriptions.Item label="命名空间数量">
+            <Descriptions.Item label={t('clusterDetail.basicInfo.namespaceCount')}>
               {clusterInfo?.totalNamespaces}
             </Descriptions.Item>
-            <Descriptions.Item label="总CPU核心数">
+            <Descriptions.Item label={t('clusterDetail.basicInfo.totalCPU')}>
               {clusterInfo?.totalCPU} Core
             </Descriptions.Item>
-            <Descriptions.Item label="总内存">
+            <Descriptions.Item label={t('clusterDetail.basicInfo.totalMemory')}>
               {clusterInfo?.totalMemory}
             </Descriptions.Item>
           </Descriptions>
@@ -220,7 +230,7 @@ const ClusterDetailPage: React.FC = () => {
         {/* 监控仪表板 */}
         {connectionStatus === 'connected' && (
           <Card
-            title="集群监控仪表板"
+            title={t('clusterDetail.monitoring.title')}
             loading={metricsLoading}
           >
             <Tabs
@@ -229,14 +239,14 @@ const ClusterDetailPage: React.FC = () => {
               items={[
                 {
                   key: 'overview',
-                  label: '概览',
+                  label: t('clusterDetail.monitoring.overview'),
                   children: (
                     <div>
                       <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
                         <Col span={6}>
                           <Card>
                             <Statistic
-                              title="集群CPU使用率"
+                              title={t('clusterDetail.monitoring.metrics.cpu')}
                               value={metrics?.cpuUsage || 0}
                               suffix="%"
                               precision={1}
@@ -255,7 +265,7 @@ const ClusterDetailPage: React.FC = () => {
                         <Col span={6}>
                           <Card>
                             <Statistic
-                              title="集群内存使用率"
+                              title={t('clusterDetail.monitoring.memoryUsage')}
                               value={metrics?.memoryUsage || 0}
                               suffix="%"
                               precision={1}
@@ -274,7 +284,7 @@ const ClusterDetailPage: React.FC = () => {
                         <Col span={6}>
                           <Card>
                             <Statistic
-                              title="Pod总数"
+                              title={t('clusterDetail.monitoring.metrics.podCount')}
                               value={metrics?.podCount || 0}
                             />
                           </Card>
@@ -282,7 +292,7 @@ const ClusterDetailPage: React.FC = () => {
                         <Col span={6}>
                           <Card>
                             <Statistic
-                              title="Deployment可用率"
+                              title={t('clusterDetail.monitoring.metrics.deploymentAvailability')}
                               value={metrics?.deploymentReadiness?.available || 0}
                               suffix={`/${metrics?.deploymentReadiness?.total || 0}`}
                             />
@@ -298,7 +308,7 @@ const ClusterDetailPage: React.FC = () => {
 
                       <Row gutter={[16, 16]}>
                         <Col span={12}>
-                          <Card title="CPU使用率历史趋势">
+                          <Card title={t('clusterDetail.monitoring.metrics.cpuTrend')}>
                             <ResponsiveContainer width="100%" height={300}>
                               <LineChart
                                 data={metrics?.historicalData?.cpuUsage?.map(item => ({
@@ -315,7 +325,7 @@ const ClusterDetailPage: React.FC = () => {
                                 <Line
                                   type="monotone"
                                   dataKey="value"
-                                  name="CPU使用率"
+                                  name={t('clusterDetail.monitoring.metrics.cpu')}
                                   stroke="#8884d8"
                                   activeDot={{ r: 8 }}
                                 />
@@ -324,7 +334,7 @@ const ClusterDetailPage: React.FC = () => {
                           </Card>
                         </Col>
                         <Col span={12}>
-                          <Card title="内存使用率历史趋势">
+                          <Card title={t('clusterDetail.monitoring.metrics.memoryTrend')}>
                             <ResponsiveContainer width="100%" height={300}>
                               <LineChart
                                 data={metrics?.historicalData?.memoryUsage?.map(item => ({
@@ -341,7 +351,7 @@ const ClusterDetailPage: React.FC = () => {
                                 <Line
                                   type="monotone"
                                   dataKey="value"
-                                  name="内存使用率"
+                                  name={t('clusterDetail.monitoring.metrics.memory')}
                                   stroke="#82ca9d"
                                   activeDot={{ r: 8 }}
                                 />
@@ -355,18 +365,18 @@ const ClusterDetailPage: React.FC = () => {
                 },
                 {
                   key: 'resources',
-                  label: '资源分配',
+                  label: t('clusterDetail.monitoring.resources'),
                   children: (
                     <div>
                       <Row gutter={[16, 16]}>
                         <Col span={12}>
-                          <Card title="CPU资源分配">
+                          <Card title={t('clusterDetail.monitoring.metrics.cpuAllocation')}>
                             <ResponsiveContainer width="100%" height={300}>
                               <BarChart
                                 data={[
-                                  { name: '已请求', value: metrics?.cpuRequestsPercentage || 0 },
-                                  { name: '已限制', value: metrics?.cpuLimitsPercentage || 0 },
-                                  { name: '已使用', value: metrics?.cpuUsage || 0 },
+                                  { name: t('clusterDetail.monitoring.metrics.requested'), value: metrics?.cpuRequestsPercentage || 0 },
+                                  { name: t('clusterDetail.monitoring.metrics.limited'), value: metrics?.cpuLimitsPercentage || 0 },
+                                  { name: t('clusterDetail.monitoring.metrics.used'), value: metrics?.cpuUsage || 0 },
                                 ]}
                                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                               >
@@ -375,19 +385,19 @@ const ClusterDetailPage: React.FC = () => {
                                 <YAxis unit="%" />
                                 <Tooltip />
                                 <Legend />
-                                <Bar dataKey="value" name="百分比" fill="#8884d8" />
+                                <Bar dataKey="value" name={t('common.percentage')} fill="#8884d8" />
                               </BarChart>
                             </ResponsiveContainer>
                           </Card>
                         </Col>
                         <Col span={12}>
-                          <Card title="内存资源分配">
+                          <Card title={t('clusterDetail.monitoring.metrics.memoryAllocation')}>
                             <ResponsiveContainer width="100%" height={300}>
                               <BarChart
                                 data={[
-                                  { name: '已请求', value: metrics?.memoryRequestsPercentage || 0 },
-                                  { name: '已限制', value: metrics?.memoryLimitsPercentage || 0 },
-                                  { name: '已使用', value: metrics?.memoryUsage || 0 },
+                                  { name: t('clusterDetail.monitoring.metrics.requested'), value: metrics?.memoryRequestsPercentage || 0 },
+                                  { name: t('clusterDetail.monitoring.metrics.limited'), value: metrics?.memoryLimitsPercentage || 0 },
+                                  { name: t('clusterDetail.monitoring.metrics.used'), value: metrics?.memoryUsage || 0 },
                                 ]}
                                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                               >
@@ -396,7 +406,7 @@ const ClusterDetailPage: React.FC = () => {
                                 <YAxis unit="%" />
                                 <Tooltip />
                                 <Legend />
-                                <Bar dataKey="value" name="百分比" fill="#82ca9d" />
+                                <Bar dataKey="value" name={t('common.percentage')} fill="#82ca9d" />
                               </BarChart>
                             </ResponsiveContainer>
                           </Card>
@@ -404,14 +414,11 @@ const ClusterDetailPage: React.FC = () => {
                       </Row>
                       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                         <Col span={12}>
-                          <Card title="节点状态分布">
+                          <Card title={t('clusterDetail.monitoring.metrics.nodeStatus')}>
                             <ResponsiveContainer width="100%" height={300}>
                               <PieChart>
                                 <Pie
-                                  data={[
-                                    { name: '正常节点', value: metrics?.nodeCounts?.ready || 0 },
-                                    { name: '异常节点', value: metrics?.nodeCounts?.notReady || 0 },
-                                  ]}
+                                  data={getNodeStatusData(metrics)}
                                   cx="50%"
                                   cy="50%"
                                   labelLine={true}
@@ -421,20 +428,17 @@ const ClusterDetailPage: React.FC = () => {
                                   nameKey="name"
                                   label={({ name, percent = 0 }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                                 >
-                                  {[
-                                    { name: '正常节点', value: metrics?.nodeCounts?.ready || 0 },
-                                    { name: '异常节点', value: metrics?.nodeCounts?.notReady || 0 },
-                                  ].map((_entry, index) => (
+                                  {getNodeStatusData(metrics).map((_entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                   ))}
                                 </Pie>
-                                <Tooltip formatter={(value) => [`${value}个节点`, '数量']} />
+                                <Tooltip formatter={(value) => [`${value}${t('nodes.nodeCount')}`, t('common.count')]} />
                               </PieChart>
                             </ResponsiveContainer>
                           </Card>
                         </Col>
                         <Col span={12}>
-                          <Card title="Pod数量历史趋势">
+                          <Card title={t('clusterDetail.monitoring.metrics.podCountTrend')}>
                             <ResponsiveContainer width="100%" height={300}>
                               <LineChart
                                 data={metrics?.historicalData?.podCount?.map(item => ({
@@ -451,7 +455,7 @@ const ClusterDetailPage: React.FC = () => {
                                 <Line
                                   type="monotone"
                                   dataKey="value"
-                                  name="Pod数量"
+                                  name={t('clusterDetail.monitoring.metrics.podCount')}
                                   stroke="#FF8042"
                                   activeDot={{ r: 8 }}
                                 />
@@ -469,7 +473,7 @@ const ClusterDetailPage: React.FC = () => {
         )}
 
         {/* 命名空间列表卡片 */}
-        <Card title="命名空间列表">
+        <Card title={t('clusterDetail.namespaces.title')}>
           <Table
             dataSource={clusterInfo?.namespaces || []}
             columns={namespaceColumns}
@@ -480,7 +484,7 @@ const ClusterDetailPage: React.FC = () => {
 
         {/* 集群事件 */}
         {connectionStatus === 'connected' && (
-          <Card title="集群事件">
+          <Card title={t('clusterDetail.events.title')}>
             <ClusterEvents clusterName={clusterName} />
           </Card>
         )}

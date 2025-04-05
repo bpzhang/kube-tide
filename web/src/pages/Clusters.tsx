@@ -52,7 +52,7 @@ const Clusters: React.FC = () => {
   };
 
   return (
-    <div>
+    <div style={{ padding: '24px' }}>
       <div style={{ marginBottom: 16 }}>
         <Button 
           type="primary" 
