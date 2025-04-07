@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout, Menu } from 'antd';
 import { Link, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,8 @@ import {
   BlockOutlined,
   ApartmentOutlined,
   ProductOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from '@ant-design/icons';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
 
@@ -17,6 +19,11 @@ const { Header, Sider, Content } = Layout;
 
 const MainLayout: React.FC = () => {
   const { t } = useTranslation();
+  const [collapsed, setCollapsed] = useState(false);
+
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
+  };
 
   const menuItems = [
     {
@@ -61,15 +68,28 @@ const MainLayout: React.FC = () => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ padding: 0, background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: '20px', fontWeight: 'bold', padding: '0 24px' }}>
+        <div style={{ fontSize: '20px', fontWeight: 'bold', padding: '0 24px', display: 'flex', alignItems: 'center' }}>
           {t('app.title')}
+          <div 
+            onClick={toggleCollapsed}
+            style={{ marginLeft: '20px', cursor: 'pointer', fontSize: '16px' }}
+          >
+            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          </div>
         </div>
         <div style={{ padding: '0 24px' }}>
           <LanguageSwitcher />
         </div>
       </Header>
       <Layout>
-        <Sider width={200} style={{ background: '#fff' }}>
+        <Sider 
+          width={200} 
+          collapsible 
+          collapsed={collapsed} 
+          onCollapse={setCollapsed} 
+          trigger={null}
+          style={{ background: '#fff' }}
+        >
           <Menu
             mode="inline"
             defaultSelectedKeys={['dashboard']}
