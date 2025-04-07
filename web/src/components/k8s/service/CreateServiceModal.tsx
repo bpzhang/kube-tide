@@ -3,6 +3,7 @@ import { Modal, Form, Button, message } from 'antd';
 import { CreateServiceRequest } from '@/api/service';
 import ServiceForm from './ServiceForm';
 import { ServiceFormData, processFormToCreateRequest } from './ServiceTypes';
+import { useTranslation } from 'react-i18next';
 
 interface CreateServiceModalProps {
   visible: boolean;
@@ -17,6 +18,7 @@ const CreateServiceModal: React.FC<CreateServiceModalProps> = ({
   onSubmit,
   namespace
 }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
 
@@ -47,11 +49,11 @@ const CreateServiceModal: React.FC<CreateServiceModalProps> = ({
       const serviceData = processFormToCreateRequest(values as ServiceFormData);
       
       await onSubmit(serviceData);
-      message.success('服务创建成功');
+      message.success(t('services.createSuccess'));
       onClose();
     } catch (error) {
-      console.error('创建服务失败:', error);
-      message.error('创建服务失败: ' + (error instanceof Error ? error.message : '未知错误'));
+      console.error(t('services.createFailed'), error);
+      message.error(t('services.createFailed') + ': ' + (error instanceof Error ? error.message : t('common.unknownError')));
     } finally {
       setSubmitting(false);
     }
@@ -59,13 +61,13 @@ const CreateServiceModal: React.FC<CreateServiceModalProps> = ({
 
   return (
     <Modal
-      title="创建服务"
+      title={t('services.createService')}
       open={visible}
       onCancel={onClose}
       width={800}
       footer={[
-        <Button key="cancel" onClick={onClose}>取消</Button>,
-        <Button key="submit" type="primary" loading={submitting} onClick={handleSubmit}>创建</Button>
+        <Button key="cancel" onClick={onClose}>{t('common.cancel')}</Button>,
+        <Button key="submit" type="primary" loading={submitting} onClick={handleSubmit}>{t('common.create')}</Button>
       ]}
     >
       <ServiceForm 

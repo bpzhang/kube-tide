@@ -3,6 +3,7 @@ import { Form, Input, Select, Button, Divider, Row, Col } from 'antd';
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { ServiceFormProps } from './ServiceTypes';
 import PortNameSelect from '../common/PortNameSelect';
+import { useTranslation } from 'react-i18next';
 
 const { Option } = Select;
 
@@ -16,6 +17,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
   form,
   mode
 }) => {
+  const { t } = useTranslation();
+  
   // 处理表单值变化
   const handleValuesChange = (changedValues: any, allValues: any) => {
     if (onFormValuesChange) {
@@ -36,12 +39,12 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
           <Col span={12}>
             <Form.Item
               name="name"
-              label="服务名称"
+              label={t('services.form.name')}
               rules={[
-                { required: true, message: '请输入服务名称' },
+                { required: true, message: t('services.form.pleaseEnterName') },
                 { 
                   pattern: /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/, 
-                  message: '名称必须由小写字母、数字和"-"组成，且以字母或数字开头和结尾' 
+                  message: t('services.form.namePattern') 
                 }
               ]}
             >
@@ -51,8 +54,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
           <Col span={12}>
             <Form.Item
               name="type"
-              label="服务类型"
-              rules={[{ required: true, message: '请选择服务类型' }]}
+              label={t('services.form.type')}
+              rules={[{ required: true, message: t('services.form.pleaseSelectType') }]}
             >
               <Select>
                 <Option value="ClusterIP">ClusterIP</Option>
@@ -68,8 +71,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
       {mode === 'edit' && (
         <Form.Item
           name="type"
-          label="服务类型"
-          rules={[{ required: true, message: '请选择服务类型' }]}
+          label={t('services.form.type')}
+          rules={[{ required: true, message: t('services.form.pleaseSelectType') }]}
         >
           <Select>
             <Option value="ClusterIP">ClusterIP</Option>
@@ -79,14 +82,14 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
         </Form.Item>
       )}
 
-      <Divider orientation="left">端口配置</Divider>
+      <Divider orientation="left">{t('services.form.portConfig')}</Divider>
       <Form.List 
         name="ports"
         rules={[
           {
             validator: async (_, ports) => {
               if (!ports || ports.length < 1) {
-                return Promise.reject(new Error('至少需要配置一个端口'));
+                return Promise.reject(new Error(t('services.form.atLeastOnePort')));
               }
             },
           },
@@ -100,17 +103,17 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
                   <Form.Item
                     key={field.key}
                     name={[field.name, 'name']}
-                    label="名称"
+                    label={t('services.form.portName')}
                   >
-                    <PortNameSelect placeholder="选择通信协议" />
+                    <PortNameSelect placeholder={t('services.form.selectProtocol')} />
                   </Form.Item>
                 </Col>
                 <Col span={5}>
                   <Form.Item
                     key={field.key}
                     name={[field.name, 'port']}
-                    label="服务端口"
-                    rules={[{ required: true, message: '请输入服务端口' }]}
+                    label={t('services.form.servicePort')}
+                    rules={[{ required: true, message: t('services.form.pleaseEnterServicePort') }]}
                   >
                     <Input type="number" placeholder="80" />
                   </Form.Item>
@@ -119,8 +122,8 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
                   <Form.Item
                     key={field.key}
                     name={[field.name, 'targetPort']}
-                    label="目标端口"
-                    rules={[{ required: true, message: '请输入目标端口' }]}
+                    label={t('services.form.targetPort')}
+                    rules={[{ required: true, message: t('services.form.pleaseEnterTargetPort') }]}
                   >
                     <Input type="number" placeholder="8080" />
                   </Form.Item>
@@ -129,7 +132,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
                   <Form.Item
                     key={field.key}
                     name={[field.name, 'protocol']}
-                    label="协议"
+                    label={t('services.form.protocol')}
                   >
                     <Select defaultValue="TCP">
                       <Option value="TCP">TCP</Option>
@@ -143,7 +146,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
                     <Form.Item
                       key={field.key}
                       name={[field.name, 'nodePort']}
-                      label="节点端口"
+                      label={t('services.form.nodePort')}
                     >
                       <Input type="number" placeholder="30000-32767" />
                     </Form.Item>
@@ -164,14 +167,14 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
             ))}
             <Form.Item>
               <Button type="dashed" onClick={() => add({ protocol: 'TCP' })} block icon={<PlusOutlined />}>
-                添加端口
+                {t('services.form.addPort')}
               </Button>
             </Form.Item>
           </>
         )}
       </Form.List>
 
-      <Divider orientation="left">标签</Divider>
+      <Divider orientation="left">{t('services.form.labels')}</Divider>
       <Form.List name="labelsArray">
         {(fields, { add, remove }) => (
           <>
@@ -181,18 +184,18 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
                   <Form.Item
                     key={field.key}
                     name={[field.name, 'key']}
-                    rules={[{ required: true, message: '请输入标签键' }]}
+                    rules={[{ required: true, message: t('services.form.pleaseEnterLabelKey') }]}
                   >
-                    <Input placeholder="标签键" />
+                    <Input placeholder={t('services.form.labelKeyPlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={11}>
                   <Form.Item
                     key={field.key}
                     name={[field.name, 'value']}
-                    rules={[{ required: true, message: '请输入标签值' }]}
+                    rules={[{ required: true, message: t('services.form.pleaseEnterLabelValue') }]}
                   >
-                    <Input placeholder="标签值" />
+                    <Input placeholder={t('services.form.labelValuePlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={2}>
@@ -207,14 +210,14 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
             ))}
             <Form.Item>
               <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                添加标签
+                {t('services.form.addLabel')}
               </Button>
             </Form.Item>
           </>
         )}
       </Form.List>
 
-      <Divider orientation="left">选择器</Divider>
+      <Divider orientation="left">{t('services.form.selectors')}</Divider>
       <Form.List name="selectorArray">
         {(fields, { add, remove }) => (
           <>
@@ -224,18 +227,18 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
                   <Form.Item
                     key={field.key}
                     name={[field.name, 'key']}
-                    rules={[{ required: true, message: '请输入选择器键' }]}
+                    rules={[{ required: true, message: t('services.form.pleaseEnterSelectorKey') }]}
                   >
-                    <Input placeholder="app" />
+                    <Input placeholder={t('services.form.selectorKeyPlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={11}>
                   <Form.Item
                     key={field.key}
                     name={[field.name, 'value']}
-                    rules={[{ required: true, message: '请输入选择器值' }]}
+                    rules={[{ required: true, message: t('services.form.pleaseEnterSelectorValue') }]}
                   >
-                    <Input placeholder="nginx" />
+                    <Input placeholder={t('services.form.selectorValuePlaceholder')} />
                   </Form.Item>
                 </Col>
                 <Col span={2}>
@@ -250,7 +253,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({
             ))}
             <Form.Item>
               <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                添加选择器
+                {t('services.form.addSelector')}
               </Button>
             </Form.Item>
           </>

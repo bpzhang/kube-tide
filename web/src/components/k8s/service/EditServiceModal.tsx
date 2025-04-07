@@ -3,6 +3,7 @@ import { Modal, Form, Button, message } from 'antd';
 import { updateService } from '@/api/service';
 import ServiceForm from './ServiceForm';
 import { ServiceFormData, processFormToUpdateRequest, processServiceToFormData } from './ServiceTypes';
+import { useTranslation } from 'react-i18next';
 
 interface EditServiceModalProps {
   visible: boolean;
@@ -19,6 +20,7 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
   clusterName,
   onSuccess,
 }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
@@ -40,12 +42,12 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
       const updateData = processFormToUpdateRequest(values as ServiceFormData);
       
       await updateService(clusterName, service.metadata.namespace, service.metadata.name, updateData);
-      message.success('服务更新成功');
+      message.success(t('services.updateSuccess'));
       onSuccess();
       onClose();
     } catch (err) {
-      console.error('更新服务失败:', err);
-      message.error('更新服务失败');
+      console.error(t('services.updateFailed'), err);
+      message.error(t('services.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -53,13 +55,13 @@ export const EditServiceModal: React.FC<EditServiceModalProps> = ({
 
   return (
     <Modal
-      title={`编辑服务: ${service?.metadata?.name}`}
+      title={t('services.editService') + ': ' + service?.metadata?.name}
       open={visible}
       onCancel={onClose}
       width={800}
       footer={[
-        <Button key="cancel" onClick={onClose}>取消</Button>,
-        <Button key="submit" type="primary" loading={loading} onClick={handleSubmit}>更新</Button>,
+        <Button key="cancel" onClick={onClose}>{t('common.cancel')}</Button>,
+        <Button key="submit" type="primary" loading={loading} onClick={handleSubmit}>{t('common.update')}</Button>,
       ]}
     >
       <ServiceForm 

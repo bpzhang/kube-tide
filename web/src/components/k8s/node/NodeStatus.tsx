@@ -181,7 +181,7 @@ const NodeStatus: FC<NodeStatusProps> = ({
       <Descriptions column={2} size="small">
         <Descriptions.Item label={t('nodeDetail.basicInfo.status')}>
           <Space>
-            <span style={{ color: node.status === 'Ready' ? '#52c41a' : '#ff4d4f' }}>
+            <span style={{ color: node.status === t('nodes.ready') ? '#52c41a' : '#ff4d4f' }}>
               {node.status}
             </span>
             {node.unschedulable && (
