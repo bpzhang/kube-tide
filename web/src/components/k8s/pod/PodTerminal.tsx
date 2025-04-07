@@ -398,7 +398,7 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
           term.writeln(t('podTerminal.possibleReasons'));
           
           setConnectionStatus('error');
-          setErrorMessage(t('podTerminal.webSocketConnectionFailed'));
+          setErrorMessage(t('podTerminal.connectionFailed'));
           
           if (connectionTimeout) {
             clearTimeout(connectionTimeout);
@@ -464,24 +464,42 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
           ),
         });
       } else {
-        message.error(t('podTerminal.podNotExist', { pod: podName }));
+        message.error(t('podTerminal.podNotExist', { pod: podName, namespace }));
       }
     } catch (error: any) {
       message.error(t('podTerminal.checkContainersError', { error: error.message || '未知错误' }));
     }
   };
 
+  // 获取连接状态显示文本和颜色
+  const getStatusDisplay = () => {
+    switch(connectionStatus) {
+      case 'connected': 
+        return { text: t('podTerminal.connected'), color: '#52c41a' };
+      case 'connecting': 
+        return { text: t('podTerminal.connecting'), color: '#faad14' };
+      case 'checking': 
+        return { text: t('podTerminal.checking'), color: '#1890ff' };
+      case 'error': 
+        return { text: t('podTerminal.error'), color: '#ff4d4f' };
+      case 'closed': 
+        return { text: t('podTerminal.disconnected'), color: '#ff4d4f' };
+      default:
+        return { text: '', color: '' };
+    }
+  };
+
   // 渲染终端UI及错误状态
+  const statusDisplay = getStatusDisplay();
+  
   return (
     <Card 
       title={
         <Space>
           {t('podTerminal.title', { podName, containerName })}
-          {connectionStatus === 'connected' && <span style={{ color: '#52c41a' }}>({t('podTerminal.connected')})</span>}
-          {connectionStatus === 'connecting' && <span style={{ color: '#faad14' }}>({t('podTerminal.connecting')})</span>}
-          {connectionStatus === 'checking' && <span style={{ color: '#1890ff' }}>({t('podTerminal.checking')})</span>}
-          {(connectionStatus === 'error' || connectionStatus === 'closed') && 
-            <span style={{ color: '#ff4d4f' }}>({connectionStatus === 'error' ? t('podTerminal.error') : t('podTerminal.disconnected')})</span>}
+          {statusDisplay.text && (
+            <span style={{ color: statusDisplay.color }}>({statusDisplay.text})</span>
+          )}
         </Space>
       }
       extra={
@@ -522,7 +540,7 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
       {connectionStatus === 'error' && (
         <Alert
           message={t('podTerminal.connectionError')}
-          description={errorMessage || t('podTerminal.connectionErrorDescription')}
+          description={errorMessage || t('podTerminal.possibleReasons')}
           type="error"
           showIcon
           style={{ margin: '16px' }}
