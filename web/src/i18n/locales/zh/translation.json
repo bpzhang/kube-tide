@@ -855,7 +855,11 @@
     }
   },
   "podTerminal": {
-    "title": "终端: {podName} - {containerName}",
+    "title": "终端:{podName}{containerName}",
+    "titleNoInfo": "终端",
+    "titleWithPod": "终端: {podName}",
+    "titleWithContainer": "终端: {containerName}",
+    "connectedStatus": " (已连接)",
     "connected": "已连接",
     "connecting": "正在连接...",
     "checking": "正在检查Pod状态...",

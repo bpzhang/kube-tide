@@ -28,6 +28,10 @@ i18n
 
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
+      format: (value, format, lng) => value, // 允许自定义格式化
+      // 以下是关键配置，设置支持单大括号{}作为插值格式
+      prefix: '{',
+      suffix: '}'
     },
 
     // common namespace used around the full app

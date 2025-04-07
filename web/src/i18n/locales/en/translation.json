@@ -856,7 +856,11 @@
     }
   },
   "podTerminal": {
-    "title": "Terminal: {podName} - {containerName}",
+    "title": "Terminal:{podName}{containerName}",
+    "titleNoInfo": "Terminal",
+    "titleWithPod": "Terminal: {podName}",
+    "titleWithContainer": "Terminal: {containerName}",
+    "connectedStatus": " (Connected)",
     "connected": "Connected",
     "connecting": "Connecting...",
     "checking": "Checking Pod Status...",

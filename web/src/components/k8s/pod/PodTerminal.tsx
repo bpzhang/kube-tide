@@ -489,6 +489,32 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
     }
   };
 
+  // 获取标题文本
+  const getTitleText = () => {
+    // 使用正确的 i18n 模板替换方式
+    if (!podName && !containerName) {
+      return t('podTerminal.titleNoInfo');
+    }
+    
+    if (podName && !containerName) {
+      return t('podTerminal.titleWithPod', { podName });
+    }
+    
+    if (podName && containerName) {
+      const titleWithBoth = t('podTerminal.title', { 
+        podName, 
+        containerName: `/${containerName}`
+      });
+      return titleWithBoth;
+    }
+    
+    if (containerName) {
+      return t('podTerminal.titleWithContainer', { containerName });
+    }
+    
+    return t('podTerminal.titleNoInfo');
+  };
+
   // 渲染终端UI及错误状态
   const statusDisplay = getStatusDisplay();
   
@@ -496,9 +522,9 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
     <Card 
       title={
         <Space>
-          {t('podTerminal.title', { podName, containerName })}
-          {statusDisplay.text && (
-            <span style={{ color: statusDisplay.color }}>({statusDisplay.text})</span>
+          {getTitleText()}
+          {connectionStatus === 'connected' && (
+            <span style={{ color: statusDisplay.color }}>({t('podTerminal.connected')})</span>
           )}
         </Space>
       }
