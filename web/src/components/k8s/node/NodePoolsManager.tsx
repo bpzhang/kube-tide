@@ -170,8 +170,9 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
       title={t('nodes.nodePool.manage')}
       open={visible}
       onCancel={onClose}
-      width={800}
+      width={1000} // 增加主模态框宽度从800px到1000px
       footer={null}
+      bodyStyle={{ maxHeight: '80vh', overflow: 'auto' }} // 设置最大高度并添加滚动条
     >
       <div style={{ marginBottom: 16 }}>
         <Button
@@ -192,6 +193,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
         columns={columns}
         rowKey="name"
         pagination={false}
+        scroll={{ x: 'max-content' }} // 添加水平滚动支持
       />
 
       <Modal
@@ -199,6 +201,8 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
         open={showForm}
         onCancel={handleCloseForm}
         footer={null}
+        width={800} // 设置子模态框宽度为800px
+        bodyStyle={{ maxHeight: '70vh', overflow: 'auto' }} // 添加滚动支持
       >
         <Form
           form={form}
@@ -217,15 +221,17 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
             <Input placeholder={t('nodes.nodePool.pleaseEnterPoolName')} disabled={!!editingPool} />
           </Form.Item>
 
+          <Typography.Title level={5} style={{ marginTop: 16 }}>{t('nodes.nodePool.labels')}</Typography.Title>
           <Form.List name="labels">
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }) => (
-                  <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                  <Space key={key} style={{ display: 'flex', marginBottom: 8, width: '100%' }} align="baseline" wrap>
                     <Form.Item
                       {...restField}
                       name={[name, 'key']}
                       rules={[{ required: true, message: t('nodes.nodePool.pleaseEnterLabelKey') }]}
+                      style={{ minWidth: '200px', marginRight: '8px' }}
                     >
                       <Input placeholder={t('nodes.nodePool.labelKey')} />
                     </Form.Item>
@@ -233,10 +239,11 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
                       {...restField}
                       name={[name, 'value']}
                       rules={[{ required: true, message: t('nodes.nodePool.pleaseEnterLabelValue') }]}
+                      style={{ minWidth: '200px', marginRight: '8px' }}
                     >
                       <Input placeholder={t('nodes.nodePool.labelValue')} />
                     </Form.Item>
-                    <Button type="text" onClick={() => remove(name)}>{t('common.delete')}</Button>
+                    <Button type="text" danger onClick={() => remove(name)}>{t('common.delete')}</Button>
                   </Space>
                 ))}
                 <Form.Item>
@@ -248,21 +255,24 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
             )}
           </Form.List>
 
+          <Typography.Title level={5} style={{ marginTop: 16 }}>{t('nodes.nodePool.taints')}</Typography.Title>
           <Form.List name="taints">
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }) => (
-                  <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                  <div key={key} style={{ display: 'flex', marginBottom: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                     <Form.Item
                       {...restField}
                       name={[name, 'key']}
                       rules={[{ required: true, message: t('nodes.nodePool.pleaseEnterTaintKey') }]}
+                      style={{ minWidth: '150px', marginRight: '8px' }}
                     >
                       <Input placeholder={t('nodes.nodePool.taintKey')} />
                     </Form.Item>
                     <Form.Item
                       {...restField}
                       name={[name, 'value']}
+                      style={{ minWidth: '150px', marginRight: '8px' }}
                     >
                       <Input placeholder={t('nodes.nodePool.taintValue')} />
                     </Form.Item>
@@ -270,6 +280,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
                       {...restField}
                       name={[name, 'effect']}
                       rules={[{ required: true, message: t('nodes.nodePool.pleaseSelectEffect') }]}
+                      style={{ minWidth: '200px', marginRight: '8px' }}
                     >
                       <Select placeholder={t('nodes.nodePool.pleaseSelectEffect')}>
                         <Select.Option value="NoSchedule">{t('nodes.nodePool.taintEffects.NoSchedule')}</Select.Option>
@@ -277,8 +288,8 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
                         <Select.Option value="NoExecute">{t('nodes.nodePool.taintEffects.NoExecute')}</Select.Option>
                       </Select>
                     </Form.Item>
-                    <Button type="text" onClick={() => remove(name)}>{t('common.delete')}</Button>
-                  </Space>
+                    <Button type="text" danger onClick={() => remove(name)} style={{ marginTop: '5px' }}>{t('common.delete')}</Button>
+                  </div>
                 ))}
                 <Form.Item>
                   <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
@@ -289,7 +300,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
             )}
           </Form.List>
 
-          <Form.Item>
+          <Form.Item style={{ marginTop: 24 }}>
             <Space>
               <Button onClick={handleCloseForm}>
                 {t('common.cancel')}
