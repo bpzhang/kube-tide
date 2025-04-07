@@ -1,6 +1,7 @@
 import React from 'react';
 import { UpdateDeploymentRequest } from '@/api/deployment';
 import DeploymentModal from './DeploymentModal';
+import { useTranslation } from 'react-i18next';
 
 interface EditDeploymentModalProps {
   visible: boolean;
@@ -31,6 +32,8 @@ const EditDeploymentModal: React.FC<EditDeploymentModalProps> = ({
   onSubmit,
   deployment
 }) => {
+  const { t } = useTranslation();
+  
   return (
     <DeploymentModal
       visible={visible}
@@ -38,7 +41,7 @@ const EditDeploymentModal: React.FC<EditDeploymentModalProps> = ({
       onSubmit={onSubmit}
       mode="edit"
       deployment={deployment}
-      title={`编辑 Deployment: ${deployment?.name}`}
+      title={t('deployments.editDeployment') + ': ' + deployment?.name}
     />
   );
 };

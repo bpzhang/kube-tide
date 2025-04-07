@@ -8,6 +8,7 @@ import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { DeploymentFormProps } from './DeploymentTypes';
 import PortNameSelect from '../common/PortNameSelect';
 import NodeAffinityManager from './NodeAffinityManager';
+import { useTranslation } from 'react-i18next';
 
 const { Option } = Select;
 
@@ -21,6 +22,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
   form,
   mode
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = React.useState('basic');
   
   // 渲染基本信息Tab
@@ -33,10 +35,10 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
             <Col span={12}>
               <Form.Item
                 name="name"
-                label="Deployment名称"
+                label={t('deployments.form.name')}
                 rules={[
-                  { required: true, message: '请输入Deployment名称' },
-                  { pattern: /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/, message: '名称必须由小写字母、数字、和"-"组成，且不能以"-"开头或结尾' }
+                  { required: true, message: t('deployments.form.pleaseEnterName') },
+                  { pattern: /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/, message: t('deployments.form.namePattern') }
                 ]}
               >
                 <Input placeholder="my-deployment" />
@@ -49,8 +51,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
           <Col span={12}>
             <Form.Item
               name="replicas"
-              label="副本数"
-              rules={[{ required: true, message: '请输入副本数' }]}
+              label={t('deployments.form.replicas')}
+              rules={[{ required: true, message: t('deployments.form.pleaseEnterReplicas') }]}
             >
               <InputNumber min={0} style={{ width: '100%' }} />
             </Form.Item>
@@ -58,12 +60,12 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
           <Col span={12}>
             <Form.Item
               name="strategy"
-              label="部署策略"
-              rules={[{ required: true, message: '请选择部署策略' }]}
+              label={t('deployments.form.strategy')}
+              rules={[{ required: true, message: t('deployments.form.pleaseSelectStrategy') }]}
             >
               <Select>
-                <Option value="RollingUpdate">滚动更新(RollingUpdate)</Option>
-                <Option value="Recreate">重建(Recreate)</Option>
+                <Option value="RollingUpdate">{t('deployments.form.strategies.rollingUpdate')}</Option>
+                <Option value="Recreate">{t('deployments.form.strategies.recreate')}</Option>
               </Select>
             </Form.Item>
           </Col>
@@ -80,7 +82,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
             return strategy === 'RollingUpdate' ? (
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item name="maxSurgeValue" label="最大超出数">
+                  <Form.Item name="maxSurgeValue" label={t('deployments.form.maxSurge')}>
                     <span style={{ display: 'flex', alignItems: 'center' }}>
                       <InputNumber
                         style={{ width: '100%' }}
@@ -93,7 +95,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="maxUnavailableValue" label="最大不可用数">
+                  <Form.Item name="maxUnavailableValue" label={t('deployments.form.maxUnavailable')}>
                     <span style={{ display: 'flex', alignItems: 'center' }}>
                       <InputNumber
                         style={{ width: '100%' }}
@@ -112,24 +114,24 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
         
         <Row gutter={16}>
           <Col span={8}>
-            <Form.Item name="minReadySeconds" label="最小就绪时间(秒)">
+            <Form.Item name="minReadySeconds" label={t('deployments.form.minReadySeconds')}>
               <InputNumber min={0} style={{ width: '100%' }} />
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item name="revisionHistoryLimit" label="历史版本保留数">
+            <Form.Item name="revisionHistoryLimit" label={t('deployments.form.revisionHistoryLimit')}>
               <InputNumber min={0} style={{ width: '100%' }} />
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item name="paused" label="暂停部署" valuePropName="checked">
+            <Form.Item name="paused" label={t('deployments.form.pauseDeploy')} valuePropName="checked">
               <Switch />
             </Form.Item>
           </Col>
         </Row>
       </>
     );
-  }, [mode]);
+  }, [mode, t]);
   
   // 渲染容器配置Tab
   const renderContainersTab = useCallback(() => {
@@ -147,10 +149,10 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Form.Item
                         key={field.key}
                         name={[field.name, 'name']}
-                        label="容器名称"
+                        label={t('deployments.form.container.name')}
                         rules={[
-                          { required: true, message: '请输入容器名称' },
-                          { pattern: /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/, message: '名称必须由小写字母、数字、和"-"组成，且不能以"-"开头或结尾' }
+                          { required: true, message: t('deployments.form.container.pleaseEnterName') },
+                          { pattern: /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/, message: t('deployments.form.namePattern') }
                         ]}
                         style={{ marginBottom: 0 }}
                       >
@@ -181,31 +183,31 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   <Form.Item
                     key={`${field.key}-image`}
                     name={[field.name, 'image']}
-                    label="镜像"
-                    rules={[{ required: true, message: '请输入容器镜像' }]}
+                    label={t('deployments.form.container.image')}
+                    rules={[{ required: true, message: t('deployments.form.container.pleaseEnterImage') }]}
                   >
-                    <Input placeholder="例如: nginx:1.19" />
+                    <Input placeholder={t('deployments.form.container.imagePlaceholder')} />
                   </Form.Item>
                   
-                  <Divider orientation="left">资源限制</Divider>
+                  <Divider orientation="left">{t('deployments.form.container.resources')}</Divider>
                   <Row gutter={16}>
                     <Col span={12}>
                       <Form.Item
                         key={`${field.key}-resources-requests-cpu`}
                         name={[field.name, 'resources', 'requests', 'cpu']}
-                        label="CPU请求"
+                        label={t('deployments.form.container.cpuRequest')}
                       >
                         <Space.Compact style={{ width: '100%' }}>
                           <Form.Item
                             key={`${field.key}-resources-requests-cpuValue`}
                             name={[field.name, 'resources', 'requests', 'cpuValue']}
                             noStyle
-                            rules={[{ required: true, message: '请输入CPU请求值' }]}
+                            rules={[{ required: true, message: t('deployments.form.container.pleaseEnterCpuRequest') }]}
                           >
                             <InputNumber 
                               style={{ width: '60%' }} 
                               min={0} 
-                              placeholder="请输入数值"
+                              placeholder={t('deployments.form.container.enterValue')}
                             />
                           </Form.Item>
                           <Form.Item
@@ -215,8 +217,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             initialValue="m"
                           >
                             <Select style={{ width: '40%' }}>
-                              <Option value="m">毫核(m)</Option>
-                              <Option value="">核心</Option>
+                              <Option value="m">{t('deployments.form.container.cpuUnits.millicore')}</Option>
+                              <Option value="">{t('deployments.form.container.cpuUnits.core')}</Option>
                             </Select>
                           </Form.Item>
                         </Space.Compact>
@@ -226,19 +228,19 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Form.Item
                         key={`${field.key}-resources-limits-cpu`}
                         name={[field.name, 'resources', 'limits', 'cpu']}
-                        label="CPU限制"
+                        label={t('deployments.form.container.cpuLimit')}
                       >
                         <Space.Compact style={{ width: '100%' }}>
                           <Form.Item
                             key={`${field.key}-resources-limits-cpuValue`}
                             name={[field.name, 'resources', 'limits', 'cpuValue']}
                             noStyle
-                            rules={[{ required: true, message: '请输入CPU限制值' }]}
+                            rules={[{ required: true, message: t('deployments.form.container.pleaseEnterCpuLimit') }]}
                           >
                             <InputNumber 
                               style={{ width: '60%' }} 
                               min={0} 
-                              placeholder="请输入数值"
+                              placeholder={t('deployments.form.container.enterValue')}
                             />
                           </Form.Item>
                           <Form.Item
@@ -248,8 +250,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             initialValue="m"
                           >
                             <Select style={{ width: '40%' }}>
-                              <Option value="m">毫核(m)</Option>
-                              <Option value="">核心</Option>
+                              <Option value="m">{t('deployments.form.container.cpuUnits.millicore')}</Option>
+                              <Option value="">{t('deployments.form.container.cpuUnits.core')}</Option>
                             </Select>
                           </Form.Item>
                         </Space.Compact>
@@ -261,19 +263,19 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Form.Item
                         key={`${field.key}-resources-requests-memory`}
                         name={[field.name, 'resources', 'requests', 'memory']}
-                        label="内存请求"
+                        label={t('deployments.form.container.memoryRequest')}
                       >
                         <Space.Compact style={{ width: '100%' }}>
                           <Form.Item
                             key={`${field.key}-resources-requests-memoryValue`}
                             name={[field.name, 'resources', 'requests', 'memoryValue']}
                             noStyle
-                            rules={[{ required: true, message: '请输入内存请求值' }]}
+                            rules={[{ required: true, message: t('deployments.form.container.pleaseEnterMemoryRequest') }]}
                           >
                             <InputNumber 
                               style={{ width: '60%' }} 
                               min={0} 
-                              placeholder="请输入数值"
+                              placeholder={t('deployments.form.container.enterValue')}
                             />
                           </Form.Item>
                           <Form.Item
@@ -296,19 +298,19 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Form.Item
                         key={`${field.key}-resources-limits-memory`}
                         name={[field.name, 'resources', 'limits', 'memory']}
-                        label="内存限制"
+                        label={t('deployments.form.container.memoryLimit')}
                       >
                         <Space.Compact style={{ width: '100%' }}>
                           <Form.Item
                             key={`${field.key}-resources-limits-memoryValue`}
                             name={[field.name, 'resources', 'limits', 'memoryValue']}
                             noStyle
-                            rules={[{ required: true, message: '请输入内存限制值' }]}
+                            rules={[{ required: true, message: t('deployments.form.container.pleaseEnterMemoryLimit') }]}
                           >
                             <InputNumber 
                               style={{ width: '60%' }} 
                               min={0} 
-                              placeholder="请输入数值"
+                              placeholder={t('deployments.form.container.enterValue')}
                             />
                           </Form.Item>
                           <Form.Item
@@ -329,7 +331,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                     </Col>
                   </Row>
 
-                  <Divider orientation="left">端口映射</Divider>
+                  <Divider orientation="left">{t('deployments.form.container.ports')}</Divider>
                   <Form.List name={[field.name, 'ports']}>
                     {(portFields, { addPort, removePort }) => (
                       <>
@@ -339,17 +341,17 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                               <Form.Item
                                 {...portField}
                                 name={[portField.name, 'name']}
-                                label="名称"
+                                label={t('deployments.form.container.portName')}
                               >
-                                <PortNameSelect placeholder="选择通信协议" />
+                                <PortNameSelect placeholder={t('deployments.form.container.selectProtocol')} />
                               </Form.Item>
                             </Col>
                             <Col span={6}>
                               <Form.Item
                                 {...portField}
                                 name={[portField.name, 'containerPort']}
-                                label="容器端口"
-                                rules={[{ required: true, message: '请输入容器端口' }]}
+                                label={t('deployments.form.container.containerPort')}
+                                rules={[{ required: true, message: t('deployments.form.container.pleaseEnterPort') }]}
                               >
                                 <InputNumber min={1} max={65535} style={{ width: '100%' }} />
                               </Form.Item>
@@ -358,7 +360,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                               <Form.Item
                                 {...portField}
                                 name={[portField.name, 'protocol']}
-                                label="协议"
+                                label={t('deployments.form.container.protocol')}
                                 initialValue="TCP"
                               >
                                 <Select>
@@ -386,14 +388,14 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             block
                             icon={<PlusOutlined />}
                           >
-                            添加端口
+                            {t('deployments.form.container.addPort')}
                           </Button>
                         </Form.Item>
                       </>
                     )}
                   </Form.List>
                   
-                  <Divider orientation="left">环境变量</Divider>
+                  <Divider orientation="left">{t('deployments.form.container.environmentVariables')}</Divider>
                   <Form.List name={[field.name, 'env']}>
                     {(envFields, { addEnv, removeEnv }) => (
                       <>
@@ -403,20 +405,20 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                               <Form.Item
                                 {...envField}
                                 name={[envField.name, 'name']}
-                                rules={[{ required: true, message: '请输入变量名' }]}
+                                rules={[{ required: true, message: t('deployments.form.container.pleaseEnterVarName') }]}
                                 style={{ marginBottom: 8 }}
                               >
-                                <Input placeholder="变量名" />
+                                <Input placeholder={t('deployments.form.container.variableName')} />
                               </Form.Item>
                             </Col>
                             <Col span={10}>
                               <Form.Item
                                 {...envField}
                                 name={[envField.name, 'value']}
-                                rules={[{ required: true, message: '请输入变量值' }]}
+                                rules={[{ required: true, message: t('deployments.form.container.pleaseEnterVarValue') }]}
                                 style={{ marginBottom: 8 }}
                               >
-                                <Input placeholder="变量值" />
+                                <Input placeholder={t('deployments.form.container.variableValue')} />
                               </Form.Item>
                             </Col>
                             <Col span={4}>
@@ -435,30 +437,30 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             block
                             icon={<PlusOutlined />}
                           >
-                            添加环境变量
+                            {t('deployments.form.container.addEnvVar')}
                           </Button>
                         </Form.Item>
                       </>
                     )}
                   </Form.List>
                   
-                  <Divider orientation="left">健康检查</Divider>
+                  <Divider orientation="left">{t('deployments.form.container.healthChecks')}</Divider>
                   
                   {/* 存活探针配置 */}
                   <Card
                     size="small"
-                    title="存活探针 (Liveness Probe)"
+                    title={t('deployments.form.container.probes.liveness')}
                     style={{ marginBottom: 16 }}
                     styles={{ body: { padding: '12px' } }}
                   >
                     <Form.Item
                       name={[field.name, 'livenessProbe', 'type']}
-                      label="检查类型"
+                      label={t('deployments.form.container.probes.type')}
                     >
-                      <Select placeholder="选择检查类型">
+                      <Select placeholder={t('deployments.form.container.probes.selectType')}>
                         <Option value="httpGet">HTTP GET</Option>
                         <Option value="tcpSocket">TCP Socket</Option>
-                        <Option value="exec">命令行</Option>
+                        <Option value="exec">{t('deployments.form.container.probes.command')}</Option>
                       </Select>
                     </Form.Item>
                     <Form.Item
@@ -478,21 +480,21 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                               <>
                                 <Form.Item
                                   name={[field.name, 'livenessProbe', 'httpGet', 'path']}
-                                  label="路径"
-                                  rules={[{ required: true, message: '请输入检查路径' }]}
+                                  label={t('deployments.form.container.probes.path')}
+                                  rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterPath') }]}
                                 >
                                   <Input placeholder="/health" />
                                 </Form.Item>
                                 <Form.Item
                                   name={[field.name, 'livenessProbe', 'httpGet', 'port']}
-                                  label="端口"
-                                  rules={[{ required: true, message: '请输入端口号' }]}
+                                  label={t('deployments.form.container.probes.port')}
+                                  rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterPort') }]}
                                 >
                                   <InputNumber min={1} max={65535} />
                                 </Form.Item>
                                 <Form.Item
                                   name={[field.name, 'livenessProbe', 'httpGet', 'scheme']}
-                                  label="协议"
+                                  label={t('deployments.form.container.probes.scheme')}
                                   initialValue="HTTP"
                                 >
                                   <Select>
@@ -506,8 +508,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             return (
                               <Form.Item
                                 name={[field.name, 'livenessProbe', 'tcpSocket', 'port']}
-                                label="端口"
-                                rules={[{ required: true, message: '请输入端口号' }]}
+                                label={t('deployments.form.container.probes.port')}
+                                rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterPort') }]}
                               >
                                 <InputNumber min={1} max={65535} />
                               </Form.Item>
@@ -516,10 +518,10 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             return (
                               <Form.Item
                                 name={[field.name, 'livenessProbe', 'exec', 'command']}
-                                label="命令"
-                                rules={[{ required: true, message: '请输入检查命令' }]}
+                                label={t('deployments.form.container.probes.command')}
+                                rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterCommand') }]}
                               >
-                                <Input.TextArea placeholder="输入要执行的命令，每行一条" />
+                                <Input.TextArea placeholder={t('deployments.form.container.probes.commandPlaceholder')} />
                               </Form.Item>
                             );
                           default:
@@ -531,7 +533,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={8}>
                         <Form.Item
                           name={[field.name, 'livenessProbe', 'initialDelaySeconds']}
-                          label="初始延迟(秒)"
+                          label={t('deployments.form.container.probes.initialDelay')}
                         >
                           <InputNumber min={0} />
                         </Form.Item>
@@ -539,7 +541,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={8}>
                         <Form.Item
                           name={[field.name, 'livenessProbe', 'periodSeconds']}
-                          label="检查周期(秒)"
+                          label={t('deployments.form.container.probes.period')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -547,7 +549,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={8}>
                         <Form.Item
                           name={[field.name, 'livenessProbe', 'timeoutSeconds']}
-                          label="超时时间(秒)"
+                          label={t('deployments.form.container.probes.timeout')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -557,7 +559,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={12}>
                         <Form.Item
                           name={[field.name, 'livenessProbe', 'successThreshold']}
-                          label="成功阈值"
+                          label={t('deployments.form.container.probes.successThreshold')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -565,7 +567,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={12}>
                         <Form.Item
                           name={[field.name, 'livenessProbe', 'failureThreshold']}
-                          label="失败阈值"
+                          label={t('deployments.form.container.probes.failureThreshold')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -576,18 +578,18 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   {/* 就绪探针配置 */}
                   <Card
                     size="small"
-                    title="就绪探针 (Readiness Probe)"
+                    title={t('deployments.form.container.probes.readiness')}
                     style={{ marginBottom: 16 }}
                     styles={{ body: { padding: '12px' } }}
                   >
                     <Form.Item
                       name={[field.name, 'readinessProbe', 'type']}
-                      label="检查类型"
+                      label={t('deployments.form.container.probes.type')}
                     >
-                      <Select placeholder="选择检查类型">
+                      <Select placeholder={t('deployments.form.container.probes.selectType')}>
                         <Option value="httpGet">HTTP GET</Option>
                         <Option value="tcpSocket">TCP Socket</Option>
-                        <Option value="exec">命令行</Option>
+                        <Option value="exec">{t('deployments.form.container.probes.command')}</Option>
                       </Select>
                     </Form.Item>
                     <Form.Item
@@ -607,21 +609,21 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                               <>
                                 <Form.Item
                                   name={[field.name, 'readinessProbe', 'httpGet', 'path']}
-                                  label="路径"
-                                  rules={[{ required: true, message: '请输入检查路径' }]}
+                                  label={t('deployments.form.container.probes.path')}
+                                  rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterPath') }]}
                                 >
                                   <Input placeholder="/ready" />
                                 </Form.Item>
                                 <Form.Item
                                   name={[field.name, 'readinessProbe', 'httpGet', 'port']}
-                                  label="端口"
-                                  rules={[{ required: true, message: '请输入端口号' }]}
+                                  label={t('deployments.form.container.probes.port')}
+                                  rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterPort') }]}
                                 >
                                   <InputNumber min={1} max={65535} />
                                 </Form.Item>
                                 <Form.Item
                                   name={[field.name, 'readinessProbe', 'httpGet', 'scheme']}
-                                  label="协议"
+                                  label={t('deployments.form.container.probes.scheme')}
                                   initialValue="HTTP"
                                 >
                                   <Select>
@@ -635,8 +637,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             return (
                               <Form.Item
                                 name={[field.name, 'readinessProbe', 'tcpSocket', 'port']}
-                                label="端口"
-                                rules={[{ required: true, message: '请输入端口号' }]}
+                                label={t('deployments.form.container.probes.port')}
+                                rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterPort') }]}
                               >
                                 <InputNumber min={1} max={65535} />
                               </Form.Item>
@@ -645,10 +647,10 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             return (
                               <Form.Item
                                 name={[field.name, 'readinessProbe', 'exec', 'command']}
-                                label="命令"
-                                rules={[{ required: true, message: '请输入检查命令' }]}
+                                label={t('deployments.form.container.probes.command')}
+                                rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterCommand') }]}
                               >
-                                <Input.TextArea placeholder="输入要执行的命令，每行一条" />
+                                <Input.TextArea placeholder={t('deployments.form.container.probes.commandPlaceholder')} />
                               </Form.Item>
                             );
                           default:
@@ -660,7 +662,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={8}>
                         <Form.Item
                           name={[field.name, 'readinessProbe', 'initialDelaySeconds']}
-                          label="初始延迟(秒)"
+                          label={t('deployments.form.container.probes.initialDelay')}
                         >
                           <InputNumber min={0} />
                         </Form.Item>
@@ -668,7 +670,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={8}>
                         <Form.Item
                           name={[field.name, 'readinessProbe', 'periodSeconds']}
-                          label="检查周期(秒)"
+                          label={t('deployments.form.container.probes.period')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -676,7 +678,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={8}>
                         <Form.Item
                           name={[field.name, 'readinessProbe', 'timeoutSeconds']}
-                          label="超时时间(秒)"
+                          label={t('deployments.form.container.probes.timeout')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -686,7 +688,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={12}>
                         <Form.Item
                           name={[field.name, 'readinessProbe', 'successThreshold']}
-                          label="成功阈值"
+                          label={t('deployments.form.container.probes.successThreshold')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -694,7 +696,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={12}>
                         <Form.Item
                           name={[field.name, 'readinessProbe', 'failureThreshold']}
-                          label="失败阈值"
+                          label={t('deployments.form.container.probes.failureThreshold')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -705,18 +707,18 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   {/* 启动探针配置 */}
                   <Card
                     size="small"
-                    title="启动探针 (Startup Probe)"
+                    title={t('deployments.form.container.probes.startup')}
                     style={{ marginBottom: 16 }}
                     styles={{ body: { padding: '12px' } }}
                   >
                     <Form.Item
                       name={[field.name, 'startupProbe', 'type']}
-                      label="检查类型"
+                      label={t('deployments.form.container.probes.type')}
                     >
-                      <Select placeholder="选择检查类型">
+                      <Select placeholder={t('deployments.form.container.probes.selectType')}>
                         <Option value="httpGet">HTTP GET</Option>
                         <Option value="tcpSocket">TCP Socket</Option>
-                        <Option value="exec">命令行</Option>
+                        <Option value="exec">{t('deployments.form.container.probes.command')}</Option>
                       </Select>
                     </Form.Item>
                     <Form.Item
@@ -736,21 +738,21 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                               <>
                                 <Form.Item
                                   name={[field.name, 'startupProbe', 'httpGet', 'path']}
-                                  label="路径"
-                                  rules={[{ required: true, message: '请输入检查路径' }]}
+                                  label={t('deployments.form.container.probes.path')}
+                                  rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterPath') }]}
                                 >
                                   <Input placeholder="/startup" />
                                 </Form.Item>
                                 <Form.Item
                                   name={[field.name, 'startupProbe', 'httpGet', 'port']}
-                                  label="端口"
-                                  rules={[{ required: true, message: '请输入端口号' }]}
+                                  label={t('deployments.form.container.probes.port')}
+                                  rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterPort') }]}
                                 >
                                   <InputNumber min={1} max={65535} />
                                 </Form.Item>
                                 <Form.Item
                                   name={[field.name, 'startupProbe', 'httpGet', 'scheme']}
-                                  label="协议"
+                                  label={t('deployments.form.container.probes.scheme')}
                                   initialValue="HTTP"
                                 >
                                   <Select>
@@ -764,8 +766,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             return (
                               <Form.Item
                                 name={[field.name, 'startupProbe', 'tcpSocket', 'port']}
-                                label="端口"
-                                rules={[{ required: true, message: '请输入端口号' }]}
+                                label={t('deployments.form.container.probes.port')}
+                                rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterPort') }]}
                               >
                                 <InputNumber min={1} max={65535} />
                               </Form.Item>
@@ -774,10 +776,10 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             return (
                               <Form.Item
                                 name={[field.name, 'startupProbe', 'exec', 'command']}
-                                label="命令"
-                                rules={[{ required: true, message: '请输入检查命令' }]}
+                                label={t('deployments.form.container.probes.command')}
+                                rules={[{ required: true, message: t('deployments.form.container.probes.pleaseEnterCommand') }]}
                               >
-                                <Input.TextArea placeholder="输入要执行的命令，每行一条" />
+                                <Input.TextArea placeholder={t('deployments.form.container.probes.commandPlaceholder')} />
                               </Form.Item>
                             );
                           default:
@@ -789,7 +791,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={8}>
                         <Form.Item
                           name={[field.name, 'startupProbe', 'initialDelaySeconds']}
-                          label="初始延迟(秒)"
+                          label={t('deployments.form.container.probes.initialDelay')}
                         >
                           <InputNumber min={0} />
                         </Form.Item>
@@ -797,7 +799,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={8}>
                         <Form.Item
                           name={[field.name, 'startupProbe', 'periodSeconds']}
-                          label="检查周期(秒)"
+                          label={t('deployments.form.container.probes.period')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -805,7 +807,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={8}>
                         <Form.Item
                           name={[field.name, 'startupProbe', 'timeoutSeconds']}
-                          label="超时时间(秒)"
+                          label={t('deployments.form.container.probes.timeout')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -815,7 +817,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={12}>
                         <Form.Item
                           name={[field.name, 'startupProbe', 'successThreshold']}
-                          label="成功阈值"
+                          label={t('deployments.form.container.probes.successThreshold')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -823,7 +825,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                       <Col span={12}>
                         <Form.Item
                           name={[field.name, 'startupProbe', 'failureThreshold']}
-                          label="失败阈值"
+                          label={t('deployments.form.container.probes.failureThreshold')}
                         >
                           <InputNumber min={1} />
                         </Form.Item>
@@ -834,7 +836,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   {/* 卷挂载配置 */}
                   {form.getFieldValue('volumes')?.length > 0 && (
                     <>
-                      <Divider orientation="left">卷挂载</Divider>
+                      <Divider orientation="left">{t('deployments.form.container.volumeMounts')}</Divider>
                       <Form.List name={[field.name, 'volumeMounts']}>
                         {(mountFields, { add: addMount, remove: removeMount }) => (
                           <>
@@ -844,10 +846,10 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                   <Form.Item
                                     key={`mount-${field.key}-${mountField.key}-name`}
                                     name={[mountField.name, 'name']}
-                                    label="卷名称"
-                                    rules={[{ required: true, message: '请选择要挂载的卷' }]}
+                                    label={t('deployments.form.container.volumeMount.name')}
+                                    rules={[{ required: true, message: t('deployments.form.container.volumeMount.pleaseSelectVolume') }]}
                                   >
-                                    <Select placeholder="选择卷">
+                                    <Select placeholder={t('deployments.form.container.volumeMount.selectVolume')}>
                                       {form.getFieldValue('volumes')?.map((volume: any) => (
                                         <Option key={volume.name} value={volume.name}>
                                           {volume.name}
@@ -860,8 +862,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                   <Form.Item
                                     key={`mount-${field.key}-${mountField.key}-mountPath`}
                                     name={[mountField.name, 'mountPath']}
-                                    label="挂载路径"
-                                    rules={[{ required: true, message: '请输入挂载路径' }]}
+                                    label={t('deployments.form.container.volumeMount.mountPath')}
+                                    rules={[{ required: true, message: t('deployments.form.container.volumeMount.pleaseEnterMountPath') }]}
                                   >
                                     <Input placeholder="/data" />
                                   </Form.Item>
@@ -870,16 +872,16 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                   <Form.Item
                                     key={`mount-${field.key}-${mountField.key}-subPath`}
                                     name={[mountField.name, 'subPath']}
-                                    label="子路径"
+                                    label={t('deployments.form.container.volumeMount.subPath')}
                                   >
-                                    <Input placeholder="可选" />
+                                    <Input placeholder={t('deployments.form.container.volumeMount.optional')} />
                                   </Form.Item>
                                 </Col>
                                 <Col span={3}>
                                   <Form.Item
                                     key={`mount-${field.key}-${mountField.key}-readOnly`}
                                     name={[mountField.name, 'readOnly']}
-                                    label="只读"
+                                    label={t('deployments.form.container.volumeMount.readOnly')}
                                     valuePropName="checked"
                                   >
                                     <Switch />
@@ -901,7 +903,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                 block
                                 icon={<PlusOutlined />}
                               >
-                                添加卷挂载
+                                {t('deployments.form.container.volumeMount.add')}
                               </Button>
                             </Form.Item>
                           </>
@@ -939,7 +941,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   block
                   icon={<PlusOutlined />}
                 >
-                  添加容器
+                  {t('deployments.form.container.add')}
                 </Button>
               </Form.Item>
             )}
@@ -947,7 +949,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
         )}
       </Form.List>
     );
-  }, [form, mode]);
+  }, [form, mode, t]);
   
   // 渲染存储卷Tab
   const renderVolumesTab = useCallback(() => {
@@ -963,10 +965,10 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   <Form.Item
                     key={field.key}
                     name={[field.name, 'name']}
-                    rules={[{ required: true, message: '请输入卷名称' }]}
+                    rules={[{ required: true, message: t('deployments.form.volume.pleaseEnterName') }]}
                     style={{ marginBottom: 0 }}
                   >
-                    <Input placeholder="卷名称" />
+                    <Input placeholder={t('deployments.form.volume.name')} />
                   </Form.Item>
                 }
                 extra={
@@ -980,8 +982,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                 <Form.Item
                   key={field.key}
                   name={[field.name, 'type']}
-                  label="卷类型"
-                  rules={[{ required: true, message: '请选择卷类型' }]}
+                  label={t('deployments.form.volume.type')}
+                  rules={[{ required: true, message: t('deployments.form.volume.pleaseSelectType') }]}
                 >
                   <Select>
                     <Option value="configMap">ConfigMap</Option>
@@ -1008,8 +1010,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             <Form.Item
                               key={field.key}
                               name={[field.name, 'configMap', 'name']}
-                              label="ConfigMap名称"
-                              rules={[{ required: true, message: '请输入ConfigMap名称' }]}
+                              label={t('deployments.form.volume.configMap.name')}
+                              rules={[{ required: true, message: t('deployments.form.volume.configMap.pleaseEnterName') }]}
                             >
                               <Input placeholder="my-config" />
                             </Form.Item>
@@ -1022,8 +1024,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                         <Form.Item
                                           key={itemField.key}
                                           name={[itemField.name, 'key']}
-                                          label="键"
-                                          rules={[{ required: true, message: '请输入键名' }]}
+                                          label={t('deployments.form.volume.key')}
+                                          rules={[{ required: true, message: t('deployments.form.volume.pleaseEnterKey') }]}
                                         >
                                           <Input placeholder="config-key" />
                                         </Form.Item>
@@ -1032,8 +1034,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                         <Form.Item
                                           key={itemField.key}
                                           name={[itemField.name, 'path']}
-                                          label="路径"
-                                          rules={[{ required: true, message: '请输入文件路径' }]}
+                                          label={t('deployments.form.volume.path')}
+                                          rules={[{ required: true, message: t('deployments.form.volume.pleaseEnterPath') }]}
                                         >
                                           <Input placeholder="config.yaml" />
                                         </Form.Item>
@@ -1042,7 +1044,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                         <Form.Item
                                           key={itemField.key}
                                           name={[itemField.name, 'mode']}
-                                          label="权限"
+                                          label={t('deployments.form.volume.mode')}
                                         >
                                           <Input placeholder="0644" />
                                         </Form.Item>
@@ -1063,7 +1065,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                       block
                                       icon={<PlusOutlined />}
                                     >
-                                      添加键值映射
+                                      {t('deployments.form.volume.configMap.addMapping')}
                                     </Button>
                                   </Form.Item>
                                 </>
@@ -1077,8 +1079,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             <Form.Item
                               key={field.key}
                               name={[field.name, 'secret', 'secretName']}
-                              label="Secret名称"
-                              rules={[{ required: true, message: '请输入Secret名称' }]}
+                              label={t('deployments.form.volume.secret.name')}
+                              rules={[{ required: true, message: t('deployments.form.volume.secret.pleaseEnterName') }]}
                             >
                               <Input placeholder="my-secret" />
                             </Form.Item>
@@ -1091,8 +1093,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                         <Form.Item
                                           key={itemField.key}
                                           name={[itemField.name, 'key']}
-                                          label="键"
-                                          rules={[{ required: true, message: '请输入键名' }]}
+                                          label={t('deployments.form.volume.key')}
+                                          rules={[{ required: true, message: t('deployments.form.volume.pleaseEnterKey') }]}
                                         >
                                           <Input placeholder="secret-key" />
                                         </Form.Item>
@@ -1101,8 +1103,8 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                         <Form.Item
                                           key={itemField.key}
                                           name={[itemField.name, 'path']}
-                                          label="路径"
-                                          rules={[{ required: true, message: '请输入文件路径' }]}
+                                          label={t('deployments.form.volume.path')}
+                                          rules={[{ required: true, message: t('deployments.form.volume.pleaseEnterPath') }]}
                                         >
                                           <Input placeholder="secret.txt" />
                                         </Form.Item>
@@ -1111,7 +1113,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                         <Form.Item
                                           key={itemField.key}
                                           name={[itemField.name, 'mode']}
-                                          label="权限"
+                                          label={t('deployments.form.volume.mode')}
                                         >
                                           <Input placeholder="0600" />
                                         </Form.Item>
@@ -1132,7 +1134,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                                       block
                                       icon={<PlusOutlined />}
                                     >
-                                      添加键值映射
+                                      {t('deployments.form.volume.secret.addMapping')}
                                     </Button>
                                   </Form.Item>
                                 </>
@@ -1146,15 +1148,15 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             <Form.Item
                               key={field.key}
                               name={[field.name, 'persistentVolumeClaim', 'claimName']}
-                              label="PVC名称"
-                              rules={[{ required: true, message: '请输入PVC名称' }]}
+                              label={t('deployments.form.volume.pvc.name')}
+                              rules={[{ required: true, message: t('deployments.form.volume.pvc.pleaseEnterName') }]}
                             >
                               <Input placeholder="my-pvc" />
                             </Form.Item>
                             <Form.Item
                               key={field.key}
                               name={[field.name, 'persistentVolumeClaim', 'readOnly']}
-                              label="只读"
+                              label={t('deployments.form.volume.pvc.readOnly')}
                               valuePropName="checked"
                             >
                               <Switch />
@@ -1167,19 +1169,19 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             <Form.Item
                               key={field.key}
                               name={[field.name, 'emptyDir', 'medium']}
-                              label="存储介质"
+                              label={t('deployments.form.volume.emptyDir.medium')}
                             >
-                              <Select placeholder="默认">
-                                <Option value="">默认</Option>
-                                <Option value="Memory">内存</Option>
+                              <Select placeholder={t('deployments.form.volume.emptyDir.default')}>
+                                <Option value="">{t('deployments.form.volume.emptyDir.default')}</Option>
+                                <Option value="Memory">{t('deployments.form.volume.emptyDir.memory')}</Option>
                               </Select>
                             </Form.Item>
                             <Form.Item
                               key={field.key}
                               name={[field.name, 'emptyDir', 'sizeLimit']}
-                              label="大小限制"
+                              label={t('deployments.form.volume.emptyDir.sizeLimit')}
                             >
-                              <Input placeholder="例如：1Gi" />
+                              <Input placeholder={t('deployments.form.volume.emptyDir.sizeLimitPlaceholder')} />
                             </Form.Item>
                           </>
                         );
@@ -1189,22 +1191,22 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                             <Form.Item
                               key={field.key}
                               name={[field.name, 'hostPath', 'path']}
-                              label="主机路径"
-                              rules={[{ required: true, message: '请输入主机路径' }]}
+                              label={t('deployments.form.volume.hostPath.path')}
+                              rules={[{ required: true, message: t('deployments.form.volume.hostPath.pleaseEnterPath') }]}
                             >
                               <Input placeholder="/data" />
                             </Form.Item>
                             <Form.Item
                               key={field.key}
                               name={[field.name, 'hostPath', 'type']}
-                              label="类型"
+                              label={t('deployments.form.volume.hostPath.type')}
                             >
-                              <Select placeholder="默认">
-                                <Option value="">默认</Option>
-                                <Option value="Directory">目录</Option>
-                                <Option value="DirectoryOrCreate">目录或创建</Option>
-                                <Option value="File">文件</Option>
-                                <Option value="FileOrCreate">文件或创建</Option>
+                              <Select placeholder={t('deployments.form.volume.hostPath.default')}>
+                                <Option value="">{t('deployments.form.volume.hostPath.default')}</Option>
+                                <Option value="Directory">{t('deployments.form.volume.hostPath.directory')}</Option>
+                                <Option value="DirectoryOrCreate">{t('deployments.form.volume.hostPath.directoryOrCreate')}</Option>
+                                <Option value="File">{t('deployments.form.volume.hostPath.file')}</Option>
+                                <Option value="FileOrCreate">{t('deployments.form.volume.hostPath.fileOrCreate')}</Option>
                               </Select>
                             </Form.Item>
                           </>
@@ -1223,20 +1225,20 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                 block
                 icon={<PlusOutlined />}
               >
-                添加存储卷
+                {t('deployments.form.volume.add')}
               </Button>
             </Form.Item>
           </>
         )}
       </Form.List>
     );
-  }, []);
+  }, [t]);
   
   // 渲染标签和注解Tab
   const renderLabelsAndAnnotationsTab = useCallback(() => {
     return (
       <>
-        <Divider orientation="left">标签</Divider>
+        <Divider orientation="left">{t('deployments.labels')}</Divider>
         <Form.List name="labels">
           {(fields, { add, remove }) => (
             <>
@@ -1246,20 +1248,20 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                     <Form.Item
                       key={field.key}
                       name={[field.name, 'key']}
-                      rules={[{ required: true, message: '请输入标签键' }]}
+                      rules={[{ required: true, message: t('deployments.form.labels.pleaseEnterKey') }]}
                       style={{ marginBottom: 8 }}
                     >
-                      <Input placeholder="标签键" />
+                      <Input placeholder={t('deployments.form.labels.keyPlaceholder')} />
                     </Form.Item>
                   </Col>
                   <Col span={10}>
                     <Form.Item
                       key={field.key}
                       name={[field.name, 'value']}
-                      rules={[{ required: true, message: '请输入标签值' }]}
+                      rules={[{ required: true, message: t('deployments.form.labels.pleaseEnterValue') }]}
                       style={{ marginBottom: 8 }}
                     >
-                      <Input placeholder="标签值" />
+                      <Input placeholder={t('deployments.form.labels.valuePlaceholder')} />
                     </Form.Item>
                   </Col>
                   <Col span={4}>
@@ -1278,14 +1280,14 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   block
                   icon={<PlusOutlined />}
                 >
-                  添加标签
+                  {t('deployments.form.labels.add')}
                 </Button>
               </Form.Item>
             </>
           )}
         </Form.List>
         
-        <Divider orientation="left">节点选择器</Divider>
+        <Divider orientation="left">{t('deployments.form.nodeSelector.title')}</Divider>
         <Form.List name="nodeSelector">
           {(fields, { add, remove }) => (
             <>
@@ -1295,20 +1297,20 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                     <Form.Item
                       key={field.key}
                       name={[field.name, 'key']}
-                      rules={[{ required: true, message: '请输入选择器键' }]}
+                      rules={[{ required: true, message: t('deployments.form.nodeSelector.pleaseEnterKey') }]}
                       style={{ marginBottom: 8 }}
                     >
-                      <Input placeholder="例如: disk-type" />
+                      <Input placeholder={t('deployments.form.nodeSelector.keyPlaceholder')} />
                     </Form.Item>
                   </Col>
                   <Col span={10}>
                     <Form.Item
                       key={field.key}
                       name={[field.name, 'value']}
-                      rules={[{ required: true, message: '请输入选择器值' }]}
+                      rules={[{ required: true, message: t('deployments.form.nodeSelector.pleaseEnterValue') }]}
                       style={{ marginBottom: 8 }}
                     >
-                      <Input placeholder="例如: ssd" />
+                      <Input placeholder={t('deployments.form.nodeSelector.valuePlaceholder')} />
                     </Form.Item>
                   </Col>
                   <Col span={4}>
@@ -1327,14 +1329,14 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   block
                   icon={<PlusOutlined />}
                 >
-                  添加节点选择器
+                  {t('deployments.form.nodeSelector.add')}
                 </Button>
               </Form.Item>
             </>
           )}
         </Form.List>
         
-        <Divider orientation="left">注解</Divider>
+        <Divider orientation="left">{t('deployments.annotations')}</Divider>
         <Form.List name="annotations">
           {(fields, { add, remove }) => (
             <>
@@ -1344,20 +1346,20 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                     <Form.Item
                       key={field.key}
                       name={[field.name, 'key']}
-                      rules={[{ required: true, message: '请输入注解键' }]}
+                      rules={[{ required: true, message: t('deployments.form.annotations.pleaseEnterKey') }]}
                       style={{ marginBottom: 8 }}
                     >
-                      <Input placeholder="注解键" />
+                      <Input placeholder={t('deployments.form.annotations.keyPlaceholder')} />
                     </Form.Item>
                   </Col>
                   <Col span={10}>
                     <Form.Item
                       key={field.key}
                       name={[field.name, 'value']}
-                      rules={[{ required: true, message: '请输入注解值' }]}
+                      rules={[{ required: true, message: t('deployments.form.annotations.pleaseEnterValue') }]}
                       style={{ marginBottom: 8 }}
                     >
-                      <Input placeholder="注解值" />
+                      <Input placeholder={t('deployments.form.annotations.valuePlaceholder')} />
                     </Form.Item>
                   </Col>
                   <Col span={4}>
@@ -1376,7 +1378,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
                   block
                   icon={<PlusOutlined />}
                 >
-                  添加注解
+                  {t('deployments.form.annotations.add')}
                 </Button>
               </Form.Item>
             </>
@@ -1384,7 +1386,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
         </Form.List>
       </>
     );
-  }, []);
+  }, [t]);
   
   // 渲染高级选项Tab
   const renderAdvancedTab = useCallback(() => {
@@ -1392,20 +1394,20 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
       <>
         <Form.Item
           name="serviceAccountName"
-          label="服务账号名称"
+          label={t('deployments.form.advanced.serviceAccountName')}
         >
-          <Input placeholder="默认使用default服务账号" />
+          <Input placeholder={t('deployments.form.advanced.serviceAccountPlaceholder')} />
         </Form.Item>
         <Form.Item
           name="hostNetwork"
-          label="使用主机网络"
+          label={t('deployments.form.advanced.hostNetwork')}
           valuePropName="checked"
         >
           <Switch />
         </Form.Item>
         <Form.Item
           name="dnsPolicy"
-          label="DNS策略"
+          label={t('deployments.form.advanced.dnsPolicy')}
         >
           <Select placeholder="ClusterFirst">
             <Option value="ClusterFirst">ClusterFirst</Option>
@@ -1416,7 +1418,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
         </Form.Item>
       </>
     );
-  }, []);
+  }, [t]);
   
   // 渲染节点亲和性Tab
   const renderNodeAffinityTab = useCallback(() => {
@@ -1431,32 +1433,32 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
   const tabItems = [
     {
       key: 'basic',
-      label: '基本信息',
+      label: t('deployments.form.tabs.basic'),
       children: renderBasicTab()
     },
     {
       key: 'containers',
-      label: '容器',
+      label: t('deployments.form.tabs.containers'),
       children: renderContainersTab()
     },
     {
       key: 'volumes',
-      label: '存储卷',
+      label: t('deployments.form.tabs.volumes'),
       children: renderVolumesTab()
     },
     {
       key: 'labelsAndAnnotations',
-      label: '标签和注解',
+      label: t('deployments.form.tabs.labelsAndAnnotations'),
       children: renderLabelsAndAnnotationsTab()
     },
     {
       key: 'nodeAffinity',
-      label: '节点亲和性',
+      label: t('deployments.form.tabs.nodeAffinity'),
       children: renderNodeAffinityTab()
     },
     {
       key: 'advanced',
-      label: '高级选项',
+      label: t('deployments.form.tabs.advanced'),
       children: renderAdvancedTab()
     }
   ];

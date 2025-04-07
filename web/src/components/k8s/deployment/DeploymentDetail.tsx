@@ -7,6 +7,7 @@ import PodList from '../pod/PodList';
 import { updateDeployment, UpdateDeploymentRequest } from '@/api/deployment';
 import { getPodsBySelector } from '@/api/pod';
 import DeploymentEvents from './DeploymentEvents';
+import { useTranslation } from 'react-i18next';
 
 const { Title } = Typography;
 
@@ -53,6 +54,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
   clusterName, 
   onUpdate 
 }) => {
+  const { t } = useTranslation();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [pods, setPods] = useState<any[]>([]);
   const [podsLoading, setPodsLoading] = useState(false);
@@ -75,11 +77,11 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
         // 提取Pod中的健康检查探针数据
         extractProbesFromPods(response.data.data.pods);
       } else {
-        message.error(response.data.message || '获取Pod列表失败');
+        message.error(response.data.message || t('pods.fetchFailed'));
       }
     } catch (error) {
-      console.error('获取Pod列表失败:', error);
-      message.error('获取Pod列表失败');
+      console.error(t('pods.fetchFailed') + ':', error);
+      message.error(t('pods.fetchFailed'));
     } finally {
       setPodsLoading(false);
     }
@@ -87,7 +89,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
 
   // 从Pods中提取健康检查探针数据
   const extractProbesFromPods = (pods: any[]) => {
-    console.log('从Pods提取探针数据，Pods数量:', pods.length);
+    console.log(t('deployments.detail.extractingProbes'), pods.length);
     
     if (!pods || pods.length === 0) return;
     
@@ -99,7 +101,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
     
     // 遍历所有Pod
     pods.forEach(pod => {
-      console.log('处理Pod:', pod.metadata?.name);
+      console.log(t('deployments.detail.processingPod'), pod.metadata?.name);
       const containers = pod.spec?.containers || [];
       
       // 遍历Pod中的容器
@@ -107,12 +109,12 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
         const containerName = podContainer.name;
         // 检查这个容器是否属于当前Deployment
         if (containerMap[containerName]) {
-          console.log(`在Pod中找到Deployment的容器: ${containerName}`);
+          console.log(t('deployments.detail.foundContainer', { name: containerName }));
           
           // 更新健康检查探针
           ['livenessProbe', 'readinessProbe', 'startupProbe'].forEach(probeType => {
             if (podContainer[probeType]) {
-              console.log(`容器 ${containerName} 存在 ${probeType}:`, podContainer[probeType]);
+              console.log(t('deployments.detail.foundProbe', { container: containerName, type: probeType }));
               // 将探针数据添加到deployment的容器中
               containerMap[containerName][probeType] = podContainer[probeType];
             }
@@ -121,7 +123,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
       });
     });
     
-    console.log('处理后的Deployment容器数据:', deployment.containers);
+    console.log(t('deployments.detail.processedContainers'), deployment.containers);
   };
 
   useEffect(() => {
@@ -157,8 +159,8 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
       
       return Promise.resolve();
     } catch (error) {
-      console.error('更新Deployment失败:', error);
-      message.error('更新Deployment失败');
+      console.error(t('deployments.editFailed') + ':', error);
+      message.error(t('deployments.editFailed'));
       return Promise.reject(error);
     }
   };
@@ -166,17 +168,17 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
   // 容器列定义
   const containerColumns = [
     {
-      title: '名称',
+      title: t('deployments.detail.containerColumns.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: '镜像',
+      title: t('deployments.detail.containerColumns.image'),
       dataIndex: 'image',
       key: 'image',
     },
     {
-      title: '端口',
+      title: t('deployments.detail.containerColumns.ports'),
       key: 'ports',
       render: (record: Container) => (
         <>
@@ -193,12 +195,12 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
   // 状态条件列定义
   const conditionColumns = [
     {
-      title: '类型',
+      title: t('deployments.detail.conditionColumns.type'),
       dataIndex: 'type',
       key: 'type',
     },
     {
-      title: '状态',
+      title: t('deployments.detail.conditionColumns.status'),
       dataIndex: 'status',
       key: 'status',
       render: (text: string) => (
@@ -206,18 +208,18 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
       ),
     },
     {
-      title: '最后更新',
+      title: t('deployments.detail.conditionColumns.lastUpdateTime'),
       dataIndex: 'lastUpdateTime',
       key: 'lastUpdateTime',
       render: (text: string) => formatDate(text),
     },
     {
-      title: '原因',
+      title: t('deployments.detail.conditionColumns.reason'),
       dataIndex: 'reason',
       key: 'reason',
     },
     {
-      title: '消息',
+      title: t('deployments.detail.conditionColumns.message'),
       dataIndex: 'message',
       key: 'message',
     },
@@ -232,22 +234,22 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
           icon={<EditOutlined />} 
           onClick={showEditModal}
         >
-          编辑
+          {t('common.edit')}
         </Button>
       </div>
       
-      <Card title="基本信息">
+      <Card title={t('deployments.detail.basicInfo.title')}>
         <Descriptions column={2}>
-          <Descriptions.Item label="命名空间">{deployment.namespace}</Descriptions.Item>
-          <Descriptions.Item label="创建时间">{formatDate(deployment.creationTime)}</Descriptions.Item>
-          <Descriptions.Item label="副本数">
+          <Descriptions.Item label={t('deployments.namespace')}>{deployment.namespace}</Descriptions.Item>
+          <Descriptions.Item label={t('deployments.createdAt')}>{formatDate(deployment.creationTime)}</Descriptions.Item>
+          <Descriptions.Item label={t('deployments.detail.basicInfo.replicas')}>
             {deployment.readyReplicas || 0}/{deployment.replicas}
           </Descriptions.Item>
-          <Descriptions.Item label="更新策略">{deployment.strategy}</Descriptions.Item>
+          <Descriptions.Item label={t('deployments.detail.basicInfo.strategy')}>{deployment.strategy}</Descriptions.Item>
         </Descriptions>
       </Card>
 
-      <Card title="标签">
+      <Card title={t('deployments.labels')}>
         <Space wrap>
           {Object.entries(deployment.labels || {}).map(([key, value], index) => (
             <Tag key={`label-${key}-${index}`}>{`${key}: ${value}`}</Tag>
@@ -255,7 +257,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
         </Space>
       </Card>
 
-      <Card title="选择器">
+      <Card title={t('deployments.detail.selector')}>
         <Space wrap>
           {Object.entries(deployment.selector || {}).map(([key, value], index) => (
             <Tag key={`selector-${key}-${index}`}>{`${key}: ${value}`}</Tag>
@@ -263,7 +265,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
         </Space>
       </Card>
 
-      <Card title="容器">
+      <Card title={t('deployments.detail.containers')}>
         <Table
           columns={containerColumns}
           dataSource={deployment.containers}
@@ -273,7 +275,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
         />
       </Card>
 
-      <Card title="状态条件">
+      <Card title={t('deployments.detail.conditions')}>
         <Table
           columns={conditionColumns}
           dataSource={deployment.conditions}
@@ -282,7 +284,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
         />
       </Card>
 
-      <Card title="容器组" loading={podsLoading}>
+      <Card title={t('deployments.detail.pods')} loading={podsLoading}>
         <PodList
           clusterName={clusterName}
           namespace={deployment.namespace}

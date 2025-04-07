@@ -299,7 +299,201 @@
     "actions": "Actions",
     "viewDetails": "View Details",
     "scaleReplicas": "Scale Replicas",
-    "restart": "Restart"
+    "restart": "Restart",
+    "detail": {
+      "extractingProbes": "Extracting probes from Pods, count:",
+      "processingPod": "Processing Pod:",
+      "foundContainer": "Found Deployment container: {name}",
+      "foundProbe": "Container {container} has {type} probe",
+      "processedContainers": "Processed container data:",
+      "basicInfo": {
+        "title": "Basic Information",
+        "replicas": "Replicas",
+        "strategy": "Update Strategy"
+      },
+      "selector": "Selector",
+      "containers": "Containers", 
+      "conditions": "Conditions",
+      "pods": "Pods",
+      "containerColumns": {
+        "name": "Name",
+        "image": "Image",
+        "ports": "Ports"
+      },
+      "conditionColumns": {
+        "type": "Type",
+        "status": "Status", 
+        "lastUpdateTime": "Last Update",
+        "reason": "Reason",
+        "message": "Message"
+      }
+    },
+    "form": {
+      "name": "Deployment Name",
+      "pleaseEnterName": "Please enter deployment name",
+      "namePattern": "Name must consist of lowercase letters, numbers, and '-', and cannot start or end with '-'",
+      "replicas": "Replicas",
+      "pleaseEnterReplicas": "Please enter number of replicas",
+      "strategy": "Deploy Strategy",
+      "pleaseSelectStrategy": "Please select deploy strategy",
+      "strategies": {
+        "rollingUpdate": "RollingUpdate (Rolling update)",
+        "recreate": "Recreate (Recreate all pods)"
+      },
+      "maxSurge": "Max Surge",
+      "maxUnavailable": "Max Unavailable",
+      "minReadySeconds": "Min Ready Seconds",
+      "revisionHistoryLimit": "History Limit",
+      "pauseDeploy": "Pause Deployment",
+      "tabs": {
+        "basic": "Basic",
+        "containers": "Containers",
+        "volumes": "Volumes",
+        "labelsAndAnnotations": "Labels & Annotations",
+        "nodeAffinity": "Node Affinity",
+        "advanced": "Advanced"
+      },
+      "container": {
+        "name": "Container Name",
+        "pleaseEnterName": "Please enter container name",
+        "image": "Image",
+        "pleaseEnterImage": "Please enter container image",
+        "imagePlaceholder": "e.g. nginx:1.19",
+        "resources": "Resource Limits",
+        "cpuRequest": "CPU Request",
+        "pleaseEnterCpuRequest": "Please enter CPU request value",
+        "cpuLimit": "CPU Limit",
+        "pleaseEnterCpuLimit": "Please enter CPU limit value",
+        "enterValue": "Enter value",
+        "cpuUnits": {
+          "millicore": "Millicores (m)",
+          "core": "Cores"
+        },
+        "memoryRequest": "Memory Request",
+        "pleaseEnterMemoryRequest": "Please enter memory request value",
+        "memoryLimit": "Memory Limit",
+        "pleaseEnterMemoryLimit": "Please enter memory limit value",
+        "ports": "Port Mapping",
+        "portName": "Name",
+        "containerPort": "Container Port",
+        "pleaseEnterPort": "Please enter port number",
+        "selectProtocol": "Select protocol",
+        "protocol": "Protocol",
+        "addPort": "Add Port",
+        "environmentVariables": "Environment Variables",
+        "pleaseEnterVarName": "Please enter variable name",
+        "pleaseEnterVarValue": "Please enter variable value",
+        "variableName": "Variable Name",
+        "variableValue": "Variable Value",
+        "addEnvVar": "Add Environment Variable",
+        "healthChecks": "Health Checks",
+        "add": "Add Container",
+        "probes": {
+          "liveness": "Liveness Probe",
+          "readiness": "Readiness Probe",
+          "startup": "Startup Probe",
+          "type": "Check Type",
+          "selectType": "Select check type",
+          "command": "Command",
+          "path": "Path",
+          "pleaseEnterPath": "Please enter path",
+          "port": "Port",
+          "pleaseEnterPort": "Please enter port number",
+          "scheme": "Scheme",
+          "pleaseEnterCommand": "Please enter command",
+          "commandPlaceholder": "Enter command, one per line",
+          "initialDelay": "Initial Delay (sec)",
+          "period": "Period (sec)",
+          "timeout": "Timeout (sec)",
+          "successThreshold": "Success Threshold",
+          "failureThreshold": "Failure Threshold"
+        },
+        "volumeMounts": "Volume Mounts",
+        "volumeMount": {
+          "name": "Volume Name",
+          "pleaseSelectVolume": "Please select volume",
+          "selectVolume": "Select volume",
+          "mountPath": "Mount Path",
+          "pleaseEnterMountPath": "Please enter mount path",
+          "subPath": "Sub Path",
+          "optional": "Optional",
+          "readOnly": "Read Only",
+          "add": "Add Volume Mount"
+        }
+      },
+      "volume": {
+        "name": "Volume Name",
+        "pleaseEnterName": "Please enter volume name",
+        "type": "Volume Type",
+        "pleaseSelectType": "Please select volume type",
+        "key": "Key",
+        "pleaseEnterKey": "Please enter key",
+        "path": "Path",
+        "pleaseEnterPath": "Please enter path",
+        "mode": "Mode",
+        "add": "Add Volume",
+        "configMap": {
+          "name": "ConfigMap Name",
+          "pleaseEnterName": "Please enter ConfigMap name",
+          "addMapping": "Add Key-Value Mapping"
+        },
+        "secret": {
+          "name": "Secret Name",
+          "pleaseEnterName": "Please enter Secret name",
+          "addMapping": "Add Key-Value Mapping"
+        },
+        "pvc": {
+          "name": "PVC Name",
+          "pleaseEnterName": "Please enter PVC name",
+          "readOnly": "Read Only"
+        },
+        "emptyDir": {
+          "medium": "Storage Medium",
+          "default": "Default",
+          "memory": "Memory",
+          "sizeLimit": "Size Limit",
+          "sizeLimitPlaceholder": "e.g. 1Gi"
+        },
+        "hostPath": {
+          "path": "Host Path",
+          "pleaseEnterPath": "Please enter host path",
+          "type": "Type",
+          "default": "Default",
+          "directory": "Directory",
+          "directoryOrCreate": "Directory Or Create",
+          "file": "File",
+          "fileOrCreate": "File Or Create"
+        }
+      },
+      "labels": {
+        "keyPlaceholder": "Label Key",
+        "valuePlaceholder": "Label Value",
+        "pleaseEnterKey": "Please enter label key",
+        "pleaseEnterValue": "Please enter label value",
+        "add": "Add Label"
+      },
+      "nodeSelector": {
+        "title": "Node Selector",
+        "keyPlaceholder": "e.g. disk-type",
+        "valuePlaceholder": "e.g. ssd",
+        "pleaseEnterKey": "Please enter selector key",
+        "pleaseEnterValue": "Please enter selector value",
+        "add": "Add Node Selector"
+      },
+      "annotations": {
+        "keyPlaceholder": "Annotation Key",
+        "valuePlaceholder": "Annotation Value",
+        "pleaseEnterKey": "Please enter annotation key",
+        "pleaseEnterValue": "Please enter annotation value",
+        "add": "Add Annotation"
+      },
+      "advanced": {
+        "serviceAccountName": "Service Account Name",
+        "serviceAccountPlaceholder": "Default service account will be used if not specified",
+        "hostNetwork": "Use Host Network",
+        "dnsPolicy": "DNS Policy"
+      }
+    }
   },
   "services": {
     "title": "Services",

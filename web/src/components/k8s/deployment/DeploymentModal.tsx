@@ -3,6 +3,7 @@ import { Modal, Form, Button, message } from 'antd';
 import { DeploymentFormData, processFormToCreateRequest, processFormToUpdateRequest, processDeploymentToFormData } from './DeploymentTypes';
 import DeploymentForm from './DeploymentForm';
 import { CreateDeploymentRequest, UpdateDeploymentRequest } from '@/api/deployment';
+import { useTranslation } from 'react-i18next';
 
 export interface DeploymentModalProps {
   visible: boolean;
@@ -29,6 +30,7 @@ const DeploymentModal: React.FC<DeploymentModalProps> = ({
   deployment,
   title
 }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [formValues, setFormValues] = useState<DeploymentFormData | null>(null);
@@ -102,11 +104,17 @@ const DeploymentModal: React.FC<DeploymentModalProps> = ({
       
       // 调用API提交
       await onSubmit(submitData);
-      message.success(`Deployment${mode === 'create' ? '创建' : '更新'}成功`);
+      message.success(mode === 'create' 
+        ? t('deployments.createSuccess') 
+        : t('deployments.editSuccess')
+      );
       onClose();
     } catch (error) {
       console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} deployment:`, error);
-      message.error('表单验证失败或操作失败');
+      message.error(mode === 'create' 
+        ? t('deployments.createFailed') 
+        : t('deployments.editFailed')
+      );
     } finally {
       setSubmitting(false);
     }
@@ -114,16 +122,19 @@ const DeploymentModal: React.FC<DeploymentModalProps> = ({
 
   return (
     <Modal
-      title={title || `${mode === 'create' ? '创建' : '编辑'} Deployment${deployment?.name ? `: ${deployment.name}` : ''}`}
+      title={title || (mode === 'create' 
+        ? t('deployments.createDeployment')
+        : t('deployments.editDeployment') + (deployment?.name ? `: ${deployment.name}` : '')
+      )}
       open={visible}
       onCancel={onClose}
       width={800}
       footer={[
         <Button key="cancel" onClick={onClose}>
-          取消
+          {t('common.cancel')}
         </Button>,
         <Button key="submit" type="primary" loading={submitting} onClick={handleSubmit}>
-          {mode === 'create' ? '创建' : '更新'}
+          {mode === 'create' ? t('common.create') : t('common.update')}
         </Button>
       ]}
     >

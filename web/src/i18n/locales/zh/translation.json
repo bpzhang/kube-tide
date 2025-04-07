@@ -31,7 +31,7 @@
     "nodes": "节点",
     "workloads": "工作负载",
     "pods": "Pod",
-    "deployments": "部署",
+    "deployments": "无状态",
     "services": "服务",
     "settings": "设置"
   },
@@ -259,7 +259,7 @@
     "noPodsFound": "此命名空间中未找到 Pod"
   },
   "deployments": {
-    "title": "部署",
+    "title": "无状态",
     "management": "Deployments 管理",
     "name": "部署名称",
     "createDeployment": "创建 Deployment",
@@ -299,7 +299,201 @@
     "actions": "操作",
     "viewDetails": "查看详情",
     "scaleReplicas": "调整副本数",
-    "restart": "重启"
+    "restart": "重启",
+    "detail": {
+      "extractingProbes": "从 Pod 中提取探针，数量：",
+      "processingPod": "正在处理 Pod：",
+      "foundContainer": "找到 Deployment 容器：{name}",
+      "foundProbe": "容器 {container} 有 {type} 探针",
+      "processedContainers": "处理完成的容器数据：",
+      "basicInfo": {
+        "title": "基本信息",
+        "replicas": "副本数",
+        "strategy": "更新策略"
+      },
+      "selector": "选择器",
+      "containers": "容器",
+      "conditions": "状况",
+      "pods": "Pod列表",
+      "containerColumns": {
+        "name": "名称",
+        "image": "镜像",
+        "ports": "端口"
+      },
+      "conditionColumns": {
+        "type": "类型",
+        "status": "状态",
+        "lastUpdateTime": "最后更新时间",
+        "reason": "原因",
+        "message": "消息"
+      }
+    },
+    "form": {
+      "name": "Deployment名称",
+      "pleaseEnterName": "请输入Deployment名称",
+      "namePattern": "名称必须由小写字母、数字、和\"-\"组成，且不能以\"-\"开头或结尾",
+      "replicas": "副本数",
+      "pleaseEnterReplicas": "请输入副本数",
+      "strategy": "部署策略",
+      "pleaseSelectStrategy": "请选择部署策略",
+      "strategies": {
+        "rollingUpdate": "滚动更新(RollingUpdate)",
+        "recreate": "重建(Recreate)"
+      },
+      "maxSurge": "最大超出数",
+      "maxUnavailable": "最大不可用数",
+      "minReadySeconds": "最小就绪时间(秒)",
+      "revisionHistoryLimit": "历史版本保留数",
+      "pauseDeploy": "暂停部署",
+      "tabs": {
+        "basic": "基本信息",
+        "containers": "容器配置",
+        "volumes": "存储卷",
+        "labelsAndAnnotations": "标签和注解",
+        "nodeAffinity": "节点亲和性",
+        "advanced": "高级选项"
+      },
+      "container": {
+        "name": "容器名称",
+        "pleaseEnterName": "请输入容器名称",
+        "image": "镜像",
+        "pleaseEnterImage": "请输入容器镜像",
+        "imagePlaceholder": "例如: nginx:1.19",
+        "resources": "资源限制",
+        "cpuRequest": "CPU请求",
+        "pleaseEnterCpuRequest": "请输入CPU请求值",
+        "cpuLimit": "CPU限制",
+        "pleaseEnterCpuLimit": "请输入CPU限制值",
+        "enterValue": "请输入数值",
+        "cpuUnits": {
+          "millicore": "毫核(m)",
+          "core": "核心"
+        },
+        "memoryRequest": "内存请求",
+        "pleaseEnterMemoryRequest": "请输入内存请求值",
+        "memoryLimit": "内存限制",
+        "pleaseEnterMemoryLimit": "请输入内存限制值",
+        "ports": "端口映射",
+        "portName": "名称",
+        "containerPort": "容器端口",
+        "pleaseEnterPort": "请输入端口号",
+        "selectProtocol": "选择通信协议",
+        "protocol": "协议",
+        "addPort": "添加端口",
+        "environmentVariables": "环境变量",
+        "pleaseEnterVarName": "请输入变量名",
+        "pleaseEnterVarValue": "请输入变量值",
+        "variableName": "变量名",
+        "variableValue": "变量值",
+        "addEnvVar": "添加环境变量",
+        "healthChecks": "健康检查",
+        "add": "添加容器",
+        "probes": {
+          "liveness": "存活探针 (Liveness Probe)",
+          "readiness": "就绪探针 (Readiness Probe)",
+          "startup": "启动探针 (Startup Probe)",
+          "type": "检查类型",
+          "selectType": "选择检查类型",
+          "command": "命令行",
+          "path": "路径",
+          "pleaseEnterPath": "请输入检查路径",
+          "port": "端口",
+          "pleaseEnterPort": "请输入端口号",
+          "scheme": "协议",
+          "pleaseEnterCommand": "请输入检查命令",
+          "commandPlaceholder": "输入要执行的命令，每行一条",
+          "initialDelay": "初始延迟(秒)",
+          "period": "检查周期(秒)",
+          "timeout": "超时时间(秒)",
+          "successThreshold": "成功阈值",
+          "failureThreshold": "失败阈值"
+        },
+        "volumeMounts": "卷挂载",
+        "volumeMount": {
+          "name": "卷名称",
+          "pleaseSelectVolume": "请选择要挂载的卷",
+          "selectVolume": "选择卷",
+          "mountPath": "挂载路径",
+          "pleaseEnterMountPath": "请输入挂载路径",
+          "subPath": "子路径",
+          "optional": "可选",
+          "readOnly": "只读",
+          "add": "添加卷挂载"
+        }
+      },
+      "volume": {
+        "name": "卷名称",
+        "pleaseEnterName": "请输入卷名称",
+        "type": "卷类型",
+        "pleaseSelectType": "请选择卷类型",
+        "key": "键",
+        "pleaseEnterKey": "请输入键名",
+        "path": "路径",
+        "pleaseEnterPath": "请输入路径",
+        "mode": "权限",
+        "add": "添加卷",
+        "configMap": {
+          "name": "ConfigMap名称",
+          "pleaseEnterName": "请输入ConfigMap名称",
+          "addMapping": "添加键值映射"
+        },
+        "secret": {
+          "name": "Secret名称",
+          "pleaseEnterName": "请输入Secret名称",
+          "addMapping": "添加键值映射"
+        },
+        "pvc": {
+          "name": "PVC名称",
+          "pleaseEnterName": "请输入PVC名称",
+          "readOnly": "只读"
+        },
+        "emptyDir": {
+          "medium": "存储介质",
+          "default": "默认",
+          "memory": "内存",
+          "sizeLimit": "大小限制",
+          "sizeLimitPlaceholder": "例如: 1Gi"
+        },
+        "hostPath": {
+          "path": "主机路径",
+          "pleaseEnterPath": "请输入主机路径",
+          "type": "类型",
+          "default": "默认",
+          "directory": "目录",
+          "directoryOrCreate": "目录或创建",
+          "file": "文件",
+          "fileOrCreate": "文件或创建"
+        }
+      },
+      "labels": {
+        "keyPlaceholder": "标签键",
+        "valuePlaceholder": "标签值",
+        "pleaseEnterKey": "请输入标签键",
+        "pleaseEnterValue": "请输入标签值",
+        "add": "添加标签"
+      },
+      "nodeSelector": {
+        "title": "节点选择器",
+        "keyPlaceholder": "例如: disk-type",
+        "valuePlaceholder": "例如: ssd",
+        "pleaseEnterKey": "请输入选择器键",
+        "pleaseEnterValue": "请输入选择器值",
+        "add": "添加节点选择器"
+      },
+      "annotations": {
+        "keyPlaceholder": "注解键",
+        "valuePlaceholder": "注解值",
+        "pleaseEnterKey": "请输入注解键",
+        "pleaseEnterValue": "请输入注解值",
+        "add": "添加注解"
+      },
+      "advanced": {
+        "serviceAccountName": "服务账户名称",
+        "serviceAccountPlaceholder": "不指定则使用默认服务账户",
+        "hostNetwork": "使用主机网络",
+        "dnsPolicy": "DNS策略"
+      }
+    }
   },
   "services": {
     "title": "服务",
