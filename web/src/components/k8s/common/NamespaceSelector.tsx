@@ -25,17 +25,17 @@ interface NamespaceSelectorProps {
 const defaultNamespaces = ['default', 'kube-system', 'kube-public'];
 
 // 全局缓存上次请求的命名空间数据
-let lastFetchInfo: LastFetchInfo | null = null;
+const namespaceCache: Record<string, LastFetchInfo> = {};
 
 // 判断是否需要重新获取命名空间列表
 // 如果与上次请求的集群不同，或者距离上次请求超过5分钟，则重新获取
 const shouldFetchNamespaces = (clusterName: string): boolean => {
-  if (!lastFetchInfo) return true;
-  if (lastFetchInfo.cluster !== clusterName) return true;
+  const cachedInfo = namespaceCache[clusterName];
+  if (!cachedInfo) return true;
   
   // 5分钟内使用缓存
   const now = Date.now();
-  return (now - lastFetchInfo.timestamp) > 300000; // 5分钟 = 300000毫秒
+  return (now - cachedInfo.timestamp) > 300000; // 5分钟 = 300000毫秒
 };
 
 const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
@@ -53,7 +53,11 @@ const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
 
   // 获取命名空间列表
   const fetchNamespaces = async (cluster: string) => {
-    if (!cluster || !shouldFetchNamespaces(cluster)) {
+    if (!cluster) return;
+
+    // 检查缓存
+    if (!shouldFetchNamespaces(cluster) && namespaceCache[cluster]) {
+      setNamespaces(namespaceCache[cluster].namespaces);
       return;
     }
 
@@ -68,11 +72,11 @@ const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
         setNamespaces(namespacesList);
         
         // 更新缓存信息
-        setLastFetchInfo({
+        namespaceCache[cluster] = {
           cluster,
           timestamp: Date.now(),
           namespaces: namespacesList
-        });
+        };
       } else {
         message.error(response.data.message || t('namespaceSelector.fetchFailed'));
         setNamespaces(defaultNamespaces);
@@ -87,17 +91,10 @@ const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
 
   // 当集群变化时获取命名空间列表
   useEffect(() => {
-    // 如果有上次的缓存并且集群名相同，使用缓存数据
-    if (lastFetchInfo && lastFetchInfo.cluster === clusterName && !shouldFetchNamespaces(clusterName)) {
-      setNamespaces(lastFetchInfo.namespaces);
-      return;
-    }
-
-    // 需要获取新数据
     if (clusterName) {
       fetchNamespaces(clusterName);
     }
-  }, [clusterName, t]); // 只在clusterName变化时执行
+  }, [clusterName]); // 只在clusterName变化时执行
 
   // 处理命名空间变化
   const handleNamespaceChange = (value: string) => {
