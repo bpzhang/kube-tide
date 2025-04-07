@@ -494,5 +494,22 @@
       "refresh": "Refresh"
     },
     "fetchMetricsFailed": "Failed to fetch cluster metrics"
+  },
+  "nodepool": {
+    "notFound": "Node pool not found",
+    "nodepoolNameEmpty": "Node pool name cannot be empty",
+    "clusterNameEmpty": "Cluster name cannot be empty",
+    "fetchFailed": "Failed to fetch node pool information",
+    "createSuccess": "Node pool created successfully",
+    "createFailed": "Failed to create node pool",
+    "updateSuccess": "Node pool updated successfully",
+    "updateFailed": "Failed to update node pool",
+    "deleteSuccess": "Node pool deleted successfully",
+    "deleteFailed": "Failed to delete node pool",
+    "list": {
+      "operation": "List node pools",
+      "success": "Successfully retrieved node pool list",
+      "failed": "Failed to retrieve node pool list"
+    }
   }
 }

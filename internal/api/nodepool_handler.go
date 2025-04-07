@@ -6,6 +6,7 @@ import (
 
 	"kube-tide/internal/core/k8s"
 	"kube-tide/internal/utils/logger"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,14 +26,14 @@ func NewNodePoolHandler(service *k8s.NodePoolService) *NodePoolHandler {
 func (h *NodePoolHandler) ListNodePools(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "nodepool.clusterNameEmpty")
 		return
 	}
 
 	pools, err := h.service.ListNodePools(context.Background(), clusterName)
 	if err != nil {
 		logger.Errorf("Failed to list node pools: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		ResponseError(c, http.StatusInternalServerError, "nodepool.list.failed", err.Error())
 		return
 	}
 
@@ -45,30 +46,30 @@ func (h *NodePoolHandler) ListNodePools(c *gin.Context) {
 func (h *NodePoolHandler) CreateNodePool(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "nodepool.clusterNameEmpty")
 		return
 	}
 
 	var pool k8s.NodePool
 	if err := c.ShouldBindJSON(&pool); err != nil {
-		ResponseError(c, http.StatusBadRequest, "request parameters are incorrect: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "api.invalidParameters", err.Error())
 		return
 	}
 
 	if pool.Name == "" {
-		ResponseError(c, http.StatusBadRequest, "node pool name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "nodepool.nodepoolNameEmpty")
 		return
 	}
 
 	err := h.service.CreateNodePool(context.Background(), clusterName, pool)
 	if err != nil {
 		logger.Errorf("Failed to create node pool: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		ResponseError(c, http.StatusInternalServerError, "nodepool.createFailed", err.Error())
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "node pool created successfully",
+		"message": "nodepool.createSuccess",
 	})
 }
 
@@ -77,13 +78,13 @@ func (h *NodePoolHandler) UpdateNodePool(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	poolName := c.Param("pool")
 	if clusterName == "" || poolName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name or node pool name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "nodepool.clusterNameEmpty")
 		return
 	}
 
 	var pool k8s.NodePool
 	if err := c.ShouldBindJSON(&pool); err != nil {
-		ResponseError(c, http.StatusBadRequest, "request parameters are incorrect: "+err.Error())
+		ResponseError(c, http.StatusBadRequest, "api.invalidParameters", err.Error())
 		return
 	}
 
@@ -92,12 +93,12 @@ func (h *NodePoolHandler) UpdateNodePool(c *gin.Context) {
 
 	err := h.service.UpdateNodePool(context.Background(), clusterName, pool)
 	if err != nil {
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		ResponseError(c, http.StatusInternalServerError, "nodepool.updateFailed", err.Error())
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "node pool updated successfully",
+		"message": "nodepool.updateSuccess",
 	})
 }
 
@@ -106,19 +107,19 @@ func (h *NodePoolHandler) DeleteNodePool(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	poolName := c.Param("pool")
 	if clusterName == "" || poolName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name or node pool name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "nodepool.clusterNameEmpty")
 		return
 	}
 
 	err := h.service.DeleteNodePool(context.Background(), clusterName, poolName)
 	if err != nil {
 		logger.Errorf("Failed to delete node pool: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		ResponseError(c, http.StatusInternalServerError, "nodepool.deleteFailed", err.Error())
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"message": "node pool deleted successfully",
+		"message": "nodepool.deleteSuccess",
 	})
 }
 
@@ -127,14 +128,14 @@ func (h *NodePoolHandler) GetNodePool(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	poolName := c.Param("pool")
 	if clusterName == "" || poolName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster name or node pool name cannot be empty")
+		ResponseError(c, http.StatusBadRequest, "nodepool.clusterNameEmpty")
 		return
 	}
 
 	pool, err := h.service.GetNodePool(context.Background(), clusterName, poolName)
 	if err != nil {
 		logger.Errorf("Failed to get node pool: %s", err.Error())
-		ResponseError(c, http.StatusInternalServerError, err.Error())
+		ResponseError(c, http.StatusInternalServerError, "nodepool.fetchFailed", err.Error())
 		return
 	}
 

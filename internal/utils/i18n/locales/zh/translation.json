@@ -86,6 +86,23 @@
       "networkUnavailable": "网络不可用"
     }
   },
+  "nodepool": {
+    "notFound": "节点池未找到",
+    "nodepoolNameEmpty": "节点池名称不能为空",
+    "clusterNameEmpty": "集群名称不能为空",
+    "fetchFailed": "获取节点池信息失败",
+    "createSuccess": "节点池创建成功",
+    "createFailed": "创建节点池失败",
+    "updateSuccess": "节点池更新成功",
+    "updateFailed": "更新节点池失败",
+    "deleteSuccess": "节点池删除成功",
+    "deleteFailed": "删除节点池失败",
+    "list": {
+      "operation": "列出节点池",
+      "success": "成功获取节点池列表",
+      "failed": "获取节点池列表失败"
+    }
+  },
   "pod": {
     "notFound": "Pod未找到",
     "podNameEmpty": "Pod名称不能为空",
