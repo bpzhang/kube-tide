@@ -5,6 +5,7 @@ import {
 } from 'antd';
 import { PlusOutlined, MinusCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { NodeAffinityConfig, NodeSelectorTerm, PreferredNodeAffinity } from './DeploymentTypes';
+import { useTranslation } from 'react-i18next';
 
 const { Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -19,6 +20,8 @@ interface NodeAffinityManagerProps {
  * 用于管理Deployment的节点亲和性规则
  */
 const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChange }) => {
+  const { t } = useTranslation();
+  
   const defaultValue: NodeAffinityConfig = {
     requiredTerms: [],
     preferredTerms: []
@@ -40,16 +43,16 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
         <Col span={6}>
           <Form.Item
             name={[field.name, 'key']}
-            rules={[{ required: true, message: '请输入标签键' }]}
+            rules={[{ required: true, message: t('deployments.form.nodeAffinity.pleaseEnterKey') }]}
             style={{ marginBottom: 8 }}
           >
-            <Input placeholder="例如: kubernetes.io/hostname" />
+            <Input placeholder={t('deployments.form.nodeAffinity.keyPlaceholder')} />
           </Form.Item>
         </Col>
         <Col span={5}>
           <Form.Item
             name={[field.name, 'operator']}
-            rules={[{ required: true, message: '请选择操作符' }]}
+            rules={[{ required: true, message: t('deployments.form.nodeAffinity.pleaseSelectOperator') }]}
             style={{ marginBottom: 8 }}
             initialValue="In"
           >
@@ -77,19 +80,21 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
               if (operator === 'Exists' || operator === 'DoesNotExist') {
                 return (
                   <Text type="secondary" style={{ lineHeight: '32px' }}>
-                    {operator === 'Exists' ? '存在标签键' : '不存在标签键'}
+                    {operator === 'Exists' 
+                      ? t('deployments.form.nodeAffinity.keyExists') 
+                      : t('deployments.form.nodeAffinity.keyDoesNotExist')}
                   </Text>
                 );
               }
               return (
                 <Form.Item
                   name={[field.name, 'values']}
-                  rules={[{ required: true, message: '请输入标签值' }]}
+                  rules={[{ required: true, message: t('deployments.form.nodeAffinity.pleaseEnterValue') }]}
                   style={{ marginBottom: 0 }}
                 >
                   <Select
                     mode="tags"
-                    placeholder="输入标签值并按回车，可输入多个值"
+                    placeholder={t('deployments.form.nodeAffinity.valuesPlaceholder')}
                     tokenSeparators={[',']}
                   />
                 </Form.Item>
@@ -112,7 +117,7 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
   const renderRequiredTerms = () => {
     return (
       <Card
-        title="必须满足的节点亲和性规则"
+        title={t('deployments.form.nodeAffinity.requiredRules')}
         bordered={false}
         extra={
           <Button 
@@ -120,12 +125,12 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
             icon={<InfoCircleOutlined />} 
             onClick={() => {}}
           >
-            帮助
+            {t('common.help')}
           </Button>
         }
       >
         <Alert
-          message="Pod必须调度到满足所有规则组中至少一个规则组的节点上"
+          message={t('deployments.form.nodeAffinity.requiredRulesDescription')}
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
@@ -137,7 +142,7 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
                 <Card
                   key={field.key}
                   type="inner"
-                  title={`规则组 ${field.name + 1}`}
+                  title={`${t('deployments.form.nodeAffinity.ruleGroup')} ${field.name + 1}`}
                   style={{ marginBottom: 16 }}
                   extra={
                     <Button
@@ -145,11 +150,11 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
                       danger
                       onClick={() => remove(field.name)}
                     >
-                      删除规则组
+                      {t('deployments.form.nodeAffinity.deleteRuleGroup')}
                     </Button>
                   }
                 >
-                  <Divider orientation="left">匹配标签</Divider>
+                  <Divider orientation="left">{t('deployments.form.nodeAffinity.matchLabels')}</Divider>
                   <Form.List name={[field.name, 'matchExpressions']}>
                     {(exprFields, { add: addExpr, remove: removeExpr }) => (
                       <>
@@ -165,16 +170,16 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
                             block
                             icon={<PlusOutlined />}
                           >
-                            添加标签匹配规则
+                            {t('deployments.form.nodeAffinity.addLabelRule')}
                           </Button>
                         </Form.Item>
                       </>
                     )}
                   </Form.List>
 
-                  <Divider orientation="left">匹配字段</Divider>
+                  <Divider orientation="left">{t('deployments.form.nodeAffinity.matchFields')}</Divider>
                   <Paragraph type="secondary" style={{ marginBottom: 16 }}>
-                    字段匹配是高级功能，通常用于匹配节点的特殊字段，例如元数据。
+                    {t('deployments.form.nodeAffinity.fieldMatchDescription')}
                   </Paragraph>
                   <Form.List name={[field.name, 'matchFields']}>
                     {(fieldFields, { add: addField, remove: removeField }) => (
@@ -191,7 +196,7 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
                             block
                             icon={<PlusOutlined />}
                           >
-                            添加字段匹配规则
+                            {t('deployments.form.nodeAffinity.addFieldRule')}
                           </Button>
                         </Form.Item>
                       </>
@@ -205,7 +210,7 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
                   onClick={() => add({ matchExpressions: [{ operator: 'In' }] })}
                   icon={<PlusOutlined />}
                 >
-                  添加必选规则组
+                  {t('deployments.form.nodeAffinity.addRequiredRuleGroup')}
                 </Button>
               </Form.Item>
             </>
@@ -219,7 +224,7 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
   const renderPreferredTerms = () => {
     return (
       <Card
-        title="优先满足的节点亲和性规则"
+        title={t('deployments.form.nodeAffinity.preferredRules')}
         bordered={false}
         extra={
           <Button 
@@ -227,12 +232,12 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
             icon={<InfoCircleOutlined />} 
             onClick={() => {}}
           >
-            帮助
+            {t('common.help')}
           </Button>
         }
       >
         <Alert
-          message="Pod会优先调度到满足这些规则的节点上，每条规则有一个权重值，满足规则的节点会获得相应的分数"
+          message={t('deployments.form.nodeAffinity.preferredRulesDescription')}
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
@@ -244,7 +249,7 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
                 <Card
                   key={field.key}
                   type="inner"
-                  title={`优先规则 ${field.name + 1}`}
+                  title={`${t('deployments.form.nodeAffinity.preferredRule')} ${field.name + 1}`}
                   style={{ marginBottom: 16 }}
                   extra={
                     <Button
@@ -252,20 +257,20 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
                       danger
                       onClick={() => remove(field.name)}
                     >
-                      删除规则
+                      {t('deployments.form.nodeAffinity.deleteRule')}
                     </Button>
                   }
                 >
                   <Form.Item
                     name={[field.name, 'weight']}
-                    label="权重"
-                    rules={[{ required: true, message: '请输入权重值' }]}
+                    label={t('deployments.form.nodeAffinity.weight')}
+                    rules={[{ required: true, message: t('deployments.form.nodeAffinity.pleaseEnterWeight') }]}
                     initialValue={10}
                   >
                     <InputNumber min={1} max={100} style={{ width: 120 }} />
                   </Form.Item>
                   
-                  <Divider orientation="left">匹配标签</Divider>
+                  <Divider orientation="left">{t('deployments.form.nodeAffinity.matchLabels')}</Divider>
                   <Form.List name={[field.name, 'preference', 'matchExpressions']}>
                     {(exprFields, { add: addExpr, remove: removeExpr }) => (
                       <>
@@ -281,16 +286,16 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
                             block
                             icon={<PlusOutlined />}
                           >
-                            添加标签匹配规则
+                            {t('deployments.form.nodeAffinity.addLabelRule')}
                           </Button>
                         </Form.Item>
                       </>
                     )}
                   </Form.List>
 
-                  <Divider orientation="left">匹配字段</Divider>
+                  <Divider orientation="left">{t('deployments.form.nodeAffinity.matchFields')}</Divider>
                   <Paragraph type="secondary" style={{ marginBottom: 16 }}>
-                    字段匹配是高级功能，通常用于匹配节点的特殊字段，例如元数据。
+                    {t('deployments.form.nodeAffinity.fieldMatchDescription')}
                   </Paragraph>
                   <Form.List name={[field.name, 'preference', 'matchFields']}>
                     {(fieldFields, { add: addField, remove: removeField }) => (
@@ -307,7 +312,7 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
                             block
                             icon={<PlusOutlined />}
                           >
-                            添加字段匹配规则
+                            {t('deployments.form.nodeAffinity.addFieldRule')}
                           </Button>
                         </Form.Item>
                       </>
@@ -321,7 +326,7 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
                   onClick={() => add({ weight: 10, preference: { matchExpressions: [{ operator: 'In' }] } })}
                   icon={<PlusOutlined />}
                 >
-                  添加优先规则
+                  {t('deployments.form.nodeAffinity.addPreferredRule')}
                 </Button>
               </Form.Item>
             </>
@@ -334,14 +339,16 @@ const NodeAffinityManager: React.FC<NodeAffinityManagerProps> = ({ value, onChan
   return (
     <div>
       <Alert
-        message="节点亲和性用于控制Pod可以调度到哪些节点上"
+        message={t('deployments.form.nodeAffinity.description')}
         description={
           <div>
             <Paragraph>
-              <strong>必须满足的规则</strong>：Pod只能调度到满足所有规则组中至少一个规则组的节点上
+              <strong>{t('deployments.form.nodeAffinity.requiredRulesTitle')}</strong>：
+              {t('deployments.form.nodeAffinity.requiredRulesDetail')}
             </Paragraph>
             <Paragraph>
-              <strong>优先满足的规则</strong>：调度器会尝试调度Pod到满足这些规则的节点上，但如果无法满足，仍会调度到其他节点
+              <strong>{t('deployments.form.nodeAffinity.preferredRulesTitle')}</strong>：
+              {t('deployments.form.nodeAffinity.preferredRulesDetail')}
             </Paragraph>
           </div>
         }

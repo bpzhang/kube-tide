@@ -23,7 +23,8 @@
     "noData": "暂无数据",
     "selectCluster": "请选择集群",
     "percentage": "百分比",
-    "operations": "操作"
+    "operations": "操作",
+    "help": "帮助"
   },
   "navigation": {
     "dashboard": "仪表盘",
@@ -492,6 +493,38 @@
         "serviceAccountPlaceholder": "不指定则使用默认服务账户",
         "hostNetwork": "使用主机网络",
         "dnsPolicy": "DNS策略"
+      },
+      "nodeAffinity": {
+        "title": "节点亲和性",
+        "description": "节点亲和性用于控制Pod可以调度到哪些节点上",
+        "requiredRulesTitle": "必须满足的规则",
+        "requiredRulesDetail": "Pod只能调度到满足所有规则组中至少一个规则组的节点上",
+        "preferredRulesTitle": "优先满足的规则",
+        "preferredRulesDetail": "调度器会尝试调度Pod到满足这些规则的节点上，但如果无法满足，仍会调度到其他节点",
+        "requiredRules": "必须满足的节点亲和性规则",
+        "preferredRules": "优先满足的节点亲和性规则",
+        "requiredRulesDescription": "Pod必须调度到满足所有规则组中至少一个规则组的节点上",
+        "preferredRulesDescription": "Pod会优先调度到满足这些规则的节点上，每条规则有一个权重值，满足规则的节点会获得相应的分数",
+        "ruleGroup": "规则组",
+        "preferredRule": "优先规则",
+        "deleteRuleGroup": "删除规则组",
+        "deleteRule": "删除规则",
+        "matchLabels": "匹配标签",
+        "matchFields": "匹配字段",
+        "fieldMatchDescription": "字段匹配是高级功能，通常用于匹配节点的特殊字段，例如元数据。",
+        "addLabelRule": "添加标签匹配规则",
+        "addFieldRule": "添加字段匹配规则",
+        "addRequiredRuleGroup": "添加必选规则组",
+        "addPreferredRule": "添加优先规则",
+        "weight": "权重",
+        "pleaseEnterWeight": "请输入权重值",
+        "pleaseEnterKey": "请输入键名",
+        "pleaseEnterValue": "请输入值",
+        "pleaseSelectOperator": "请选择操作符",
+        "keyPlaceholder": "例如: kubernetes.io/hostname",
+        "valuesPlaceholder": "输入标签值并按回车，可输入多个值",
+        "keyExists": "存在标签键",
+        "keyDoesNotExist": "不存在标签键"
       }
     }
   },
