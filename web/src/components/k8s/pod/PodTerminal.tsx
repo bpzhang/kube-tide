@@ -3,9 +3,10 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { AttachAddon } from '@xterm/addon-attach';
 import '@xterm/xterm/css/xterm.css';
-import { Card, Alert, Spin, Button, Space, message } from 'antd';
-import { ReloadOutlined, BugOutlined } from '@ant-design/icons';
+import { Card, Alert, Spin, Button, Space, message, Modal } from 'antd';
+import { ReloadOutlined, BugOutlined, CloseCircleOutlined, ExpandOutlined, CompressOutlined } from '@ant-design/icons';
 import { checkPodExists } from '@/api/pod'; // 导入检查Pod存在性的API
+import { useTranslation } from 'react-i18next';
 
 interface PodTerminalProps {
   clusterName: string;
@@ -26,6 +27,7 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
   podName,
   containerName,
 }) => {
+  const { t } = useTranslation();
   const terminalRef = useRef<HTMLDivElement>(null);
   const terminalInstance = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -81,21 +83,21 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
           if (!containerName && containerNames.length > 0) {
             effectiveContainerName = containerNames[0];
             console.log('未指定容器名，使用第一个容器:', effectiveContainerName);
-            message.info(`未指定容器名，将使用 '${effectiveContainerName}'`);
+            message.info(t('podTerminal.usingFirstContainer', { container: effectiveContainerName }));
           } else if (containerName && !containerNames.includes(containerName)) {
             // 尝试查找包含指定名称的容器
             const matchingContainer = containerNames.find((name: string) => name.includes(containerName));
             if (matchingContainer) {
               effectiveContainerName = matchingContainer;
               console.log('找到匹配的容器名:', effectiveContainerName);
-              message.info(`找到匹配的容器名: '${effectiveContainerName}' (原请求: '${containerName}')`);
+              message.info(t('podTerminal.usingMatchingContainer', { found: effectiveContainerName, requested: containerName }));
             } else {
               console.log('指定的容器不存在，使用第一个容器');
               if (containerNames.length > 0) {
                 effectiveContainerName = containerNames[0];
-                message.warning(`指定的容器 '${containerName}' 不存在，将使用 '${effectiveContainerName}'`);
+                message.warning(t('podTerminal.usingFirstContainer', { requested: containerName, using: effectiveContainerName }));
               } else {
-                message.error(`Pod 中没有可用的容器`);
+                message.error(t('podTerminal.noContainersInPod'));
               }
             }
           }
@@ -126,19 +128,19 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
             console.log('Pod或容器未就绪，无法建立连接');
             setPodStatus('notfound');
             setConnectionStatus('error');
-            setErrorMessage(`容器未就绪: ${podName}/${effectiveContainerName || containerName} - ${podDetails?.status?.phase || 'Unknown'}`);
+            setErrorMessage(t('podTerminal.containerNotReady', { container: effectiveContainerName || containerName, phase: podDetails?.status?.phase || 'Unknown' }));
           }
         } else {
           console.log('Pod不存在');
           setPodStatus('notfound');
           setConnectionStatus('error');
-          setErrorMessage(`Pod不存在: ${namespace}/${podName}`);
+          setErrorMessage(t('podTerminal.podNotExist', { namespace, pod: podName }));
         }
       } catch (error: any) {
         console.error('检查Pod状态错误:', error);
         setPodStatus('error');
         setConnectionStatus('error');
-        setErrorMessage(`无法检查Pod状态: ${error.message || '未知错误'}`);
+        setErrorMessage(t('podTerminal.checkPodError', { error: error.message || '未知错误' }));
       }
     };
     
@@ -179,25 +181,32 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
     setErrorMessage('');
     
     // 延迟一点时间再重连，避免连续快速重连
-    message.info('正在重新检查Pod状态...');
+    message.info(t('podTerminal.recheckingPodStatus'));
   };
   
   // 显示调试信息
   const showDebugInfo = () => {
-    message.info(
-      <div>
-        <p>调试信息:</p>
-        <p>集群: {clusterName}</p>
-        <p>命名空间: {namespace}</p>
-        <p>Pod名称: {podName}</p>
-        <p>容器: {containerName}</p>
-        <p>连接状态: {connectionStatus}</p>
-        <p>Pod状态: {podStatus}</p>
-        <p>可用容器: {containerList.join(', ')}</p>
-        <p>WebSocket URL: {window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//{window.location.host}/api/clusters/{clusterName}/namespaces/{namespace}/pods/{podName}/exec?container={containerName}</p>
-      </div>,
-      10
-    );
+    Modal.info({
+      title: t('podTerminal.debugInfo'),
+      width: 600,
+      content: (
+        <div style={{ overflowY: 'auto', maxHeight: '400px' }}>
+          <p><strong>{t('podTerminal.cluster')}:</strong> {clusterName}</p>
+          <p><strong>{t('podTerminal.namespace')}:</strong> {namespace}</p>
+          <p><strong>{t('podTerminal.pod')}:</strong> {podName}</p>
+          <p><strong>{t('podTerminal.container')}:</strong> {containerName}</p>
+          <p><strong>{t('podTerminal.connectionStatus')}:</strong> {connectionStatus}</p>
+          <p><strong>{t('podTerminal.availableContainers')}:</strong></p>
+          <ul>
+            {containerList.map((container, index) => (
+              <li key={index}>{container}</li>
+            ))}
+          </ul>
+          <p><strong>{t('podTerminal.connectionDetails')}:</strong></p>
+          <pre>{JSON.stringify(wsRef.current, null, 2)}</pre>
+        </div>
+      ),
+    });
   };
   
   // 清理资源
@@ -271,8 +280,8 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
       
       // 打开终端
       term.open(terminalRef.current);
-      term.writeln('正在连接到容器终端...');
-      term.writeln(`连接到集群 ${clusterName}，命名空间 ${namespace}，Pod ${podName}，容器 ${actualContainerName}`);
+      term.writeln(t('podTerminal.connectingToContainer'));
+      term.writeln(t('podTerminal.connectionDetails', { cluster: clusterName, namespace, pod: podName, container: actualContainerName }));
       
       // 等待DOM更新后再调整大小
       setTimeout(() => {
@@ -316,8 +325,8 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
         const timeout = setTimeout(() => {
           if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
             console.error('WebSocket连接超时');
-            term.writeln('\r\n连接超时，请检查网络或服务器状态。');
-            setErrorMessage('连接超时 - 无法建立WebSocket连接');
+            term.writeln(t('podTerminal.connectionTimeout'));
+            setErrorMessage(t('podTerminal.connectionTimeoutError'));
             setConnectionStatus('error');
             ws.close();
             clearInterval(pingInterval);
@@ -336,7 +345,7 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
             setConnectionTimeout(null);
           }
           
-          term.writeln('\r\n连接成功! 您现在可以与容器终端交互。');
+          term.writeln(t('podTerminal.connectionSuccess'));
           setConnectionStatus('connected');
           
           try {
@@ -347,8 +356,8 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
             }
           } catch (error) {
             console.error('附加WebSocket错误:', error);
-            term.writeln('\r\n附加WebSocket失败，请重试。');
-            setErrorMessage('无法附加WebSocket到终端');
+            term.writeln(t('podTerminal.attachWebSocketError'));
+            setErrorMessage(t('podTerminal.attachWebSocketError'));
             clearInterval(pingInterval);
           }
         });
@@ -364,7 +373,7 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
             timestamp: new Date().toISOString()
           });
           
-          term.writeln('\r\n连接已关闭。');
+          term.writeln(t('podTerminal.connectionClosed'));
           setConnectionStatus('closed');
           
           if (connectionTimeout) {
@@ -385,16 +394,11 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
             timestamp: new Date().toISOString()
           });
           
-          term.writeln('\r\n连接错误，请检查网络连接或服务器状态。');
-          term.writeln('\r\n可能原因：');
-          term.writeln('1. Pod或容器不存在或已终止');
-          term.writeln('2. API服务器无法访问');
-          term.writeln('3. 网络连接问题');
-          term.writeln('4. WebSocket服务未启动或配置错误');
-          term.writeln('\r\n请尝试刷新页面或点击重连按钮。');
+          term.writeln(t('podTerminal.connectionError'));
+          term.writeln(t('podTerminal.possibleReasons'));
           
           setConnectionStatus('error');
-          setErrorMessage('WebSocket连接失败 - 请检查Pod和容器状态');
+          setErrorMessage(t('podTerminal.webSocketConnectionFailed'));
           
           if (connectionTimeout) {
             clearTimeout(connectionTimeout);
@@ -413,13 +417,13 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
         
       } catch (error: any) {
         console.error('创建WebSocket实例错误:', error.message || '未知错误');
-        term.writeln(`\r\n创建WebSocket失败: ${error.message || '未知错误'}`);
-        setErrorMessage(`无法创建WebSocket连接: ${error.message || '未知错误'}`);
+        term.writeln(t('podTerminal.createWebSocketError', { error: error.message || '未知错误' }));
+        setErrorMessage(t('podTerminal.createWebSocketError', { error: error.message || '未知错误' }));
         setConnectionStatus('error');
       }
     } catch (error: any) {
       console.error('终端设置错误:', error);
-      setErrorMessage(`终端初始化失败 - ${error.message || '未知错误'}`);
+      setErrorMessage(t('podTerminal.terminalInitError', { error: error.message || '未知错误' }));
       setConnectionStatus('error');
       
       // 清除超时
@@ -442,19 +446,28 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
         setContainerList(containerNames);
         
         const containerListStr = containerNames.join('\n- ');
-        message.info(
-          <div>
-            <p>Pod '{podName}' 中的容器列表:</p>
-            <p>- {containerListStr}</p>
-            <p>当前选择: {containerName || '未指定'}</p>
-          </div>,
-          10
-        );
+        Modal.info({
+          title: t('podTerminal.availableContainers'),
+          content: (
+            <div>
+              <p>{t('podTerminal.containerListHint')}</p>
+              {containerNames.length > 0 ? (
+                <ul>
+                  {containerNames.map((container, index) => (
+                    <li key={index}>{container}{container === containerName ? ` (${t('podTerminal.current')})` : ''}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>{t('podTerminal.noContainersFound')}</p>
+              )}
+            </div>
+          ),
+        });
       } else {
-        message.error(`Pod '${podName}' 不存在`);
+        message.error(t('podTerminal.podNotExist', { pod: podName }));
       }
     } catch (error: any) {
-      message.error(`检查容器列表失败: ${error.message || '未知错误'}`);
+      message.error(t('podTerminal.checkContainersError', { error: error.message || '未知错误' }));
     }
   };
 
@@ -463,12 +476,12 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
     <Card 
       title={
         <Space>
-          容器终端
-          {connectionStatus === 'connected' && <span style={{ color: '#52c41a' }}>(已连接)</span>}
-          {connectionStatus === 'connecting' && <span style={{ color: '#faad14' }}>(连接中...)</span>}
-          {connectionStatus === 'checking' && <span style={{ color: '#1890ff' }}>(检查Pod状态...)</span>}
+          {t('podTerminal.title', { podName, containerName })}
+          {connectionStatus === 'connected' && <span style={{ color: '#52c41a' }}>({t('podTerminal.connected')})</span>}
+          {connectionStatus === 'connecting' && <span style={{ color: '#faad14' }}>({t('podTerminal.connecting')})</span>}
+          {connectionStatus === 'checking' && <span style={{ color: '#1890ff' }}>({t('podTerminal.checking')})</span>}
           {(connectionStatus === 'error' || connectionStatus === 'closed') && 
-            <span style={{ color: '#ff4d4f' }}>({connectionStatus === 'error' ? '连接错误' : '已断开'})</span>}
+            <span style={{ color: '#ff4d4f' }}>({connectionStatus === 'error' ? t('podTerminal.error') : t('podTerminal.disconnected')})</span>}
         </Space>
       }
       extra={
@@ -478,22 +491,22 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
             onClick={checkContainers}
             size="small"
           >
-            容器列表
+            {t('podTerminal.containerList')}
           </Button>
           <Button 
             icon={<BugOutlined />}
             onClick={showDebugInfo}
             size="small"
           >
-            调试信息
+            {t('podTerminal.debug')}
           </Button>
           <Button 
             type="primary" 
-            icon={<ReloadOutlined />} 
+            icon={<ReloadOutlined />}
             onClick={reconnect}
-            disabled={connectionStatus === 'connecting' || connectionStatus === 'checking'}
+            size="small"
           >
-            重新连接
+            {t('podTerminal.reconnect')}
           </Button>
         </Space>
       }
@@ -508,14 +521,14 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
     >
       {connectionStatus === 'error' && (
         <Alert
-          message="连接错误"
-          description={errorMessage || "无法连接到容器终端，请检查Pod和容器状态后重试。"}
+          message={t('podTerminal.connectionError')}
+          description={errorMessage || t('podTerminal.connectionErrorDescription')}
           type="error"
           showIcon
           style={{ margin: '16px' }}
           action={
             <Button size="small" danger onClick={reconnect}>
-              重试
+              {t('podTerminal.retry')}
             </Button>
           }
         />
@@ -531,8 +544,8 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
         }}>
           <Spin 
             tip={connectionStatus === 'checking' ? 
-              "正在检查Pod状态..." : 
-              "正在连接到容器终端..."} 
+              t('podTerminal.checkingPodStatus') : 
+              t('podTerminal.connectingToContainer')} 
             size="large" 
           />
         </div>

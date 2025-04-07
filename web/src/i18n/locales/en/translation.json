@@ -24,7 +24,9 @@
     "selectCluster": "Please select a cluster",
     "percentage": "Percentage",
     "operations": "Operations",
-    "help": "Help"
+    "help": "Help",
+    "yes": "Yes",
+    "no": "No"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -257,7 +259,74 @@
     "viewDetails": "View Details",
     "viewLogs": "View Logs",
     "openTerminal": "Open Terminal",
-    "noPodsFound": "No pods found in this namespace"
+    "noPodsFound": "No pods found in this namespace",
+    "labels": "Labels",
+    "annotations": "Annotations"
+  },
+  "podDetail": {
+    "title": "Pod Details",
+    "podNotFound": "Pod information not found",
+    "backToPods": "Back to Pods List",
+    "fetchFailed": "Failed to fetch pod details",
+    "container": "Container",
+    "tabs": {
+      "info": "Basic Information",
+      "logs": "Logs",
+      "terminal": "Terminal"
+    },
+    "basicInfo": {
+      "title": "Basic Information",
+      "name": "Name",
+      "namespace": "Namespace",
+      "status": "Status",
+      "node": "Node",
+      "ip": "Pod IP",
+      "hostIP": "Host IP",
+      "creationTime": "Creation Time",
+      "qos": "QoS Class",
+      "phase": "Phase"
+    },
+    "containers": {
+      "title": "Containers",
+      "name": "Name",
+      "image": "Image",
+      "ports": "Ports",
+      "status": "Status",
+      "ready": "Ready",
+      "restarts": "Restarts",
+      "resources": "Resources"
+    },
+    "volumeMounts": {
+      "title": "Volume Mounts",
+      "name": "Name",
+      "mountPath": "Mount Path",
+      "readOnly": "Read Only"
+    },
+    "volumes": {
+      "title": "Volumes",
+      "name": "Name",
+      "type": "Type"
+    },
+    "logs": {
+      "title": "Container Logs",
+      "noData": "No log data available",
+      "fetchFailed": "Failed to fetch logs",
+      "fetchFailedRetry": "Failed to fetch logs, please try again",
+      "connectingStream": "Connecting to real-time log stream, please wait...",
+      "startStreamFailed": "Failed to start log stream",
+      "startStreamFailedNetwork": "Failed to start log stream, please check network connection or refresh the page",
+      "startStreamFailedDetail": "Failed to start log stream, please check network connection or refresh the page\nError details: {error}",
+      "selectContainer": "Select Container",
+      "lineCount": "Lines",
+      "streamTooltip": "Real-time Logs",
+      "streamEnabled": "Real-time",
+      "streamDisabled": "Static",
+      "autoScrollTooltip": "Auto Scroll",
+      "scrollEnabled": "Scroll",
+      "scrollDisabled": "No Scroll",
+      "download": "Download",
+      "scrollToBottom": "Scroll to Bottom"
+    }
   },
   "deployments": {
     "title": "Deployments",
@@ -537,7 +606,13 @@
     "clusterIp": "Cluster IP",
     "externalIp": "External IP",
     "ports": "Ports",
-    "selectors": "Selectors"
+    "selectors": "Selectors",
+    "management": "Services Management",
+    "namespace": "Namespace:",
+    "nodePort": "NodePort",
+    "cluster": "Cluster:",
+    "noSelectors": "No selectors",
+    "deleteConfirm": "Are you sure you want to delete this service?"
   },
   "settings": {
     "title": "Settings",
@@ -737,6 +812,113 @@
       "operation": "List node pools",
       "success": "Successfully retrieved node pool list",
       "failed": "Failed to retrieve node pool list"
+    }
+  },
+  "namespaceSelector": {
+    "fetchFailed": "Failed to fetch namespace list",
+    "fetchError": "Error fetching namespaces, using defaults"
+  },
+  "labelsManage": {
+    "title": "Manage Labels and Selectors",
+    "labels": "Labels",
+    "selector": "Selectors",
+    "pleaseEnterKey": "Please enter key",
+    "pleaseEnterValue": "Please enter value",
+    "keyPlaceholder": "Key",
+    "valuePlaceholder": "Value",
+    "addLabel": "Add Label",
+    "addSelector": "Add Selector",
+    "validationFailed": "Validation failed"
+  },
+  "taintsManage": {
+    "title": "Manage Taints - {nodeName}",
+    "currentTaints": "Current Taints",
+    "noTaints": "No taints",
+    "addTaint": "Add Taint",
+    "keyLabel": "Key",
+    "valueLabel": "Value (optional)",
+    "effectLabel": "Effect",
+    "pleaseEnterKey": "Please enter taint key",
+    "keyPlaceholder": "e.g. node-role.kubernetes.io/master",
+    "valuePlaceholder": "Optional, e.g. true",
+    "pleaseSelectEffect": "Please select taint effect",
+    "clickToRemove": "Click to remove this taint",
+    "addButton": "Add Taint",
+    "fetchFailed": "Failed to fetch taints",
+    "addSuccess": "Taint added successfully",
+    "addFailed": "Failed to add taint",
+    "deleteSuccess": "Taint removed successfully",
+    "deleteFailed": "Failed to remove taint",
+    "effects": {
+      "noSchedule": "NoSchedule (prevents new pods from scheduling)",
+      "preferNoSchedule": "PreferNoSchedule (tries to avoid scheduling new pods)",
+      "noExecute": "NoExecute (prevents new pods and evicts existing ones)"
+    }
+  },
+  "podTerminal": {
+    "title": "Terminal: {podName} - {containerName}",
+    "connected": "Connected",
+    "connecting": "Connecting...",
+    "checking": "Checking Pod Status...",
+    "error": "Connection Error",
+    "disconnected": "Disconnected",
+    "containerList": "Container List",
+    "debug": "Debug Info",
+    "reconnect": "Reconnect",
+    "exitFullscreen": "Exit Fullscreen",
+    "fullscreen": "Fullscreen",
+    "connectingToContainer": "Connecting to container...",
+    "connectionDetails": "Connecting to {cluster} / {namespace} / {pod} / {container}",
+    "connectionSuccess": "Connection established successfully",
+    "connectionClosed": "Connection closed",
+    "connectionError": "Connection error",
+    "possibleReasons": "Possible reasons: container is not ready or pod is not running",
+    "checkPodError": "Error checking pod status: {error}",
+    "connectionFailed": "Failed to connect to container",
+    "containerNotReady": "Container '{container}' is not ready (phase: {phase})",
+    "podNotExist": "Pod '{pod}' does not exist in namespace '{namespace}'",
+    "checkPodFailed": "Failed to check pod status",
+    "foundMatchingContainer": "Found matching container name",
+    "usingMatchingContainer": "Using matching container '{found}' (requested: '{requested}')",
+    "containerNotExist": "Specified container does not exist",
+    "usingFirstContainer": "Using first container '{using}' (requested: '{requested}')",
+    "noContainersInPod": "No containers available in pod",
+    "connectionTimeoutError": "Connection timed out. The container might not be ready.",
+    "connectionTimeout": "Connection timeout",
+    "attachWebSocketError": "Error attaching WebSocket",
+    "createWebSocketError": "Error creating WebSocket: {error}",
+    "terminalInitError": "Terminal initialization error: {error}",
+    "recheckingPodStatus": "Rechecking pod status...",
+    "cluster": "Cluster",
+    "namespace": "Namespace",
+    "pod": "Pod",
+    "container": "Container",
+    "connectionStatus": "Connection Status",
+    "availableContainers": "Available Containers",
+    "connectionDetails": "Connection Details",
+    "containerListHint": "Available containers in this pod:",
+    "current": "current",
+    "noContainersFound": "No containers found in this pod",
+    "checkingPodStatus": "Checking pod status...",
+    "connectingToContainer": "Connecting to container...",
+    "retry": "Retry",
+    "checkContainersError": "Error checking containers: {error}",
+    "usingFirstContainer": "Using first container '{container}'"
+  },
+  "events": {
+    "title": "{resourceKind} Events",
+    "fetchFailed": "Failed to fetch {resourceKind} events",
+    "fetchErrorLog": "Failed to fetch {resourceKind} events",
+    "fetchErrorRetry": "Failed to fetch {resourceKind} events, please try again",
+    "noEvents": "No events found for this {resourceKind}",
+    "columns": {
+      "type": "Type",
+      "reason": "Reason",
+      "message": "Message",
+      "source": "Source",
+      "firstTimestamp": "First Seen",
+      "lastTimestamp": "Last Seen",
+      "count": "Count"
     }
   }
 }

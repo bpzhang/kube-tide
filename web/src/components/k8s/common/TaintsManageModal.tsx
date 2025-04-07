@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Button, Tag, Tooltip, Space, message } from 'antd';
+import { Modal, Form, Input, Button, Select, Space, Tag, Tooltip, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { NodeTaint, getNodeTaints, addNodeTaint, removeNodeTaint } from '@/api/node';
+import { useTranslation } from 'react-i18next';
 
 interface TaintsManageModalProps {
   open: boolean;
@@ -17,6 +18,7 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
   nodeName,
   clusterName,
 }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [taints, setTaints] = useState<NodeTaint[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,7 +31,7 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
         setTaints(response.data.data.taints || []);
       }
     } catch (err) {
-      message.error('获取节点污点失败');
+      message.error(t('taintsManage.fetchFailed'));
     }
   };
 
@@ -48,11 +50,11 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
         value: values.value,
         effect: values.effect,
       });
-      message.success('添加污点成功');
+      message.success(t('taintsManage.addSuccess'));
       form.resetFields();
       fetchTaints();
     } catch (err) {
-      message.error('添加污点失败');
+      message.error(t('taintsManage.addFailed'));
     } finally {
       setLoading(false);
     }
@@ -63,10 +65,10 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
     setLoading(true);
     try {
       await removeNodeTaint(clusterName, nodeName, key, effect);
-      message.success('删除污点成功');
+      message.success(t('taintsManage.deleteSuccess'));
       fetchTaints();
     } catch (err) {
-      message.error('删除污点失败');
+      message.error(t('taintsManage.deleteFailed'));
     } finally {
       setLoading(false);
     }
@@ -88,14 +90,14 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
 
   return (
     <Modal
-      title={`节点污点管理 - ${nodeName}`}
+      title={t('taintsManage.title', { nodeName })}
       open={open}
       onCancel={onClose}
       footer={null}
       width={600}
     >
       <div style={{ marginBottom: 16 }}>
-        <h4>当前污点：</h4>
+        <h4>{t('taintsManage.currentTaints')}</h4>
         <div style={{ marginBottom: 16 }}>
           {taints.length > 0 ? (
             <Space size={[0, 8]} wrap>
@@ -115,13 +117,13 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
               ))}
             </Space>
           ) : (
-            <div style={{ color: '#999' }}>暂无污点</div>
+            <div style={{ color: '#999' }}>{t('taintsManage.noTaints')}</div>
           )}
         </div>
       </div>
 
       <div style={{ marginTop: 24 }}>
-        <h4>添加污点：</h4>
+        <h4>{t('taintsManage.addTaint')}</h4>
         <Form
           form={form}
           onFinish={handleAddTaint}
@@ -129,28 +131,28 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
         >
           <Form.Item
             name="key"
-            label="键(Key)"
-            rules={[{ required: true, message: '请输入污点键' }]}
+            label={t('taintsManage.keyLabel')}
+            rules={[{ required: true, message: t('taintsManage.pleaseEnterKey') }]}
           >
-            <Input placeholder="例如: node-role.kubernetes.io/master" />
+            <Input placeholder={t('taintsManage.keyPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="value"
-            label="值(Value)"
+            label={t('taintsManage.valueLabel')}
           >
-            <Input placeholder="可选，例如: true" />
+            <Input placeholder={t('taintsManage.valuePlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="effect"
-            label="效果(Effect)"
-            rules={[{ required: true, message: '请选择污点效果' }]}
+            label={t('taintsManage.effectLabel')}
+            rules={[{ required: true, message: t('taintsManage.pleaseSelectEffect') }]}
           >
             <Select>
-              <Select.Option value="NoSchedule">NoSchedule (不允许新Pod调度到节点)</Select.Option>
-              <Select.Option value="PreferNoSchedule">PreferNoSchedule (尽量避免新Pod调度到节点)</Select.Option>
-              <Select.Option value="NoExecute">NoExecute (不允许新Pod调度且驱逐现有Pod)</Select.Option>
+              <Select.Option value="NoSchedule">{t('taintsManage.effects.noSchedule')}</Select.Option>
+              <Select.Option value="PreferNoSchedule">{t('taintsManage.effects.preferNoSchedule')}</Select.Option>
+              <Select.Option value="NoExecute">{t('taintsManage.effects.noExecute')}</Select.Option>
             </Select>
           </Form.Item>
 
@@ -161,7 +163,7 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
               icon={<PlusOutlined />}
               loading={loading}
             >
-              添加污点
+              {t('taintsManage.addButton')}
             </Button>
           </Form.Item>
         </Form>

@@ -11,10 +11,12 @@ import { getClusterList } from '../../api/cluster';
 import CreateServiceModal from '../../components/k8s/service/CreateServiceModal';
 import { EditServiceModal } from '../../components/k8s/service/EditServiceModal';
 import NamespaceSelector from '../../components/k8s/common/NamespaceSelector';
+import { useTranslation } from 'react-i18next';
 
 const { Option } = Select;
 
 const Services: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedCluster, setSelectedCluster] = useState<string>('');
   const [clusters, setClusters] = useState<string[]>([]);
   const [namespace, setNamespace] = useState<string>('default');
@@ -34,7 +36,7 @@ const Services: React.FC = () => {
         }
       }
     } catch (err) {
-      message.error('获取集群列表失败');
+      message.error(t('clusters.fetchFailed'));
     }
   };
 
@@ -47,11 +49,11 @@ const Services: React.FC = () => {
       if (response.data.code === 0) {
         setServices(response.data.data.services || []);
       } else {
-        message.error(response.data.message || '获取服务列表失败');
+        message.error(response.data.message || t('services.fetchFailed'));
         setServices([]);
       }
     } catch (err) {
-      message.error('获取服务列表失败');
+      message.error(t('services.fetchFailed'));
       setServices([]);
     } finally {
       setLoading(false);
@@ -71,21 +73,21 @@ const Services: React.FC = () => {
   const handleDeleteService = async (name: string) => {
     try {
       await deleteService(selectedCluster, namespace, name);
-      message.success('服务删除成功');
+      message.success(t('services.deleteSuccess'));
       fetchServices();
     } catch (err) {
-      message.error('服务删除失败');
+      message.error(t('services.deleteFailed'));
     }
   };
 
   const handleCreateService = async (values: any) => {
     try {
       await createService(selectedCluster, namespace, values);
-      message.success('服务创建成功');
+      message.success(t('services.createSuccess'));
       setCreateModalVisible(false);
       fetchServices();
     } catch (err) {
-      message.error('服务创建失败');
+      message.error(t('services.createFailed'));
     }
   };
 
@@ -94,11 +96,11 @@ const Services: React.FC = () => {
     
     try {
       await updateService(selectedCluster, namespace, currentService.metadata.name, values);
-      message.success('服务更新成功');
+      message.success(t('services.updateSuccess'));
       setEditModalVisible(false);
       fetchServices();
     } catch (err) {
-      message.error('服务更新失败');
+      message.error(t('services.updateFailed'));
     }
   };
 
@@ -109,17 +111,17 @@ const Services: React.FC = () => {
 
   const columns = [
     {
-      title: '名称',
+      title: t('services.name'),
       dataIndex: ['metadata', 'name'],
       key: 'name',
     },
     {
-      title: '命名空间',
+      title: t('services.namespace'),
       dataIndex: ['metadata', 'namespace'],
       key: 'namespace',
     },
     {
-      title: '类型',
+      title: t('services.type'),
       dataIndex: ['spec', 'type'],
       key: 'type',
       render: (type: string) => {
@@ -132,18 +134,18 @@ const Services: React.FC = () => {
       },
     },
     {
-      title: '集群IP',
+      title: t('services.clusterIp'),
       dataIndex: ['spec', 'clusterIP'],
       key: 'clusterIP',
     },
     {
-      title: '外部IP',
+      title: t('services.externalIp'),
       dataIndex: ['spec'],
       key: 'externalIP',
       render: (spec: any) => (spec.externalIPs || []).join(', ') || '-',
     },
     {
-      title: '端口',
+      title: t('services.ports'),
       dataIndex: 'spec',
       key: 'ports',
       render: (spec: any) => (
@@ -152,19 +154,19 @@ const Services: React.FC = () => {
             <div key={index}>
               {port.port} → {port.targetPort}
               {port.protocol && ` (${port.protocol})`}
-              {port.nodePort && ` NodePort: ${port.nodePort}`}
+              {port.nodePort && ` ${t('services.nodePort')}: ${port.nodePort}`}
             </div>
           ))}
         </div>
       ),
     },
     {
-      title: '选择器',
+      title: t('services.selectors'),
       dataIndex: 'spec',
       key: 'selector',
       render: (spec: any) => {
         if (!spec.selector || Object.keys(spec.selector).length === 0) {
-          return <Tag color="red">无选择器</Tag>;
+          return <Tag color="red">{t('services.noSelectors')}</Tag>;
         }
         return (
           <div>
@@ -176,7 +178,7 @@ const Services: React.FC = () => {
       },
     },
     {
-      title: '操作',
+      title: t('common.operations'),
       key: 'action',
       render: (text: string, record: any) => (
         <Space size="middle">
@@ -185,16 +187,16 @@ const Services: React.FC = () => {
             icon={<EditOutlined />} 
             onClick={() => showEditModal(record)}
           >
-            编辑
+            {t('common.edit')}
           </Button>
           <Popconfirm
-            title="确定要删除此服务吗?"
+            title={t('services.deleteConfirm')}
             onConfirm={() => handleDeleteService(record.metadata.name)}
-            okText="是"
-            cancelText="否"
+            okText={t('common.yes')}
+            cancelText={t('common.no')}
           >
             <Button type="link" danger icon={<DeleteOutlined />}>
-              删除
+              {t('common.delete')}
             </Button>
           </Popconfirm>
         </Space>
@@ -204,10 +206,10 @@ const Services: React.FC = () => {
 
   return (
     <Card
-      title="Service管理"
+      title={t('services.management')}
       extra={
         <Space>
-          <span>集群:</span>
+          <span>{t('services.cluster')}</span>
           <Select
             value={selectedCluster}
             onChange={setSelectedCluster}
@@ -218,7 +220,7 @@ const Services: React.FC = () => {
               <Option key={cluster} value={cluster}>{cluster}</Option>
             ))}
           </Select>
-          <span>命名空间:</span>
+          <span>{t('services.namespace')}</span>
           <NamespaceSelector
             clusterName={selectedCluster}
             value={namespace}
@@ -229,7 +231,7 @@ const Services: React.FC = () => {
             icon={<PlusOutlined />}
             onClick={() => setCreateModalVisible(true)}
           >
-            创建服务
+            {t('services.createService')}
           </Button>
         </Space>
       }

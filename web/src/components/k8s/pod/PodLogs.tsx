@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, Select, Button, Space, Input, Switch, Tooltip, message } from 'antd';
 import { DownloadOutlined, SyncOutlined, VerticalAlignBottomOutlined } from '@ant-design/icons';
 import { getPodLogs, streamPodLogs } from '@/api/pod';
+import { useTranslation } from 'react-i18next';
 
 interface PodLogsProps {
   clusterName: string;
@@ -11,6 +12,7 @@ interface PodLogsProps {
 }
 
 const PodLogs: React.FC<PodLogsProps> = ({ clusterName, namespace, podName, containers }) => {
+  const { t } = useTranslation();
   const [selectedContainer, setSelectedContainer] = useState<string>('');
   const [logs, setLogs] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -80,13 +82,13 @@ const PodLogs: React.FC<PodLogsProps> = ({ clusterName, namespace, podName, cont
         if (response.data.data.logs) {
           setLogs(response.data.data.logs);
         } else {
-          setLogs('没有日志数据');
+          setLogs(t('podDetail.logs.noData'));
         }
       }
     } catch (error) {
-      console.error('获取日志失败:', error);
-      message.error('获取日志失败');
-      setLogs('获取日志失败，请重试');
+      console.error(t('podDetail.logs.fetchFailed'), error);
+      message.error(t('podDetail.logs.fetchFailed'));
+      setLogs(t('podDetail.logs.fetchFailedRetry'));
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +104,7 @@ const PodLogs: React.FC<PodLogsProps> = ({ clusterName, namespace, podName, cont
     
     try {
       // 开始显示连接中的提示
-      setLogs("正在连接实时日志流，请稍候...\n");
+      setLogs(t('podDetail.logs.connectingStream'));
       
       // 开始一个新的日志流
       const logStream = streamPodLogs(
@@ -134,9 +136,11 @@ const PodLogs: React.FC<PodLogsProps> = ({ clusterName, namespace, podName, cont
       // 保存引用以便后续清理
       eventSourceRef.current = logStream;
     } catch (error) {
-      console.error('开启日志流失败:', error);
-      message.error('开启日志流失败，请检查网络连接或刷新页面重试');
-      setLogs('开启日志流失败，请检查网络连接或刷新页面重试\n错误详情：' + (error instanceof Error ? error.message : String(error)));
+      console.error(t('podDetail.logs.startStreamFailed'), error);
+      message.error(t('podDetail.logs.startStreamFailedNetwork'));
+      setLogs(t('podDetail.logs.startStreamFailedDetail', { 
+        error: error instanceof Error ? error.message : String(error)
+      }));
       setIsLoading(false);
       setIsStreaming(false); // 自动关闭开关
     }
@@ -175,38 +179,38 @@ const PodLogs: React.FC<PodLogsProps> = ({ clusterName, namespace, podName, cont
 
   return (
     <Card 
-      title="容器日志" 
+      title={t('podDetail.logs.title')}
       extra={
         <Space>
           <Select
             value={selectedContainer}
             onChange={setSelectedContainer}
             style={{ width: 200 }}
-            placeholder="选择容器"
+            placeholder={t('podDetail.logs.selectContainer')}
             options={containers.map(container => ({ label: container, value: container }))}
           />
           <Input
             type="number"
-            addonBefore="行数"
+            addonBefore={t('podDetail.logs.lineCount')}
             value={tailLines}
             onChange={e => setTailLines(parseInt(e.target.value) || 100)}
             style={{ width: 120 }}
           />
-          <Tooltip title="实时日志">
+          <Tooltip title={t('podDetail.logs.streamTooltip')}>
             <Switch
               checked={isStreaming}
               onChange={handleStreamToggle}
               loading={isLoading}
-              checkedChildren="实时"
-              unCheckedChildren="静态"
+              checkedChildren={t('podDetail.logs.streamEnabled')}
+              unCheckedChildren={t('podDetail.logs.streamDisabled')}
             />
           </Tooltip>
-          <Tooltip title="自动滚动">
+          <Tooltip title={t('podDetail.logs.autoScrollTooltip')}>
             <Switch
               checked={autoScroll}
               onChange={setAutoScroll}
-              checkedChildren="滚动"
-              unCheckedChildren="不滚动"
+              checkedChildren={t('podDetail.logs.scrollEnabled')}
+              unCheckedChildren={t('podDetail.logs.scrollDisabled')}
             />
           </Tooltip>
           <Button 
@@ -215,14 +219,14 @@ const PodLogs: React.FC<PodLogsProps> = ({ clusterName, namespace, podName, cont
             disabled={isStreaming}
             loading={isLoading}
           >
-            刷新
+            {t('common.refresh')}
           </Button>
           <Button 
             icon={<DownloadOutlined />} 
             onClick={downloadLogs}
             disabled={!logs}
           >
-            下载
+            {t('podDetail.logs.download')}
           </Button>
           {!autoScroll && (
             <Button 
@@ -233,7 +237,7 @@ const PodLogs: React.FC<PodLogsProps> = ({ clusterName, namespace, podName, cont
                 }
               }}
             >
-              滚动到底部
+              {t('podDetail.logs.scrollToBottom')}
             </Button>
           )}
         </Space>
@@ -253,7 +257,7 @@ const PodLogs: React.FC<PodLogsProps> = ({ clusterName, namespace, podName, cont
           wordBreak: 'break-all'
         }}
       >
-        {logs || (isLoading ? '加载中...' : '没有日志数据')}
+        {logs || (isLoading ? t('common.loading') : t('podDetail.logs.noData'))}
       </div>
     </Card>
   );

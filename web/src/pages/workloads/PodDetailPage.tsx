@@ -6,10 +6,12 @@ import { getPodDetails } from '../../api/pod';
 import PodDetail from '../../components/k8s/pod/PodDetail';
 import PodTerminal from '../../components/k8s/pod/PodTerminal';
 import PodLogs from '../../components/k8s/pod/PodLogs';
+import { useTranslation } from 'react-i18next';
 
 const { Option } = Select;
 
 const PodDetailPage: React.FC = () => {
+  const { t } = useTranslation();
   const { clusterName, namespace, podName } = useParams<{
     clusterName: string;
     namespace: string;
@@ -23,7 +25,7 @@ const PodDetailPage: React.FC = () => {
   useEffect(() => {
     const fetchPodDetails = async () => {
       if (!clusterName || !namespace || !podName) {
-        message.error('参数不完整');
+        message.error(t('common.error'));
         navigate('/workloads/pods');
         return;
       }
@@ -37,18 +39,18 @@ const PodDetailPage: React.FC = () => {
             setSelectedContainer(response.data.data.pod.spec.containers[0].name);
           }
         } else {
-          message.error(response.data.message || '获取Pod详情失败');
+          message.error(response.data.message || t('podDetail.fetchFailed'));
         }
       } catch (error) {
-        console.error('获取Pod详情失败:', error);
-        message.error('获取Pod详情失败');
+        console.error(t('podDetail.fetchFailed'), error);
+        message.error(t('podDetail.fetchFailed'));
       } finally {
         setLoading(false);
       }
     };
 
     fetchPodDetails();
-  }, [clusterName, namespace, podName, navigate]);
+  }, [clusterName, namespace, podName, navigate, t]);
 
   if (loading) {
     return (
@@ -61,9 +63,9 @@ const PodDetailPage: React.FC = () => {
   if (!pod) {
     return (
       <div style={{ padding: '24px', textAlign: 'center' }}>
-        <h2>未找到Pod信息</h2>
+        <h2>{t('podDetail.podNotFound')}</h2>
         <Button type="primary" onClick={() => navigate('/workloads/pods')}>
-          返回Pod列表
+          {t('podDetail.backToPods')}
         </Button>
       </div>
     );
@@ -75,12 +77,12 @@ const PodDetailPage: React.FC = () => {
   const tabItems = [
     {
       key: 'info',
-      label: '基本信息',
+      label: t('podDetail.tabs.info'),
       children: <PodDetail pod={pod} clusterName={clusterName!} />
     },
     {
       key: 'logs',
-      label: '日志',
+      label: t('podDetail.tabs.logs'),
       children: (
         <PodLogs
           clusterName={clusterName!}
@@ -92,11 +94,11 @@ const PodDetailPage: React.FC = () => {
     },
     {
       key: 'terminal',
-      label: '终端',
+      label: t('podDetail.tabs.terminal'),
       children: (
         <Card>
           <div style={{ marginBottom: 16 }}>
-            <span style={{ marginRight: 8 }}>容器:</span>
+            <span style={{ marginRight: 8 }}>{t('podDetail.container')}:</span>
             <Select
               value={selectedContainer}
               onChange={setSelectedContainer}
@@ -129,7 +131,7 @@ const PodDetailPage: React.FC = () => {
         onClick={() => navigate('/workloads/pods')}
         style={{ marginBottom: '16px' }}
       >
-        返回Pod列表
+        {t('podDetail.backToPods')}
       </Button>
 
       <Tabs defaultActiveKey="info" items={tabItems} />

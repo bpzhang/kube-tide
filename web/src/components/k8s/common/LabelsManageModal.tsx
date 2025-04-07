@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, Input, Button, Space } from 'antd';
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
-
+import { useTranslation } from 'react-i18next';
 
 interface LabelsManageModalProps {
   open: boolean;
@@ -18,6 +18,7 @@ const LabelsManageModal: React.FC<LabelsManageModalProps> = ({
   initialLabels = {},
   initialSelector = {},
 }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -56,13 +57,13 @@ const LabelsManageModal: React.FC<LabelsManageModalProps> = ({
       onSave(labels, selector);
       onClose();
     } catch (error) {
-      console.error('验证失败:', error);
+      console.error(t('labelsManage.validationFailed'), error);
     }
   };
 
   return (
     <Modal
-      title="管理标签和选择器"
+      title={t('labelsManage.title')}
       open={open}
       onCancel={onClose}
       onOk={handleSubmit}
@@ -72,7 +73,7 @@ const LabelsManageModal: React.FC<LabelsManageModalProps> = ({
         form={form}
         layout="vertical"
       >
-        <Form.Item label="标签" required>
+        <Form.Item label={t('labelsManage.labels')} required>
           <Form.List name="labelsArray">
             {(fields, { add, remove }) => (
               <>
@@ -81,16 +82,16 @@ const LabelsManageModal: React.FC<LabelsManageModalProps> = ({
                     <Form.Item
                       {...restField}
                       name={[name, 'key']}
-                      rules={[{ required: true, message: '请输入键' }]}
+                      rules={[{ required: true, message: t('labelsManage.pleaseEnterKey') }]}
                     >
-                      <Input placeholder="键" />
+                      <Input placeholder={t('labelsManage.keyPlaceholder')} />
                     </Form.Item>
                     <Form.Item
                       {...restField}
                       name={[name, 'value']}
-                      rules={[{ required: true, message: '请输入值' }]}
+                      rules={[{ required: true, message: t('labelsManage.pleaseEnterValue') }]}
                     >
-                      <Input placeholder="值" />
+                      <Input placeholder={t('labelsManage.valuePlaceholder')} />
                     </Form.Item>
                     <Button 
                       type="text" 
@@ -106,14 +107,14 @@ const LabelsManageModal: React.FC<LabelsManageModalProps> = ({
                   block 
                   icon={<PlusOutlined />}
                 >
-                  添加标签
+                  {t('labelsManage.addLabel')}
                 </Button>
               </>
             )}
           </Form.List>
         </Form.Item>
         
-        <Form.Item label="选择器" required>
+        <Form.Item label={t('labelsManage.selector')} required>
           <Form.List name="selectorArray">
             {(fields, { add, remove }) => (
               <>
@@ -122,16 +123,16 @@ const LabelsManageModal: React.FC<LabelsManageModalProps> = ({
                     <Form.Item
                       {...restField}
                       name={[name, 'key']}
-                      rules={[{ required: true, message: '请输入键' }]}
+                      rules={[{ required: true, message: t('labelsManage.pleaseEnterKey') }]}
                     >
-                      <Input placeholder="键" />
+                      <Input placeholder={t('labelsManage.keyPlaceholder')} />
                     </Form.Item>
                     <Form.Item
                       {...restField}
                       name={[name, 'value']}
-                      rules={[{ required: true, message: '请输入值' }]}
+                      rules={[{ required: true, message: t('labelsManage.pleaseEnterValue') }]}
                     >
-                      <Input placeholder="值" />
+                      <Input placeholder={t('labelsManage.valuePlaceholder')} />
                     </Form.Item>
                     <Button 
                       type="text" 
@@ -147,7 +148,7 @@ const LabelsManageModal: React.FC<LabelsManageModalProps> = ({
                   block 
                   icon={<PlusOutlined />}
                 >
-                  添加选择器
+                  {t('labelsManage.addSelector')}
                 </Button>
               </>
             )}

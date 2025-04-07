@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Table, Tag, Button, Spin, Empty, message } from 'antd';
 import { SyncOutlined } from '@ant-design/icons';
 import { formatDate } from '@/utils/format';
+import { useTranslation } from 'react-i18next';
 
 
 interface K8sEventsProps {
@@ -22,6 +23,7 @@ const K8sEvents: React.FC<K8sEventsProps> = ({
   resourceKind,
   fetchEvents 
 }) => {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -33,11 +35,11 @@ const K8sEvents: React.FC<K8sEventsProps> = ({
       if (response.data.code === 0) {
         setEvents(response.data.data.events || []);
       } else {
-        message.error(response.data.message || `获取${resourceKind}事件失败`);
+        message.error(response.data.message || t('events.fetchFailed', { resourceKind }));
       }
     } catch (error) {
-      console.error(`获取${resourceKind}事件失败:`, error);
-      message.error(`获取${resourceKind}事件失败，请稍后重试`);
+      console.error(t('events.fetchErrorLog', { resourceKind }), error);
+      message.error(t('events.fetchErrorRetry', { resourceKind }));
     } finally {
       setLoading(false);
     }
@@ -62,48 +64,48 @@ const K8sEvents: React.FC<K8sEventsProps> = ({
   // 事件表格列定义
   const columns = [
     {
-      title: '类型',
+      title: t('events.columns.type'),
       dataIndex: 'type',
       key: 'type',
       render: (type: string) => <Tag color={getEventTypeColor(type)}>{type}</Tag>,
       width: 100,
     },
     {
-      title: '原因',
+      title: t('events.columns.reason'),
       dataIndex: 'reason',
       key: 'reason',
       width: 150,
     },
     {
-      title: '消息',
+      title: t('events.columns.message'),
       dataIndex: 'message',
       key: 'message',
       width: '40%',
       ellipsis: true,
     },
     {
-      title: '组件',
+      title: t('events.columns.source'),
       dataIndex: 'source',
       key: 'source',
       render: (source: any) => source?.component || '-',
       width: 120,
     },
     {
-      title: '首次发生',
+      title: t('events.columns.firstTimestamp'),
       dataIndex: 'firstTimestamp',
       key: 'firstTimestamp',
       render: (time: string) => formatDate(time),
       width: 170,
     },
     {
-      title: '最后发生',
+      title: t('events.columns.lastTimestamp'),
       dataIndex: 'lastTimestamp',
       key: 'lastTimestamp',
       render: (time: string) => formatDate(time),
       width: 170,
     },
     {
-      title: '次数',
+      title: t('events.columns.count'),
       dataIndex: 'count',
       key: 'count',
       width: 80,
@@ -112,14 +114,14 @@ const K8sEvents: React.FC<K8sEventsProps> = ({
 
   return (
     <Card 
-      title={`${resourceKind}事件`}
+      title={t('events.title', { resourceKind })}
       extra={
         <Button
           icon={<SyncOutlined />}
           onClick={loadEvents}
           loading={loading}
         >
-          刷新
+          {t('common.refresh')}
         </Button>
       }
     >
@@ -137,7 +139,7 @@ const K8sEvents: React.FC<K8sEventsProps> = ({
           scroll={{ x: 'max-content' }}
         />
       ) : (
-        <Empty description={`没有找到相关${resourceKind}事件`} />
+        <Empty description={t('events.noEvents', { resourceKind })} />
       )}
     </Card>
   );

@@ -1,58 +1,55 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Select, message } from 'antd';
 import { getNamespaceList } from '@/api/namespace';
+import { useTranslation } from 'react-i18next';
 
 const { Option } = Select;
 
-// 本地缓存，但使用React Hook方式实现而非全局变量
-interface NamespaceSelectorProps {
-  clusterName: string;  // 必须提供集群名称
-  value?: string;      // 当前选中的命名空间
-  onChange?: (namespace: string) => void; // 命名空间变更回调
-  width?: number | string; // 选择器宽度
-  disabled?: boolean;  // 是否禁用
-  placeholder?: string; // 占位文本
-  style?: React.CSSProperties; // 自定义样式
-  defaultNamespaces?: string[]; // 默认的命名空间列表，当API调用失败时使用
+interface LastFetchInfo {
+  cluster: string;
+  timestamp: number;
+  namespaces: string[];
 }
 
-/**
- * 命名空间选择器组件
- * 用于在各个页面中统一选择命名空间
- */
+interface NamespaceSelectorProps {
+  clusterName: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  width?: number | string;
+  placeholder?: string;
+  disabled?: boolean;
+  style?: React.CSSProperties;
+}
+
+// 默认命名空间列表
+const defaultNamespaces = ['default', 'kube-system', 'kube-public'];
+
+// 全局缓存上次请求的命名空间数据
+let lastFetchInfo: LastFetchInfo | null = null;
+
+// 判断是否需要重新获取命名空间列表
+// 如果与上次请求的集群不同，或者距离上次请求超过5分钟，则重新获取
+const shouldFetchNamespaces = (clusterName: string): boolean => {
+  if (!lastFetchInfo) return true;
+  if (lastFetchInfo.cluster !== clusterName) return true;
+  
+  // 5分钟内使用缓存
+  const now = Date.now();
+  return (now - lastFetchInfo.timestamp) > 300000; // 5分钟 = 300000毫秒
+};
+
 const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
   clusterName,
   value = 'default',
   onChange,
   width = 200,
+  placeholder,
   disabled = false,
-  placeholder = '选择命名空间',
-  style,
-  defaultNamespaces = ['default', 'kube-system']
+  style = {},
 }) => {
+  const { t } = useTranslation();
   const [namespaces, setNamespaces] = useState<string[]>(defaultNamespaces);
   const [loading, setLoading] = useState<boolean>(false);
-  
-  // 使用useRef或useState来保存上次请求信息，避免使用模块级变量
-  const [lastFetchInfo, setLastFetchInfo] = useState<{
-    cluster: string; 
-    timestamp: number;
-    namespaces: string[]
-  } | null>(null);
-
-  // 判断是否需要获取新数据的函数
-  const shouldFetchNamespaces = (currentCluster: string): boolean => {
-    if (!currentCluster) return false;
-    
-    // 没有缓存或集群变化时需要重新获取
-    if (!lastFetchInfo || lastFetchInfo.cluster !== currentCluster) {
-      return true;
-    }
-    
-    // 缓存时间超过30分钟需要重新获取（30 * 60 * 1000 = 1800000毫秒）
-    const cacheAge = Date.now() - lastFetchInfo.timestamp;
-    return cacheAge > 1800000;
-  };
 
   // 获取命名空间列表
   const fetchNamespaces = async (cluster: string) => {
@@ -77,11 +74,11 @@ const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
           namespaces: namespacesList
         });
       } else {
-        message.error(response.data.message || '获取命名空间列表失败');
+        message.error(response.data.message || t('namespaceSelector.fetchFailed'));
         setNamespaces(defaultNamespaces);
       }
     } catch (err) {
-      console.warn('获取命名空间列表失败，使用默认值', err);
+      console.warn(t('namespaceSelector.fetchError'), err);
       setNamespaces(defaultNamespaces);
     } finally {
       setLoading(false);
@@ -100,7 +97,7 @@ const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
     if (clusterName) {
       fetchNamespaces(clusterName);
     }
-  }, [clusterName]); // 只在clusterName变化时执行
+  }, [clusterName, t]); // 只在clusterName变化时执行
 
   // 处理命名空间变化
   const handleNamespaceChange = (value: string) => {
@@ -124,8 +121,8 @@ const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
           .includes(input.toLowerCase())
       }
     >
-      {namespaces.map(ns => (
-        <Option key={ns} value={ns}>{ns}</Option>
+      {namespaces.map(namespace => (
+        <Option key={namespace} value={namespace}>{namespace}</Option>
       ))}
     </Select>
   );

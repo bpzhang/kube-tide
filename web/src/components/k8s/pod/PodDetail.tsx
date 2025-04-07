@@ -3,6 +3,7 @@ import { Card, Descriptions, Tag, Space, Table } from 'antd';
 import { formatDate } from '@/utils/format';
 import K8sEvents from '../common/K8sEvents';
 import { getPodEvents } from '@/api/pod';
+import { useTranslation } from 'react-i18next';
 
 interface ContainerStatus {
   name: string;
@@ -59,6 +60,8 @@ interface PodDetailProps {
 }
 
 const PodDetail: React.FC<PodDetailProps> = ({ pod, clusterName }) => {
+  const { t } = useTranslation();
+  
   const getStatusColor = (status: string) => {
     const colors: { [key: string]: string } = {
       Running: 'green',
@@ -84,12 +87,12 @@ const PodDetail: React.FC<PodDetailProps> = ({ pod, clusterName }) => {
 
   const containerColumns = [
     {
-      title: '名称',
+      title: t('podDetail.containers.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: '状态',
+      title: t('podDetail.containers.status'),
       key: 'state',
       render: (container: ContainerStatus) => {
         const state = getContainerStateText(container.state);
@@ -97,20 +100,20 @@ const PodDetail: React.FC<PodDetailProps> = ({ pod, clusterName }) => {
       },
     },
     {
-      title: '就绪',
+      title: t('podDetail.containers.ready'),
       dataIndex: 'ready',
       key: 'ready',
       render: (ready: boolean) => (
-        <Tag color={ready ? 'green' : 'red'}>{ready ? '是' : '否'}</Tag>
+        <Tag color={ready ? 'green' : 'red'}>{ready ? t('common.yes') : t('common.no')}</Tag>
       ),
     },
     {
-      title: '重启次数',
+      title: t('podDetail.containers.restarts'),
       dataIndex: 'restartCount',
       key: 'restartCount',
     },
     {
-      title: '镜像',
+      title: t('podDetail.containers.image'),
       dataIndex: 'image',
       key: 'image',
     },
@@ -118,23 +121,23 @@ const PodDetail: React.FC<PodDetailProps> = ({ pod, clusterName }) => {
 
   return (
     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-      <Card title="基本信息">
+      <Card title={t('podDetail.basicInfo.title')}>
         <Descriptions column={2}>
-          <Descriptions.Item label="名称">{pod.metadata.name}</Descriptions.Item>
-          <Descriptions.Item label="命名空间">{pod.metadata.namespace}</Descriptions.Item>
-          <Descriptions.Item label="创建时间">
+          <Descriptions.Item label={t('podDetail.basicInfo.name')}>{pod.metadata.name}</Descriptions.Item>
+          <Descriptions.Item label={t('podDetail.basicInfo.namespace')}>{pod.metadata.namespace}</Descriptions.Item>
+          <Descriptions.Item label={t('podDetail.basicInfo.creationTime')}>
             {formatDate(pod.metadata.creationTimestamp)}
           </Descriptions.Item>
-          <Descriptions.Item label="状态">
+          <Descriptions.Item label={t('podDetail.basicInfo.status')}>
             <Tag color={getStatusColor(pod.status.phase)}>{pod.status.phase}</Tag>
           </Descriptions.Item>
-          <Descriptions.Item label="Pod IP">{pod.status.podIP || '-'}</Descriptions.Item>
-          <Descriptions.Item label="主机 IP">{pod.status.hostIP || '-'}</Descriptions.Item>
-          <Descriptions.Item label="节点">{pod.spec.nodeName || '-'}</Descriptions.Item>
+          <Descriptions.Item label={t('podDetail.basicInfo.ip')}>{pod.status.podIP || '-'}</Descriptions.Item>
+          <Descriptions.Item label={t('podDetail.basicInfo.hostIP')}>{pod.status.hostIP || '-'}</Descriptions.Item>
+          <Descriptions.Item label={t('podDetail.basicInfo.node')}>{pod.spec.nodeName || '-'}</Descriptions.Item>
         </Descriptions>
       </Card>
 
-      <Card title="标签">
+      <Card title={t('pods.labels')}>
         <Space wrap>
           {Object.entries(pod.metadata.labels || {}).map(([key, value]) => (
             <Tag key={key}>{`${key}: ${value}`}</Tag>
@@ -142,7 +145,7 @@ const PodDetail: React.FC<PodDetailProps> = ({ pod, clusterName }) => {
         </Space>
       </Card>
 
-      <Card title="注解">
+      <Card title={t('pods.annotations')}>
         <Space direction="vertical" style={{ width: '100%' }}>
           {Object.entries(pod.metadata.annotations || {}).map(([key, value]) => (
             <div key={key}>
@@ -152,7 +155,7 @@ const PodDetail: React.FC<PodDetailProps> = ({ pod, clusterName }) => {
         </Space>
       </Card>
 
-      <Card title="容器状态">
+      <Card title={t('podDetail.containers.title')}>
         <Table
           columns={containerColumns}
           dataSource={pod.status.containerStatuses}
@@ -161,7 +164,7 @@ const PodDetail: React.FC<PodDetailProps> = ({ pod, clusterName }) => {
         />
       </Card>
 
-      <Card title="存储卷挂载">
+      <Card title={t('podDetail.volumeMounts.title')}>
         {pod.spec.containers.map(container => (
           <div key={container.name} style={{ marginBottom: 16 }}>
             <h4>{container.name}</h4>
@@ -171,22 +174,22 @@ const PodDetail: React.FC<PodDetailProps> = ({ pod, clusterName }) => {
               dataSource={container.volumeMounts || []}
               columns={[
                 {
-                  title: '名称',
+                  title: t('podDetail.volumeMounts.name'),
                   dataIndex: 'name',
                   key: 'name',
                 },
                 {
-                  title: '挂载路径',
+                  title: t('podDetail.volumeMounts.mountPath'),
                   dataIndex: 'mountPath',
                   key: 'mountPath',
                 },
                 {
-                  title: '只读',
+                  title: t('podDetail.volumeMounts.readOnly'),
                   dataIndex: 'readOnly',
                   key: 'readOnly',
                   render: (readOnly?: boolean) => (
                     <Tag color={readOnly ? 'orange' : 'green'}>
-                      {readOnly ? '是' : '否'}
+                      {readOnly ? t('common.yes') : t('common.no')}
                     </Tag>
                   ),
                 },
@@ -197,17 +200,17 @@ const PodDetail: React.FC<PodDetailProps> = ({ pod, clusterName }) => {
         ))}
       </Card>
 
-      <Card title="存储卷">
+      <Card title={t('podDetail.volumes.title')}>
         <Table
           dataSource={pod.spec.volumes || []}
           columns={[
             {
-              title: '名称',
+              title: t('podDetail.volumes.name'),
               dataIndex: 'name',
               key: 'name',
             },
             {
-              title: '类型',
+              title: t('podDetail.volumes.type'),
               key: 'type',
               render: (volume: any) => {
                 const type = Object.keys(volume).find(key => 

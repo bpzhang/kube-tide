@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Kube-Tide",
+    "title": "甲子引擎",
     "description": "Kubernetes 管理平台"
   },
   "common": {
@@ -24,7 +24,9 @@
     "selectCluster": "请选择集群",
     "percentage": "百分比",
     "operations": "操作",
-    "help": "帮助"
+    "help": "帮助",
+    "yes": "是",
+    "no": "否"
   },
   "navigation": {
     "dashboard": "仪表盘",
@@ -257,7 +259,53 @@
     "viewDetails": "查看详情",
     "viewLogs": "查看日志",
     "openTerminal": "打开终端",
-    "noPodsFound": "此命名空间中未找到 Pod"
+    "noPodsFound": "此命名空间中未找到 Pod",
+    "labels": "标签",
+    "annotations": "注解"
+  },
+  "podDetail": {
+    "title": "Pod 详情",
+    "podNotFound": "未找到 Pod 信息",
+    "backToPods": "返回 Pod 列表",
+    "fetchFailed": "获取 Pod 详情失败",
+    "container": "容器",
+    "tabs": {
+      "info": "基本信息",
+      "logs": "日志",
+      "terminal": "终端"
+    },
+    "basicInfo": {
+      "name": "名称",
+      "namespace": "命名空间",
+      "status": "状态",
+      "node": "节点",
+      "ip": "Pod IP",
+      "hostIP": "主机 IP",
+      "creationTime": "创建时间",
+      "qos": "QoS 等级",
+      "phase": "阶段"
+    },
+    "containers": {
+      "title": "容器",
+      "name": "名称",
+      "image": "镜像",
+      "ports": "端口",
+      "status": "状态",
+      "ready": "就绪",
+      "restarts": "重启次数",
+      "resources": "资源"
+    },
+    "volumeMounts": {
+      "title": "卷挂载",
+      "name": "名称",
+      "mountPath": "挂载路径",
+      "readOnly": "只读"
+    },
+    "volumes": {
+      "title": "存储卷",
+      "name": "名称",
+      "type": "类型"
+    }
   },
   "deployments": {
     "title": "无状态",
@@ -537,7 +585,13 @@
     "clusterIp": "集群 IP",
     "externalIp": "外部 IP",
     "ports": "端口",
-    "selectors": "选择器"
+    "selectors": "选择器",
+    "management": "服务管理",
+    "namespace": "命名空间:",
+    "nodePort": "节点端口",
+    "cluster": "集群:",
+    "noSelectors": "无选择器",
+    "deleteConfirm": "确定要删除此服务吗？"
   },
   "settings": {
     "title": "设置",
@@ -738,5 +792,96 @@
       "success": "成功获取节点池列表",
       "failed": "获取节点池列表失败"
     }
+  },
+  "namespaceSelector": {
+    "fetchFailed": "获取命名空间列表失败",
+    "fetchError": "获取命名空间错误，使用默认值"
+  },
+  "labelsManage": {
+    "title": "管理标签和选择器",
+    "labels": "标签",
+    "selector": "选择器",
+    "pleaseEnterKey": "请输入键",
+    "pleaseEnterValue": "请输入值",
+    "keyPlaceholder": "键",
+    "valuePlaceholder": "值",
+    "addLabel": "添加标签",
+    "addSelector": "添加选择器",
+    "validationFailed": "验证失败"
+  },
+  "taintsManage": {
+    "title": "管理污点 - {nodeName}",
+    "currentTaints": "当前污点",
+    "noTaints": "无污点",
+    "addTaint": "添加污点",
+    "keyLabel": "键",
+    "valueLabel": "值（可选）",
+    "effectLabel": "效果",
+    "pleaseEnterKey": "请输入污点键",
+    "keyPlaceholder": "例如: node-role.kubernetes.io/master",
+    "valuePlaceholder": "可选，例如: true",
+    "pleaseSelectEffect": "请选择污点效果",
+    "clickToRemove": "点击移除此污点",
+    "addButton": "添加污点",
+    "fetchFailed": "获取污点失败",
+    "addSuccess": "污点添加成功",
+    "addFailed": "添加污点失败",
+    "deleteSuccess": "污点删除成功",
+    "deleteFailed": "删除污点失败",
+    "effects": {
+      "noSchedule": "NoSchedule（阻止新Pod调度）",
+      "preferNoSchedule": "PreferNoSchedule（尽量避免新Pod调度）",
+      "noExecute": "NoExecute（阻止新Pod调度并驱逐已有Pod）"
+    }
+  },
+  "podTerminal": {
+    "title": "终端: {podName} - {containerName}",
+    "connected": "已连接",
+    "connecting": "正在连接...",
+    "checking": "正在检查Pod状态...",
+    "error": "连接错误",
+    "disconnected": "已断开连接",
+    "containerList": "容器列表",
+    "debug": "调试信息",
+    "reconnect": "重新连接",
+    "exitFullscreen": "退出全屏",
+    "fullscreen": "全屏",
+    "connectingToContainer": "正在连接容器...",
+    "connectionDetails": "正在连接 {cluster} / {namespace} / {pod} / {container}",
+    "connectionSuccess": "连接建立成功",
+    "connectionClosed": "连接已关闭",
+    "connectionError": "连接错误",
+    "possibleReasons": "可能原因：容器未就绪或Pod未运行",
+    "checkPodError": "检查Pod状态错误: {error}",
+    "connectionFailed": "连接到容器失败",
+    "containerNotReady": "容器 '{container}' 未就绪（阶段: {phase}）",
+    "podNotExist": "命名空间 '{namespace}' 中不存在Pod '{pod}'",
+    "checkPodFailed": "检查Pod状态失败",
+    "foundMatchingContainer": "找到匹配的容器名",
+    "usingMatchingContainer": "使用匹配的容器 '{found}'（请求的: '{requested}'）",
+    "containerNotExist": "指定的容器不存在",
+    "usingFirstContainer": "使用第一个容器 '{using}'（请求的: '{requested}'）",
+    "noContainersInPod": "Pod中没有可用的容器",
+    "connectionTimeoutError": "连接超时，容器可能未就绪",
+    "connectionTimeout": "连接超时",
+    "attachWebSocketError": "WebSocket附加错误",
+    "createWebSocketError": "创建WebSocket错误: {error}",
+    "terminalInitError": "终端初始化错误: {error}",
+    "recheckingPodStatus": "重新检查Pod状态...",
+    "cluster": "集群",
+    "namespace": "命名空间",
+    "pod": "Pod",
+    "container": "容器",
+    "connectionStatus": "连接状态",
+    "availableContainers": "可用容器",
+    "connectionDetails": "连接详情",
+    "containerListHint": "此Pod中的可用容器:",
+    "current": "当前",
+    "noContainersFound": "此Pod中没有找到容器",
+    "checkingPodStatus": "正在检查Pod状态...",
+    "connectingToContainer": "正在连接容器...",
+    "retry": "重试",
+    "checkContainersError": "检查容器错误: {error}",
+    "usingFirstContainer": "使用第一个容器 '{container}'"
   }
 }
