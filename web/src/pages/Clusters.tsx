@@ -111,7 +111,7 @@ const Clusters: React.FC = () => {
           </Form.Item>
 
           <div style={{ marginBottom: 24 }}>
-            <div style={{ marginBottom: 8, fontWeight: 'bold' }}>添加方式</div>
+            <div style={{ marginBottom: 8, fontWeight: 'bold' }}>{t('clusters.addType')}</div>
             <Radio.Group 
               value={addType} 
               onChange={(e) => handleAddTypeChange(e.target.value)}
@@ -120,10 +120,10 @@ const Clusters: React.FC = () => {
               style={{ width: '100%', marginBottom: 8 }}
             >
               <Radio.Button value="path" style={{ width: '50%', textAlign: 'center', height: '40px', lineHeight: '40px' }}>
-                通过文件路径
+                {t('clusters.addTypeFile')}
               </Radio.Button>
               <Radio.Button value="content" style={{ width: '50%', textAlign: 'center', height: '40px', lineHeight: '40px' }}>
-                通过内容填写
+                {t('clusters.addTypeContent')}
               </Radio.Button>
             </Radio.Group>
           </div>
@@ -131,19 +131,20 @@ const Clusters: React.FC = () => {
           {addType === 'path' ? (
             <Form.Item
               name="kubeconfigPath"
-              label="Kubeconfig路径"
-              rules={[{ required: addType === 'path', message: "请输入kubeconfig文件路径" }]}
+              label={t('clusters.kubeconfigPath')}
+              rules={[{ required: addType === 'path', message: t('clusters.pleaseInputKubeconfigPath') }]}
             >
-              <Input placeholder="请输入kubeconfig文件的完整路径" />
+              <Input placeholder={t('clusters.kubeconfigPathPlaceholder')} />
             </Form.Item>
           ) : (
             <Form.Item
               name="kubeconfigContent"
-              label="Kubeconfig内容"
-              rules={[{ required: addType === 'content', message: "请输入kubeconfig内容" }]}
+              label={t('clusters.kubeconfigContent')}
+              rules={[{ required: addType === 'content', message: t('clusters.pleaseInputKubeconfigContent') }]}
+
             >
               <Input.TextArea 
-                placeholder="在此粘贴kubeconfig的YAML内容"
+                placeholder={t('clusters.kubeconfigContentPlaceholder')}
                 rows={10}
                 style={{ fontFamily: 'monospace' }}
               />
