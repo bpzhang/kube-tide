@@ -21,23 +21,20 @@ const LanguageSwitcher: React.FC = () => {
     i18n.changeLanguage(langCode);
   };
   
-  const menu = (
-    <Menu>
-      {languages.map((lang) => (
-        <Menu.Item 
-          key={lang.code} 
-          onClick={() => changeLanguage(lang.code)}
-          className={i18n.language === lang.code ? 'ant-dropdown-menu-item-active' : ''}
-        >
-          <span style={{ marginRight: 8 }}>{lang.flag}</span>
-          {lang.name}
-        </Menu.Item>
-      ))}
-    </Menu>
-  );
+  const menuItems = languages.map((lang) => ({
+    key: lang.code,
+    onClick: () => changeLanguage(lang.code),
+    className: i18n.language === lang.code ? 'ant-dropdown-menu-item-active' : '',
+    label: (
+      <>
+        <span style={{ marginRight: 8 }}>{lang.flag}</span>
+        {lang.name}
+      </>
+    ),
+  }));
 
   return (
-    <Dropdown overlay={menu} trigger={['click']} placement="bottomRight">
+    <Dropdown menu={{ items: menuItems }} trigger={['click']} placement="bottomRight">
       <div className="language-switcher" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
         <GlobalOutlined style={{ fontSize: 16, marginRight: 4 }} />
         <span>{languages.find(lang => lang.code === i18n.language)?.name || 'English'}</span>
