@@ -172,7 +172,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
       onCancel={onClose}
       width={1000} // 增加主模态框宽度从800px到1000px
       footer={null}
-      bodyStyle={{ maxHeight: '80vh', overflow: 'auto' }} // 设置最大高度并添加滚动条
+      styles={{body: { maxHeight: '80vh', overflow: 'auto' }}}
     >
       <div style={{ marginBottom: 16 }}>
         <Button
@@ -202,7 +202,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
         onCancel={handleCloseForm}
         footer={null}
         width={800} // 设置子模态框宽度为800px
-        bodyStyle={{ maxHeight: '70vh', overflow: 'auto' }} // 添加滚动支持
+        styles={{ body: { maxHeight: '70vh', overflow: 'auto' } }} // 添加滚动支持
       >
         <Form
           form={form}

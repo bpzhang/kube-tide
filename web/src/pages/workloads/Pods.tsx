@@ -114,7 +114,11 @@ const Pods: React.FC = () => {
       {/* 只有在初始加载时显示整体加载状态 */}
       {loading && pods.length === 0 ? (
         <div style={{ padding: '40px 0', textAlign: 'center' }}>
-          <Spin size="large" tip={t('pods.loading')} />
+          <Spin size="large">
+            <div style={{ padding: '50px', textAlign: 'center' }}>
+              <p>{t('pods.loading')}</p>
+            </div>
+          </Spin>
         </div>
       ) : (
         <PodList
