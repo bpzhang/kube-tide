@@ -84,6 +84,11 @@
     "kubeconfigPath": "Kubeconfig Path",
     "pleaseInputKubeconfigPath": "Please enter kubeconfig file path",
     "kubeconfigPathPlaceholder": "Please enter the full path to the kubeconfig file",
+    "kubeconfigContent": "Kubeconfig Content",
+    "pleaseInputKubeconfigContent": "Please enter kubeconfig content",
+    "kubeconfigContentPlaceholder": "Paste kubeconfig YAML content here",
+    "addTypeFile": "Via File Path",
+    "addTypeContent": "Via Content",
     "deleteConfirm": "Delete Cluster",
     "deleteConfirmMessage": "Are you sure you want to delete cluster {name}?",
     "deleteSuccess": "Cluster {name} has been deleted successfully",
@@ -791,7 +796,8 @@
       "nodeCount": "Node Count",
       "namespaceCount": "Namespace Count",
       "totalCPU": "Total CPU Cores",
-      "totalMemory": "Total Memory"
+      "totalMemory": "Total Memory",
+      "addType": "Add Type"
     },
     "monitoring": {
       "title": "Cluster Monitoring Dashboard",

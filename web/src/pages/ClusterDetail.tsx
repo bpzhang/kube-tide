@@ -224,6 +224,11 @@ const ClusterDetailPage: React.FC = () => {
             <Descriptions.Item label={t('clusterDetail.basicInfo.totalMemory')}>
               {clusterInfo?.totalMemory}
             </Descriptions.Item>
+            <Descriptions.Item label={t('clusterDetail.basicInfo.addType') || '添加方式'}>
+              {clusterInfo?.addType === 'path' && (t('clusters.addTypeFile') || '通过文件路径')}
+              {clusterInfo?.addType === 'content' && (t('clusters.addTypeContent') || '通过内容填写')}
+              {(!clusterInfo?.addType || clusterInfo?.addType === 'unknown') && (t('clusters.addTypeUnknown') || '未知方式')}
+            </Descriptions.Item>
           </Descriptions>
         </Card>
 

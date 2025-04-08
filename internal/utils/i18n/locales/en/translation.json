@@ -20,7 +20,8 @@
     "deleteSuccess": "Cluster deleted successfully",
     "deleteFailed": "Failed to delete cluster",
     "invalidKubeconfig": "Invalid kubeconfig file",
-    "kubeconfigPathEmpty": "Kubeconfig path cannot be empty"
+    "kubeconfigPathEmpty": "Kubeconfig path cannot be empty",
+    "kubeconfigContentEmpty": "Kubeconfig content cannot be empty"
   },
   "node": {
     "notFound": "Node not found",

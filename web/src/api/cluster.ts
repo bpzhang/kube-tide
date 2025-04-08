@@ -2,7 +2,9 @@ import api from './axios';
 
 interface Cluster {
   name: string;
-  kubeconfigPath: string;
+  kubeconfigPath?: string;
+  kubeconfigContent?: string;
+  addType?: 'path' | 'content'; // 添加类型：path（文件路径）或content（内容）
 }
 
 export interface ClusterResponse {
@@ -22,6 +24,7 @@ export interface ClusterDetail {
   totalCPU: number;
   totalMemory: string;
   platform: string;
+  addType?: 'path' | 'content' | 'unknown'; // 添加方式：path(文件路径)、content(内容)或unknown(未知)
 }
 
 export interface ClusterDetailResponse {
@@ -103,4 +106,17 @@ export const getClusterNamespaces = (clusterName: string) => {
 
 export const getClusterEvents = (clusterName: string) => {
   return api.get<ClusterEventsResponse>(`/clusters/${clusterName}/events`);
+};
+
+export interface ClusterAddTypeResponse {
+  code: number;
+  message: string;
+  data: {
+    name: string;
+    addType: 'path' | 'content' | 'unknown';
+  };
+}
+
+export const getClusterAddType = (clusterName: string) => {
+  return api.get<ClusterAddTypeResponse>(`/clusters/${clusterName}/add-type`);
 };

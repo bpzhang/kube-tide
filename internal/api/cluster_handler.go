@@ -54,21 +54,46 @@ func (h *ClusterHandler) AddCluster(c *gin.Context) {
 		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
 		return
 	}
+	logger.Infof("Adding cluster: %s", cluster.Name)
+	logger.Infof("AddType: %s", cluster.AddType)
+	// 根据添加方式进行不同处理
+	var err error
+	if cluster.AddType == "content" {
+		// 通过kubeconfig内容添加
+		if cluster.KubeconfigContent == "" {
+			ResponseError(c, http.StatusBadRequest, "cluster.kubeconfigContentEmpty")
+			return
+		}
 
-	if cluster.KubeconfigPath == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster.kubeconfigPathEmpty")
-		return
+		// 验证kubeconfig内容
+		err = h.clientManager.ValidateKubeconfigContent(cluster.KubeconfigContent)
+		if err != nil {
+			logger.Errorf(i18n.T(c, "cluster.validate.failed"), err.Error())
+			FailWithError(c, http.StatusBadRequest, "cluster.invalidKubeconfig", err)
+			return
+		}
+
+		// 添加集群
+		err = h.clientManager.AddClusterWithContent(cluster.Name, cluster.KubeconfigContent)
+	} else {
+		// 默认通过kubeconfig文件路径添加
+		if cluster.KubeconfigPath == "" {
+			ResponseError(c, http.StatusBadRequest, "cluster.kubeconfigPathEmpty")
+			return
+		}
+
+		// 验证kubeconfig文件
+		err = h.clientManager.ValidateKubeconfig(cluster.KubeconfigPath)
+		if err != nil {
+			logger.Errorf(i18n.T(c, "cluster.validate.failed"), err.Error())
+			FailWithError(c, http.StatusBadRequest, "cluster.invalidKubeconfig", err)
+			return
+		}
+
+		// 添加集群
+		err = h.clientManager.AddCluster(cluster.Name, cluster.KubeconfigPath)
 	}
 
-	// Validate kubeconfig file
-	err := h.clientManager.ValidateKubeconfig(cluster.KubeconfigPath)
-	if err != nil {
-		logger.Errorf(i18n.T(c, "cluster.validate.failed"), err.Error())
-		FailWithError(c, http.StatusBadRequest, "cluster.invalidKubeconfig", err)
-		return
-	}
-
-	err = h.clientManager.AddCluster(cluster.Name, cluster.KubeconfigPath)
 	if err != nil {
 		logger.Errorf(i18n.T(c, "cluster.add.failed"), err.Error())
 		FailWithError(c, http.StatusInternalServerError, "cluster.addFailed", err)
@@ -171,6 +196,9 @@ func (h *ClusterHandler) GetClusterDetails(c *gin.Context) {
 		// 转换内存单位为GB
 		totalMemoryGB := float64(totalMemory) / (1024 * 1024 * 1024)
 
+		// 获取集群添加方式
+		addType := h.clientManager.GetAddType(clusterName)
+
 		return gin.H{
 			"name":            clusterName,
 			"version":         version.String(),
@@ -180,6 +208,7 @@ func (h *ClusterHandler) GetClusterDetails(c *gin.Context) {
 			"totalCPU":        totalCPU,
 			"totalMemory":     fmt.Sprintf("%.2f GB", totalMemoryGB),
 			"platform":        version.Platform,
+			"addType":         addType, // 添加集群的方式
 		}, nil
 	})
 
@@ -262,5 +291,21 @@ func (h *ClusterHandler) GetClusterEvents(c *gin.Context) {
 
 	ResponseSuccess(c, gin.H{
 		"events": events,
+	})
+}
+
+// GetClusterAddType 获取集群添加方式
+func (h *ClusterHandler) GetClusterAddType(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
+		return
+	}
+
+	// 获取集群添加方式
+	addType := h.clientManager.GetAddType(clusterName)
+	ResponseSuccess(c, gin.H{
+		"name":    clusterName,
+		"addType": addType,
 	})
 }

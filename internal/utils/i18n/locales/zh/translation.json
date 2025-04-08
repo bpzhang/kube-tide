@@ -37,7 +37,8 @@
     "deleteSuccess": "集群删除成功",
     "deleteFailed": "删除集群失败",
     "invalidKubeconfig": "无效的kubeconfig文件",
-    "kubeconfigPathEmpty": "kubeconfig路径不能为空"
+    "kubeconfigPathEmpty": "kubeconfig路径不能为空",
+    "kubeconfigContentEmpty": "kubeconfig内容不能为空"
   },
   "node": {
     "notFound": "节点未找到",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Button, Modal, Form, Input, message } from 'antd';
+import { Row, Col, Button, Modal, Form, Input, message, Radio, Tabs } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { getClusterList, addCluster } from '../api/cluster';
@@ -11,6 +11,7 @@ const Clusters: React.FC = () => {
   const [clusters, setClusters] = useState<string[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [addType, setAddType] = useState<'path' | 'content'>('path'); // 默认使用路径方式
   const [form] = Form.useForm();
 
   const fetchClusters = async () => {
@@ -37,7 +38,13 @@ const Clusters: React.FC = () => {
 
   const handleAddCluster = async (values: any) => {
     try {
-      const response = await addCluster(values);
+      // 添加集群类型字段
+      const clusterData = {
+        ...values,
+        addType
+      };
+      
+      const response = await addCluster(clusterData);
       if (response.data.code === 0) {
         message.success(t('clusters.addSuccess'));
         setIsModalVisible(false);
@@ -49,6 +56,12 @@ const Clusters: React.FC = () => {
     } catch (err) {
       message.error(t('clusters.addFailed'));
     }
+  };
+  
+  // 处理添加方式切换
+  const handleAddTypeChange = (type: 'path' | 'content') => {
+    setAddType(type);
+    form.resetFields(['kubeconfigPath', 'kubeconfigContent']);
   };
 
   return (
@@ -81,11 +94,13 @@ const Clusters: React.FC = () => {
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
         confirmLoading={loading}
+        width={600}
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={handleAddCluster}
+          initialValues={{ addTypeField: 'path' }} // 默认选择通过文件路径
         >
           <Form.Item
             name="name"
@@ -94,13 +109,46 @@ const Clusters: React.FC = () => {
           >
             <Input placeholder={t('clusters.clusterNamePlaceholder')} />
           </Form.Item>
-          <Form.Item
-            name="kubeconfigPath"
-            label={t('clusters.kubeconfigPath')}
-            rules={[{ required: true, message: t('clusters.pleaseInputKubeconfigPath') }]}
-          >
-            <Input placeholder={t('clusters.kubeconfigPathPlaceholder')} />
-          </Form.Item>
+
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 8, fontWeight: 'bold' }}>添加方式</div>
+            <Radio.Group 
+              value={addType} 
+              onChange={(e) => handleAddTypeChange(e.target.value)}
+              buttonStyle="solid"
+              size="large"
+              style={{ width: '100%', marginBottom: 8 }}
+            >
+              <Radio.Button value="path" style={{ width: '50%', textAlign: 'center', height: '40px', lineHeight: '40px' }}>
+                通过文件路径
+              </Radio.Button>
+              <Radio.Button value="content" style={{ width: '50%', textAlign: 'center', height: '40px', lineHeight: '40px' }}>
+                通过内容填写
+              </Radio.Button>
+            </Radio.Group>
+          </div>
+          
+          {addType === 'path' ? (
+            <Form.Item
+              name="kubeconfigPath"
+              label="Kubeconfig路径"
+              rules={[{ required: addType === 'path', message: "请输入kubeconfig文件路径" }]}
+            >
+              <Input placeholder="请输入kubeconfig文件的完整路径" />
+            </Form.Item>
+          ) : (
+            <Form.Item
+              name="kubeconfigContent"
+              label="Kubeconfig内容"
+              rules={[{ required: addType === 'content', message: "请输入kubeconfig内容" }]}
+            >
+              <Input.TextArea 
+                placeholder="在此粘贴kubeconfig的YAML内容"
+                rows={10}
+                style={{ fontFamily: 'monospace' }}
+              />
+            </Form.Item>
+          )}
         </Form>
       </Modal>
     </div>

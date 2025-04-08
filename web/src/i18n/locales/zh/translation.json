@@ -84,6 +84,11 @@
     "kubeconfigPath": "Kubeconfig路径",
     "pleaseInputKubeconfigPath": "请输入Kubeconfig文件路径",
     "kubeconfigPathPlaceholder": "请输入Kubeconfig文件的完整路径",
+    "kubeconfigContent": "Kubeconfig内容",
+    "pleaseInputKubeconfigContent": "请输入Kubeconfig内容",
+    "kubeconfigContentPlaceholder": "在此粘贴kubeconfig的YAML内容",
+    "addTypeFile": "通过文件路径",
+    "addTypeContent": "通过内容填写",
     "deleteConfirm": "删除集群",
     "deleteConfirmMessage": "确定要删除集群 {name} 吗？",
     "deleteSuccess": "集群 {name} 已成功删除",
@@ -790,7 +795,8 @@
       "nodeCount": "节点数量",
       "namespaceCount": "命名空间数量",
       "totalCPU": "总CPU核心数",
-      "totalMemory": "总内存"
+      "totalMemory": "总内存",
+      "addType": "添加类型"
     },
     "monitoring": {
       "title": "集群监控仪表板",

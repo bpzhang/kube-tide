@@ -73,6 +73,8 @@ func InitRouter(app *App) *gin.Engine {
 		v1.GET("/clusters/:cluster/metrics", app.ClusterHandler.GetClusterMetrics)
 		// Cluster events
 		v1.GET("/clusters/:cluster/events", app.ClusterHandler.GetClusterEvents)
+		// Get cluster add type information
+		v1.GET("/clusters/:cluster/add-type", app.ClusterHandler.GetClusterAddType)
 
 		// Namespace management - Use dedicated NamespaceHandler
 		v1.GET("/clusters/:cluster/namespaces", app.NamespaceHandler.ListNamespaces)
