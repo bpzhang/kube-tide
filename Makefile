@@ -15,7 +15,7 @@ WEB_DIST_DIR=$(PKG_DIR)/embed/web
 # 定义Node.js工具
 NODE=node
 NPM=npm
-YARN=yarn
+PNPM=pnpm
 
 # 默认目标
 .PHONY: all
@@ -30,7 +30,7 @@ rebuild: clean build-prod
 .PHONY: build-web-prod
 build-web-prod:
 	@echo "开始前端生产构建..."
-	cd $(WEB_DIR) && $(YARN) install && npx vite build
+	cd $(WEB_DIR) && $(PNPM) install && $(PNPM) build
 	@echo "前端生产构建完成"
 
 # 构建后端（生产环境）
