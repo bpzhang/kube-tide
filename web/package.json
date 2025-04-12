@@ -6,28 +6,28 @@
   "dependencies": {
     "@ant-design/icons": "^5.6.1",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
-    "@types/react": "^19.0.12",
-    "@types/react-dom": "^19.0.4",
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.3.4",
     "@xterm/addon-attach": "^0.11.0",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
-    "antd": "^5.24.4",
+    "antd": "^5.24.6",
     "axios": "^1.8.4",
     "i18next": "^24.2.3",
     "i18next-browser-languagedetector": "^8.0.4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "react-i18next": "^15.4.1",
-    "react-router-dom": "^7.4.0",
-    "recharts": "^2.15.1",
-    "typescript": "^5.8.2"
+    "react-router-dom": "^7.5.0",
+    "recharts": "^2.15.2",
+    "typescript": "^5.8.3"
   },
   "devDependencies": {
-    "@types/node": "^22.13.13",
+    "@types/node": "^22.14.1",
     "@types/recharts": "^1.8.29",
-    "terser": "^5.22.0",
-    "vite": "^5.0.0"
+    "terser": "^5.39.0",
+    "vite": "^5.4.18"
   },
   "scripts": {
     "dev": "vite",
@@ -38,5 +38,5 @@
     "test": "vitest",
     "type-check": "tsc --noEmit"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "pnpm@10.8.0+sha512.0e82714d1b5b43c74610193cb20734897c1d00de89d0e18420aebc5977fa13d780a9cb05734624e81ebd81cc876cd464794850641c48b9544326b5622ca29971"
 }
