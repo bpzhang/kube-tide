@@ -268,12 +268,12 @@ const DeploymentsPage: React.FC = () => {
       ),
     },
     {
-      title: t('deployments.namespace'),
+      title: t('common.namespace'),
       dataIndex: 'namespace',
       key: 'namespace',
     },
     {
-      title: t('deployments.labels'),
+      title: t('common.labels'),
       dataIndex: 'labels',
       key: 'labels',
       render: (labels: { [key: string]: string }) => (
@@ -285,7 +285,7 @@ const DeploymentsPage: React.FC = () => {
       ),
     },
     {
-      title: t('deployments.replicas'),
+      title: t('common.status'),
       key: 'replicas',
       render: (text: string, record: DeploymentType) => (
         <Space>
@@ -297,7 +297,7 @@ const DeploymentsPage: React.FC = () => {
       ),
     },
     {
-      title: t('deployments.createdAt'),
+      title: t('common.createTime'),
       dataIndex: 'creationTime',
       key: 'creationTime',
       render: (time: string) => formatDate(time),

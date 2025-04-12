@@ -26,7 +26,21 @@
     "operations": "Operations",
     "help": "Help",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "name": "Name",
+    "namespace": "Namespace",
+    "status": "Status",
+    "labels": "Labels",
+    "createTime": "Creation Time",
+    "key": "Key",
+    "value": "Value",
+    "pleaseEnterKey": "Please enter key",
+    "pleaseEnterValue": "Please enter value",
+    "addLabel": "Add Label",
+    "scale": "Scale",
+    "restart": "Restart",
+    "view": "View",
+    "cluster": "Cluster:"
   },
   "navigation": {
     "dashboard": "Dashboard",

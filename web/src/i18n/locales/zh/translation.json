@@ -26,7 +26,21 @@
     "operations": "操作",
     "help": "帮助",
     "yes": "是",
-    "no": "否"
+    "no": "否",
+    "name": "名称",
+    "namespace": "命名空间",
+    "status": "状态",
+    "createTime": "创建时间",
+    "scale": "扩缩容",
+    "restart": "重启",
+    "view": "查看",
+    "cluster": "集群：",
+    "labels": "标签",
+    "key": "键",
+    "value": "值",
+    "pleaseEnterKey": "请输入键",
+    "pleaseEnterValue": "请输入值",
+    "addLabel": "添加标签"
   },
   "navigation": {
     "dashboard": "仪表盘",
