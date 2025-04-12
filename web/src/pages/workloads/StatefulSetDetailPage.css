@@ -1,0 +1,49 @@
+/* StatefulSet Detail Page Styles */
+
+.statefulset-detail-container {
+  margin-bottom: 20px;
+}
+
+.statefulset-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.statefulset-detail-title {
+  margin-bottom: 0;
+}
+
+.statefulset-action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.statefulset-info-item {
+  margin-bottom: 8px;
+}
+
+.statefulset-info-label {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.statefulset-pods-list {
+  margin-top: 16px;
+}
+
+.statefulset-events-container {
+  margin-top: 16px;
+}
+
+.statefulset-container-info {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.statefulset-volume-info {
+  margin-top: 16px;
+}

@@ -1488,3 +1488,27 @@ func convertKeyToPath(items []KeyToPath) []corev1.KeyToPath {
 
 	return k8sItems
 }
+
+// DeleteDeployment 删除指定的Deployment
+func (ds *DeploymentService) DeleteDeployment(clusterName, namespace, name string) error {
+	logger.Info("删除Deployment:", clusterName, namespace, name)
+	client, err := ds.clientManager.GetClient(clusterName)
+	if err != nil {
+		return fmt.Errorf("获取集群客户端失败: %v", err)
+	}
+
+	// 使用DeletePropagationForeground确保先删除所有关联资源
+	deletePolicy := metav1.DeletePropagationForeground
+	deleteOptions := metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+
+	err = client.AppsV1().Deployments(namespace).Delete(context.TODO(), name, deleteOptions)
+	if err != nil {
+		logger.Error("删除Deployment失败", err)
+		return fmt.Errorf("删除Deployment失败: %v", err)
+	}
+
+	logger.Info("成功删除Deployment:", clusterName, namespace, name)
+	return nil
+}

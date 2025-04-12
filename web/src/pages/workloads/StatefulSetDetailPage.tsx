@@ -12,24 +12,97 @@ import { useTranslation } from 'react-i18next';
 import { getStatefulSetDetails, deleteStatefulSet, restartStatefulSet, getStatefulSetPods, getAllStatefulSetEvents } from '@/api/statefulset';
 import ScaleStatefulSetModal from '@/components/k8s/statefulset/ScaleStatefulSetModal';
 import K8sEvents from '@/components/k8s/common/K8sEvents';
+import './StatefulSetDetailPage.css';
 
 const { TabPane } = Tabs;
+
+interface StatefulSetParams {
+  clusterName: string;
+  namespace: string;
+  statefulsetName: string;
+}
+
+interface Container {
+  name: string;
+  image: string;
+  resources?: {
+    requests?: Record<string, string | number>;
+    limits?: Record<string, string | number>;
+  };
+  env?: Array<{
+    name: string;
+    value?: string;
+    valueFrom?: any;
+  }>;
+  ports?: Array<{
+    name?: string;
+    containerPort: number;
+    protocol: string;
+  }>;
+}
+
+interface VolumeClaimTemplate {
+  name: string;
+  storageClassName: string;
+  accessModes: string[];
+  storage: string;
+}
+
+interface StatefulSet {
+  name: string;
+  namespace: string;
+  replicas: number;
+  readyReplicas: number;
+  serviceName: string;
+  updateStrategy: string;
+  podManagementPolicy: string;
+  creationTime: string;
+  labels?: Record<string, string>;
+  annotations?: Record<string, string>;
+  containers?: Container[];
+  volumeClaimTemplates?: VolumeClaimTemplate[];
+}
+
+interface Pod {
+  metadata: {
+    name: string;
+    namespace: string;
+    creationTimestamp: string;
+  };
+  status: {
+    phase: string;
+  };
+}
+
+interface Event {
+  type: string;
+  reason: string;
+  message: string;
+  count: number;
+  firstTimestamp: string;
+  lastTimestamp: string;
+  involvedObject: {
+    kind: string;
+    name: string;
+  };
+}
+
+interface Events {
+  statefulset: Event[];
+  pod: Event[];
+}
 
 /**
  * StatefulSet详情页面
  */
 const StatefulSetDetailPage: React.FC = () => {
   const { t } = useTranslation();
-  const { clusterName, namespace, statefulsetName } = useParams<{
-    clusterName: string;
-    namespace: string;
-    statefulsetName: string;
-  }>();
+  const { clusterName, namespace, statefulsetName } = useParams<StatefulSetParams>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [statefulset, setStatefulSet] = useState<any>(null);
-  const [pods, setPods] = useState<any[]>([]);
-  const [events, setEvents] = useState<any>({ statefulset: [], pod: [] });
+  const [statefulset, setStatefulSet] = useState<StatefulSet | null>(null);
+  const [pods, setPods] = useState<Pod[]>([]);
+  const [events, setEvents] = useState<Events>({ statefulset: [], pod: [] });
   const [scaleModalVisible, setScaleModalVisible] = useState(false);
 
   // 获取StatefulSet详情
@@ -259,7 +332,7 @@ const StatefulSetDetailPage: React.FC = () => {
     return (
       <div className="containers">
         <Card title={t('statefulsets.containers')} bordered={false}>
-          {statefulset.containers.map((container: any, index: number) => (
+          {statefulset.containers.map((container) => (
             <div key={container.name} className="container-item">
               <h3>{container.name}</h3>
               <div className="container-info">
@@ -305,7 +378,7 @@ const StatefulSetDetailPage: React.FC = () => {
                   <div className="environment">
                     <h4>{t('statefulsets.environment')}</h4>
                     <div className="env-list">
-                      {container.env.map((env: any, envIndex: number) => (
+                      {container.env.map((env, envIndex) => (
                         <div key={envIndex} className="env-item">
                           <span className="env-key">{env.name}:</span>
                           <span className="env-value">
@@ -322,7 +395,7 @@ const StatefulSetDetailPage: React.FC = () => {
                   <div className="ports">
                     <h4>{t('statefulsets.ports')}</h4>
                     <div className="ports-list">
-                      {container.ports.map((port: any, portIndex: number) => (
+                      {container.ports.map((port, portIndex) => (
                         <div key={portIndex} className="port-item">
                           <span className="port-name">
                             {port.name ? `${port.name}: ` : ''}
@@ -350,7 +423,7 @@ const StatefulSetDetailPage: React.FC = () => {
     return (
       <div className="volume-claim-templates">
         <Card title={t('statefulsets.volumeClaimTemplates')} bordered={false}>
-          {statefulset.volumeClaimTemplates.map((pvc: any) => (
+          {statefulset.volumeClaimTemplates.map((pvc) => (
             <div key={pvc.name} className="pvc-item">
               <h3>{pvc.name}</h3>
               <div className="pvc-info">
@@ -381,7 +454,7 @@ const StatefulSetDetailPage: React.FC = () => {
         <Card title={t('statefulsets.pods')} bordered={false}>
           {pods.length > 0 ? (
             <div className="pod-items">
-              {pods.map((pod: any) => (
+              {pods.map((pod) => (
                 <div key={pod.metadata.name} className="pod-item">
                   <div className="pod-name">
                     <a onClick={() => navigate(`/workloads/pods/detail/${clusterName}/${pod.metadata.namespace}/${pod.metadata.name}`)}>
@@ -521,124 +594,6 @@ const StatefulSetDetailPage: React.FC = () => {
           currentReplicas={statefulset.replicas}
         />
       )}
-
-      <style jsx>{`
-        .statefulset-detail-page {
-          margin-bottom: 24px;
-        }
-        .page-title {
-          display: flex;
-          align-items: center;
-        }
-        .loading-container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 400px;
-        }
-        .info-item {
-          margin-bottom: 8px;
-        }
-        .info-label {
-          font-weight: 500;
-          margin-right: 8px;
-        }
-        .labels-container, .annotations-container {
-          display: flex;
-          flex-wrap: wrap;
-          margin-top: 8px;
-        }
-        .label-item, .annotation-item {
-          background-color: #f5f5f5;
-          border-radius: 4px;
-          padding: 4px 8px;
-          margin-right: 8px;
-          margin-bottom: 8px;
-        }
-        .label-key, .annotation-key {
-          font-weight: 500;
-          margin-right: 4px;
-        }
-        .pod-items {
-          margin-top: 16px;
-        }
-        .pod-item {
-          display: flex;
-          padding: 12px;
-          border-bottom: 1px solid #f0f0f0;
-        }
-        .pod-item:last-child {
-          border-bottom: none;
-        }
-        .pod-name {
-          flex: 2;
-        }
-        .pod-status {
-          flex: 1;
-        }
-        .pod-age {
-          flex: 1;
-          text-align: right;
-        }
-        .status-badge {
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-        }
-        .status-badge.running {
-          background-color: #52c41a;
-          color: white;
-        }
-        .status-badge.pending {
-          background-color: #faad14;
-          color: white;
-        }
-        .status-badge.failed {
-          background-color: #f5222d;
-          color: white;
-        }
-        .container-item {
-          margin-bottom: 24px;
-          padding-bottom: 16px;
-          border-bottom: 1px solid #f0f0f0;
-        }
-        .container-item:last-child {
-          border-bottom: none;
-        }
-        .resources-info {
-          display: flex;
-          margin-top: 8px;
-        }
-        .requests, .limits {
-          flex: 1;
-        }
-        .env-list, .ports-list {
-          margin-top: 8px;
-        }
-        .env-item, .port-item, .resource-item {
-          margin-bottom: 4px;
-        }
-        .pvc-item {
-          margin-bottom: 16px;
-          padding-bottom: 16px;
-          border-bottom: 1px solid #f0f0f0;
-        }
-        .pvc-item:last-child {
-          border-bottom: none;
-        }
-        .empty-message {
-          color: #999;
-          padding: 16px 0;
-        }
-        .yaml-content {
-          background-color: #f5f5f5;
-          padding: 16px;
-          border-radius: 4px;
-          overflow: auto;
-          max-height: 500px;
-          font-family: monospace;
-        }
-      `}</style>
     </div>
   );
 };

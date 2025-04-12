@@ -1,6 +1,7 @@
-import { request } from './axios';
+import api from './axios';
+import { PodListResponse } from './pod';
 
-// StatefulSet基本信息类型定义
+// StatefulSet 相关接口响应类型
 export interface StatefulSetInfo {
   name: string;
   namespace: string;
@@ -245,12 +246,9 @@ export interface UpdateStatefulSetRequest {
  * @param clusterName 集群名称
  * @returns 所有StatefulSet
  */
-export function getStatefulSetList(clusterName: string) {
-  return request<StatefulSetListResponse>({
-    url: `/api/clusters/${clusterName}/statefulsets`,
-    method: 'get'
-  });
-}
+export const getStatefulSetList = (clusterName: string) => {
+  return api.get<StatefulSetListResponse>(`/clusters/${clusterName}/statefulsets`);
+};
 
 /**
  * 获取指定命名空间的StatefulSet列表
@@ -258,12 +256,9 @@ export function getStatefulSetList(clusterName: string) {
  * @param namespace 命名空间
  * @returns 命名空间内的StatefulSet
  */
-export function listStatefulSetsByNamespace(clusterName: string, namespace: string) {
-  return request<StatefulSetListResponse>({
-    url: `/api/clusters/${clusterName}/namespaces/${namespace}/statefulsets`,
-    method: 'get'
-  });
-}
+export const listStatefulSetsByNamespace = (clusterName: string, namespace: string) => {
+  return api.get<StatefulSetListResponse>(`/clusters/${clusterName}/namespaces/${namespace}/statefulsets`);
+};
 
 /**
  * 获取StatefulSet详情
@@ -272,12 +267,9 @@ export function listStatefulSetsByNamespace(clusterName: string, namespace: stri
  * @param statefulsetName StatefulSet名称
  * @returns StatefulSet详情
  */
-export function getStatefulSetDetails(clusterName: string, namespace: string, statefulsetName: string) {
-  return request<StatefulSetDetailResponse>({
-    url: `/api/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}`,
-    method: 'get'
-  });
-}
+export const getStatefulSetDetails = (clusterName: string, namespace: string, statefulsetName: string) => {
+  return api.get<StatefulSetDetailResponse>(`/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}`);
+};
 
 /**
  * 创建StatefulSet
@@ -286,13 +278,9 @@ export function getStatefulSetDetails(clusterName: string, namespace: string, st
  * @param statefulsetData StatefulSet数据
  * @returns 操作结果
  */
-export function createStatefulSet(clusterName: string, namespace: string, statefulsetData: CreateStatefulSetRequest) {
-  return request<OperationResponse>({
-    url: `/api/clusters/${clusterName}/namespaces/${namespace}/statefulsets`,
-    method: 'post',
-    data: statefulsetData
-  });
-}
+export const createStatefulSet = (clusterName: string, namespace: string, statefulsetData: CreateStatefulSetRequest) => {
+  return api.post<OperationResponse>(`/clusters/${clusterName}/namespaces/${namespace}/statefulsets`, statefulsetData);
+};
 
 /**
  * 更新StatefulSet
@@ -302,13 +290,9 @@ export function createStatefulSet(clusterName: string, namespace: string, statef
  * @param updateData 更新数据
  * @returns 操作结果
  */
-export function updateStatefulSet(clusterName: string, namespace: string, statefulsetName: string, updateData: UpdateStatefulSetRequest) {
-  return request<OperationResponse>({
-    url: `/api/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}`,
-    method: 'put',
-    data: updateData
-  });
-}
+export const updateStatefulSet = (clusterName: string, namespace: string, statefulsetName: string, updateData: UpdateStatefulSetRequest) => {
+  return api.put<OperationResponse>(`/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}`, updateData);
+};
 
 /**
  * 删除StatefulSet
@@ -317,12 +301,9 @@ export function updateStatefulSet(clusterName: string, namespace: string, statef
  * @param statefulsetName StatefulSet名称
  * @returns 操作结果
  */
-export function deleteStatefulSet(clusterName: string, namespace: string, statefulsetName: string) {
-  return request<OperationResponse>({
-    url: `/api/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}`,
-    method: 'delete'
-  });
-}
+export const deleteStatefulSet = (clusterName: string, namespace: string, statefulsetName: string) => {
+  return api.delete<OperationResponse>(`/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}`);
+};
 
 /**
  * 扩缩容StatefulSet
@@ -332,13 +313,12 @@ export function deleteStatefulSet(clusterName: string, namespace: string, statef
  * @param replicas 副本数
  * @returns 操作结果
  */
-export function scaleStatefulSet(clusterName: string, namespace: string, statefulsetName: string, replicas: number) {
-  return request<OperationResponse>({
-    url: `/api/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}/scale`,
-    method: 'put',
-    data: { replicas }
-  });
-}
+export const scaleStatefulSet = (clusterName: string, namespace: string, statefulsetName: string, replicas: number) => {
+  return api.put<OperationResponse>(
+    `/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}/scale`,
+    { replicas }
+  );
+};
 
 /**
  * 重启StatefulSet
@@ -347,12 +327,11 @@ export function scaleStatefulSet(clusterName: string, namespace: string, statefu
  * @param statefulsetName StatefulSet名称
  * @returns 操作结果
  */
-export function restartStatefulSet(clusterName: string, namespace: string, statefulsetName: string) {
-  return request<OperationResponse>({
-    url: `/api/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}/restart`,
-    method: 'post'
-  });
-}
+export const restartStatefulSet = (clusterName: string, namespace: string, statefulsetName: string) => {
+  return api.post<OperationResponse>(
+    `/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}/restart`
+  );
+};
 
 /**
  * 获取StatefulSet事件
@@ -361,12 +340,11 @@ export function restartStatefulSet(clusterName: string, namespace: string, state
  * @param statefulsetName StatefulSet名称
  * @returns 事件列表
  */
-export function getStatefulSetEvents(clusterName: string, namespace: string, statefulsetName: string) {
-  return request<StatefulSetEventsResponse>({
-    url: `/api/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}/events`,
-    method: 'get'
-  });
-}
+export const getStatefulSetEvents = (clusterName: string, namespace: string, statefulsetName: string) => {
+  return api.get<StatefulSetEventsResponse>(
+    `/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}/events`
+  );
+};
 
 /**
  * 获取StatefulSet及其关联Pod的所有事件
@@ -375,12 +353,11 @@ export function getStatefulSetEvents(clusterName: string, namespace: string, sta
  * @param statefulsetName StatefulSet名称
  * @returns 所有相关事件
  */
-export function getAllStatefulSetEvents(clusterName: string, namespace: string, statefulsetName: string) {
-  return request<AllStatefulSetEventsResponse>({
-    url: `/api/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}/all-events`,
-    method: 'get'
-  });
-}
+export const getAllStatefulSetEvents = (clusterName: string, namespace: string, statefulsetName: string) => {
+  return api.get<AllStatefulSetEventsResponse>(
+    `/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}/all-events`
+  );
+};
 
 /**
  * 获取StatefulSet关联的Pod
@@ -389,9 +366,8 @@ export function getAllStatefulSetEvents(clusterName: string, namespace: string, 
  * @param statefulsetName StatefulSet名称
  * @returns Pod列表
  */
-export function getStatefulSetPods(clusterName: string, namespace: string, statefulsetName: string) {
-  return request({
-    url: `/api/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}/pods`,
-    method: 'get'
-  });
-}
+export const getStatefulSetPods = (clusterName: string, namespace: string, statefulsetName: string) => {
+  return api.get<PodListResponse>(
+    `/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}/pods`
+  );
+};

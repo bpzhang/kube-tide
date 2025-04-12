@@ -9,6 +9,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -103,20 +104,18 @@ func (s *StatefulSetService) GetStatefulSets(ctx context.Context, clusterName, n
 			volClaims[i] = pvc.Name
 		}
 
-		stsUpdateStrategy := string(sts.Spec.UpdateStrategy.Type)
-
 		statefulsetInfo := StatefulSetInfo{
 			Name:                 sts.Name,
 			Namespace:            sts.Namespace,
 			Replicas:             *sts.Spec.Replicas,
 			ReadyReplicas:        sts.Status.ReadyReplicas,
 			ServiceName:          sts.Spec.ServiceName,
+			UpdateStrategy:       string(sts.Spec.UpdateStrategy.Type),
 			CreationTime:         sts.CreationTimestamp.Time,
 			Labels:               sts.Labels,
 			Selector:             sts.Spec.Selector.MatchLabels,
 			ContainerCount:       len(containers),
 			Images:               images,
-			UpdateStrategy:       string(sts.Spec.UpdateStrategy.Type),
 			VolumeClaimTemplates: volClaims,
 		}
 		statefulsetInfos = append(statefulsetInfos, statefulsetInfo)
@@ -202,12 +201,44 @@ func (s *StatefulSetService) GetStatefulSetDetails(ctx context.Context, clusterN
 			}
 		}
 
-		// 转换自定义类型的资源需求到K8s API类型
-		k8sResources := convertResourceRequirementsToK8s(resources)
-		// 转换自定义类型的环境变量到K8s API类型
-		k8sEnvVars := convertEnvVarsToK8s(envVars)
-		// 转换自定义类型的容器端口到K8s API类型
-		k8sPorts := convertContainerPortsToK8s(ports)
+		// 转换资源需求到K8s API类型
+		resourceMap := make(map[string]map[string]string)
+		if resources.Limits != nil {
+			limits := make(map[string]string)
+			for k, v := range resources.Limits {
+				limits[string(k)] = v
+			}
+			resourceMap["limits"] = limits
+		}
+		if resources.Requests != nil {
+			requests := make(map[string]string)
+			for k, v := range resources.Requests {
+				requests[string(k)] = v
+			}
+			resourceMap["requests"] = requests
+		}
+		k8sResources := convertResourceRequirementsToK8s(resourceMap)
+
+		// 转换环境变量到K8s API类型
+		envMaps := make([]map[string]string, len(envVars))
+		for i, env := range envVars {
+			envMap := make(map[string]string)
+			envMap["name"] = env.Name
+			envMap["value"] = env.Value
+			envMaps[i] = envMap
+		}
+		k8sEnvVars := convertEnvVarsToK8s(envMaps)
+
+		// 转换容器端口到K8s API类型
+		portMaps := make([]map[string]interface{}, len(ports))
+		for i, port := range ports {
+			portMap := make(map[string]interface{})
+			portMap["name"] = port.Name
+			portMap["containerPort"] = int32(port.ContainerPort)
+			portMap["protocol"] = port.Protocol
+			portMaps[i] = portMap
+		}
+		k8sPorts := convertContainerPortsToK8s(portMaps)
 
 		containerInfos[i] = ContainerInfo{
 			Name:      container.Name,
@@ -220,13 +251,13 @@ func (s *StatefulSetService) GetStatefulSetDetails(ctx context.Context, clusterN
 
 		// 添加健康检查探针
 		if container.LivenessProbe != nil {
-			containerInfos[i].LivenessProbe = convertK8sProbeToCustomProbe(container.LivenessProbe)
+			containerInfos[i].LivenessProbe = container.LivenessProbe
 		}
 		if container.ReadinessProbe != nil {
-			containerInfos[i].ReadinessProbe = convertK8sProbeToCustomProbe(container.ReadinessProbe)
+			containerInfos[i].ReadinessProbe = container.ReadinessProbe
 		}
 		if container.StartupProbe != nil {
-			containerInfos[i].StartupProbe = convertK8sProbeToCustomProbe(container.StartupProbe)
+			containerInfos[i].StartupProbe = container.StartupProbe
 		}
 	}
 
@@ -366,24 +397,24 @@ func (s *StatefulSetService) UpdateStatefulSet(ctx context.Context, clusterName,
 					if currentSts.Spec.Template.Spec.Containers[i].Resources.Requests == nil {
 						currentSts.Spec.Template.Spec.Containers[i].Resources.Requests = corev1.ResourceList{}
 					}
-					for resource, value := range requests {
-						parsedQuantity, err := corev1.ParseQuantity(value)
+					for resourceName, value := range requests {
+						parsedQuantity, err := resource.ParseQuantity(value)
 						if err != nil {
 							return nil, fmt.Errorf("解析资源请求失败: %w", err)
 						}
-						currentSts.Spec.Template.Spec.Containers[i].Resources.Requests[corev1.ResourceName(resource)] = parsedQuantity
+						currentSts.Spec.Template.Spec.Containers[i].Resources.Requests[corev1.ResourceName(resourceName)] = parsedQuantity
 					}
 				}
 				if limits, ok := containerResources["limits"]; ok {
 					if currentSts.Spec.Template.Spec.Containers[i].Resources.Limits == nil {
 						currentSts.Spec.Template.Spec.Containers[i].Resources.Limits = corev1.ResourceList{}
 					}
-					for resource, value := range limits {
-						parsedQuantity, err := corev1.ParseQuantity(value)
+					for resourceName, value := range limits {
+						parsedQuantity, err := resource.ParseQuantity(value)
 						if err != nil {
 							return nil, fmt.Errorf("解析资源限制失败: %w", err)
 						}
-						currentSts.Spec.Template.Spec.Containers[i].Resources.Limits[corev1.ResourceName(resource)] = parsedQuantity
+						currentSts.Spec.Template.Spec.Containers[i].Resources.Limits[corev1.ResourceName(resourceName)] = parsedQuantity
 					}
 				}
 			}

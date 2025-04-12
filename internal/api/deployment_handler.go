@@ -284,3 +284,35 @@ func (h *DeploymentHandler) GetAllRelatedEvents(c *gin.Context) {
 		"events": eventMap,
 	})
 }
+
+// DeleteDeployment 删除Deployment
+func (h *DeploymentHandler) DeleteDeployment(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	deploymentName := c.Param("deployment")
+	logger.Info("删除deployment: " + clusterName + ", 命名空间: " + namespace + ", 名称: " + deploymentName)
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
+		return
+	}
+	if deploymentName == "" {
+		ResponseError(c, http.StatusBadRequest, "deployment.deploymentNameEmpty")
+		return
+	}
+
+	err := h.service.DeleteDeployment(clusterName, namespace, deploymentName)
+	if err != nil {
+		logger.Errorf("删除Deployment %s 失败: %v", deploymentName, err)
+		FailWithError(c, http.StatusInternalServerError, "deployment.deleteFailed", err)
+		return
+	}
+
+	ResponseSuccess(c, gin.H{
+		"message": "Deployment deleted successfully",
+	})
+}

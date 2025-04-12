@@ -173,7 +173,7 @@ const StatefulSets: React.FC = () => {
     {
       title: t('common.status'),
       key: 'status',
-      render: (_, record: StatefulSetInfo) => (
+      render: (_: unknown, record: StatefulSetInfo) => (
         <Tag color={record.replicas === record.readyReplicas ? 'green' : 'orange'}>
           {record.readyReplicas}/{record.replicas}
         </Tag>
