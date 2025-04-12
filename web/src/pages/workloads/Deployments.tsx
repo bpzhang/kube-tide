@@ -34,12 +34,12 @@ import {
   getDeploymentDetails,
   createDeployment,
   CreateDeploymentRequest
-} from '../../api/deployment';
-import { getClusterList } from '../../api/cluster';
-import { formatDate } from '../../utils/format';
-import DeploymentDetail from '../../components/k8s/deployment/DeploymentDetail';
-import CreateDeploymentModal from '../../components/k8s/deployment/CreateDeploymentModal';
-import NamespaceSelector from '../../components/k8s/common/NamespaceSelector';
+} from '@/api/deployment';
+import { getClusterList } from '@/api/cluster';
+import { formatDate } from '@/utils/format';
+import DeploymentDetail from '@/components/k8s/deployment/DeploymentDetail';
+import CreateDeploymentModal from '@/components/k8s/deployment/CreateDeploymentModal';
+import NamespaceSelector from '@/components/k8s/common/NamespaceSelector';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -298,8 +298,8 @@ const DeploymentsPage: React.FC = () => {
     },
     {
       title: t('deployments.createdAt'),
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      dataIndex: 'creationTime',
+      key: 'creationTime',
       render: (time: string) => formatDate(time),
     },
     {
