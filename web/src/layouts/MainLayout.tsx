@@ -52,6 +52,11 @@ const MainLayout: React.FC = () => {
           label: <Link to="/workloads/deployments">{t('navigation.deployments')}</Link>,
         },
         {
+          key: 'statefulsets',
+          icon: <BlockOutlined />,
+          label: <Link to="/workloads/statefulsets">{t('navigation.statefulsets')}</Link>,
+        },
+        {
           key: 'pods',
           icon: <ProductOutlined />,
           label: <Link to="/workloads/pods">{t('navigation.pods')}</Link>,

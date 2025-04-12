@@ -16,6 +16,7 @@ type App struct {
 	PodHandler         *PodHandler
 	ServiceHandler     *ServiceHandler
 	DeploymentHandler  *DeploymentHandler
+	StatefulSetHandler *StatefulSetHandler // 添加StatefulSet处理器
 	NodePoolHandler    *NodePoolHandler
 	HealthHandler      *HealthCheckHandler
 	PodTerminalHandler *PodTerminalHandler
@@ -138,6 +139,20 @@ func InitRouter(app *App) *gin.Engine {
 		v1.PUT("/clusters/:cluster/namespaces/:namespace/deployments/:deployment", app.DeploymentHandler.UpdateDeployment)
 		v1.PUT("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/scale", app.DeploymentHandler.ScaleDeployment)
 		v1.POST("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/restart", app.DeploymentHandler.RestartDeployment)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/deployments/:deployment", app.DeploymentHandler.DeleteDeployment)
+
+		// StatefulSet management
+		v1.GET("/clusters/:cluster/statefulsets", app.StatefulSetHandler.ListStatefulSets)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/statefulsets", app.StatefulSetHandler.ListStatefulSets)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/statefulsets/:statefulset", app.StatefulSetHandler.GetStatefulSetDetails)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/statefulsets/:statefulset/events", app.StatefulSetHandler.GetStatefulSetEvents)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/statefulsets/:statefulset/all-events", app.StatefulSetHandler.GetAllStatefulSetEvents)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/statefulsets/:statefulset/pods", app.StatefulSetHandler.GetStatefulSetPods)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/statefulsets", app.StatefulSetHandler.CreateStatefulSet)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/statefulsets/:statefulset", app.StatefulSetHandler.UpdateStatefulSet)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/statefulsets/:statefulset/scale", app.StatefulSetHandler.ScaleStatefulSet)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/statefulsets/:statefulset/restart", app.StatefulSetHandler.RestartStatefulSet)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/statefulsets/:statefulset", app.StatefulSetHandler.DeleteStatefulSet)
 	}
 
 	return router

@@ -12,7 +12,7 @@
 
 ### 工作负载管理
 
-- [ ] 实现StatefulSet管理功能
+- [X] 实现StatefulSet管理功能
 - [X] 实现deployment管理功能
 - [ ] 实现DaemonSet管理功能
 - [ ] 添加Job和CronJob管理
