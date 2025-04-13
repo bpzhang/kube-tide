@@ -287,7 +287,7 @@ const DeploymentsPage: React.FC = () => {
     {
       title: t('common.status'),
       key: 'replicas',
-      render: (text: string, record: DeploymentType) => (
+      render: (record: DeploymentType) => (
         <Space>
           <Badge status={record.readyReplicas === record.replicas ? 'success' : 'processing'} />
           <span>
@@ -305,7 +305,7 @@ const DeploymentsPage: React.FC = () => {
     {
       title: t('deployments.actions'),
       key: 'action',
-      render: (text: string, record: DeploymentType) => (
+      render: (record: DeploymentType) => (
         <Space>
           <Tooltip title={t('deployments.viewDetails')}>
             <Button
