@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Progress, Spin, Descriptions, Space, Tabs } from 'antd';
+import { Card, Row, Col, Statistic, Progress, Spin, Descriptions, Space, Tabs, Radio, DatePicker } from 'antd';
 import {
   LineChart,
   Line,
@@ -13,6 +13,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { getPodMetrics } from '@/api/pod_metrics';
 import type { PodMetrics, ContainerMetrics } from '@/api/pod_metrics';
+import dayjs from 'dayjs';
 
 interface PodMonitoringProps {
   clusterName: string;
@@ -22,9 +23,12 @@ interface PodMonitoringProps {
 
 const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, podName }) => {
   const { t } = useTranslation();
+  const { RangePicker } = DatePicker;
   const [loading, setLoading] = useState<boolean>(true);
   const [metrics, setMetrics] = useState<PodMetrics | null>(null);
   const [activeTab, setActiveTab] = useState<string>('overview');
+  const [timeRange, setTimeRange] = useState<string>('1h'); // 默认显示最近1小时的数据
+  const [customTimeRange, setCustomTimeRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
   
   // 获取Pod指标数据
   const fetchPodMetrics = async () => {
@@ -56,10 +60,82 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
     return () => clearInterval(intervalId);
   }, [clusterName, namespace, podName]);
   
-  // 格式化时间戳为小时:分钟
+  // 格式化时间戳，根据选择的时间范围显示不同级别的细节
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    
+    // 根据时间范围选择合适的格式
+    if (timeRange === '1h' || timeRange === '6h') {
+      // 短时间范围仅显示时:分
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    } else if (timeRange === '24h') {
+      // 24小时显示日期和时间
+      return `${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    } else {
+      // 更长时间范围显示年-月-日
+      return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+    }
+  };
+  
+  // 根据选择的时间范围过滤数据，并确保数据按时间顺序排序
+  const filterDataByTimeRange = (data: { timestamp: string; value: number }[]) => {
+    if (!data || data.length === 0) return [];
+    
+    const now = new Date();
+    let startTime: Date;
+    
+    // 如果设置了自定义时间范围
+    if (customTimeRange && customTimeRange[0] && customTimeRange[1]) {
+      const filteredData = data.filter(item => {
+        const itemTime = new Date(item.timestamp);
+        return itemTime >= customTimeRange[0].toDate() && itemTime <= customTimeRange[1].toDate();
+      });
+      
+      // 按时间戳排序
+      return filteredData.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    }
+    
+    // 根据预设时间范围过滤
+    switch (timeRange) {
+      case '1h':
+        startTime = new Date(now.getTime() - 60 * 60 * 1000);
+        break;
+      case '6h':
+        startTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+        break;
+      case '24h':
+        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startTime = new Date(now.getTime() - 60 * 60 * 1000); // 默认1小时
+    }
+    
+    const filteredData = data.filter(item => new Date(item.timestamp) >= startTime);
+    
+    // 按时间戳排序
+    return filteredData.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  };
+  
+  // 处理时间范围变更
+  const handleTimeRangeChange = (e: any) => {
+    setTimeRange(e.target.value);
+    setCustomTimeRange(null); // 清除自定义时间范围
+  };
+  
+  // 处理自定义时间范围变更
+  const handleCustomRangeChange = (dates: any) => {
+    if (dates && dates.length === 2) {
+      setCustomTimeRange([dates[0], dates[1]]);
+      setTimeRange('custom'); // 设置为自定义模式
+    } else {
+      setCustomTimeRange(null);
+    }
   };
   
   // 渲染Pod总体概览
@@ -165,7 +241,7 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
             <Card title={t('podDetail.monitoring.cpuHistory')}>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart
-                  data={metrics.historicalData.cpuUsage.map(item => ({
+                  data={filterDataByTimeRange(metrics.historicalData.cpuUsage).map(item => ({
                     name: formatTime(item.timestamp),
                     value: item.value
                   }))}
@@ -192,7 +268,7 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
             <Card title={t('podDetail.monitoring.memoryHistory')}>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart
-                  data={metrics.historicalData.memoryUsage.map(item => ({
+                  data={filterDataByTimeRange(metrics.historicalData.memoryUsage).map(item => ({
                     name: formatTime(item.timestamp),
                     value: item.value
                   }))}
@@ -219,7 +295,7 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
             <Card title={t('podDetail.monitoring.diskHistory')}>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart
-                  data={(metrics.historicalData.diskUsage || []).map(item => ({
+                  data={filterDataByTimeRange(metrics.historicalData.diskUsage || []).map(item => ({
                     name: formatTime(item.timestamp),
                     value: item.value
                   }))}
@@ -318,6 +394,92 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
                 </Card>
               </Col>
             </Row>
+            
+            {/* 容器历史数据图表 */}
+            {container.historicalData && (
+              <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                <Col xs={24} md={8}>
+                  <Card title={t('podDetail.monitoring.cpuHistory')} size="small">
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart
+                        data={filterDataByTimeRange(container.historicalData.cpuUsage || []).map(item => ({
+                          name: formatTime(item.timestamp),
+                          value: item.value
+                        }))}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis unit="%" />
+                        <Tooltip />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          name={t('podDetail.monitoring.cpuUsage')}
+                          stroke="#8884d8"
+                          activeDot={{ r: 8 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </Col>
+                
+                <Col xs={24} md={8}>
+                  <Card title={t('podDetail.monitoring.memoryHistory')} size="small">
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart
+                        data={filterDataByTimeRange(container.historicalData.memoryUsage || []).map(item => ({
+                          name: formatTime(item.timestamp),
+                          value: item.value
+                        }))}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis unit="%" />
+                        <Tooltip />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          name={t('podDetail.monitoring.memoryUsage')}
+                          stroke="#82ca9d"
+                          activeDot={{ r: 8 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </Col>
+                
+                <Col xs={24} md={8}>
+                  <Card title={t('podDetail.monitoring.diskHistory')} size="small">
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart
+                        data={filterDataByTimeRange(container.historicalData.diskUsage || []).map(item => ({
+                          name: formatTime(item.timestamp),
+                          value: item.value
+                        }))}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis unit="%" />
+                        <Tooltip />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          name={t('podDetail.monitoring.diskUsage')}
+                          stroke="#f5a442"
+                          activeDot={{ r: 8 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </Col>
+              </Row>
+            )}
           </Card>
         ))}
       </Space>
@@ -342,6 +504,22 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
   
   return (
     <div className="pod-monitoring">
+      <Radio.Group value={timeRange} onChange={handleTimeRangeChange} style={{ marginBottom: 16 }}>
+        <Radio.Button value="1h">{t('timeRange.1h')}</Radio.Button>
+        <Radio.Button value="6h">{t('timeRange.6h')}</Radio.Button>
+        <Radio.Button value="24h">{t('timeRange.24h')}</Radio.Button>
+        <Radio.Button value="7d">{t('timeRange.7d')}</Radio.Button>
+        <Radio.Button value="30d">{t('timeRange.30d')}</Radio.Button>
+        <Radio.Button value="custom">{t('timeRange.custom')}</Radio.Button>
+      </Radio.Group>
+      {timeRange === 'custom' && (
+        <RangePicker
+          showTime
+          value={customTimeRange}
+          onChange={handleCustomRangeChange}
+          style={{ marginBottom: 16 }}
+        />
+      )}
       <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}

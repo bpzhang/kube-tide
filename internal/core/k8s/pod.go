@@ -30,13 +30,16 @@ func IsNotFoundError(err error) bool {
 
 // PodService Pod服务
 type PodService struct {
-	clientManager *ClientManager
+	clientManager  *ClientManager
+	metricsService *PodMetricsService
 }
 
 // NewPodService 创建Pod服务
 func NewPodService(clientManager *ClientManager) *PodService {
+	metricsService := NewPodMetricsService(clientManager)
 	return &PodService{
-		clientManager: clientManager,
+		clientManager:  clientManager,
+		metricsService: metricsService,
 	}
 }
 
@@ -330,4 +333,10 @@ func (s *PodService) GetPodEvents(ctx context.Context, clusterName, namespace, p
 	})
 
 	return events.Items, nil
+}
+
+// GetPodMetrics 获取Pod的CPU和内存监控指标（使用缓存服务）
+func (s *PodService) GetPodMetrics(ctx context.Context, clusterName, namespace, podName string) (*PodMetrics, error) {
+	// 直接使用指标服务获取Pod指标（会优先从缓存获取，缓存中没有再从API获取）
+	return s.metricsService.GetPodMetrics(ctx, clusterName, namespace, podName)
 }

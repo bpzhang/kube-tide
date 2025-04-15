@@ -52,6 +52,39 @@ func main() {
 	namespaceService := k8s.NewNamespaceService(clientManager)     // 初始化命名空间服务
 	statefulSetService := k8s.NewStatefulSetService(clientManager) // 初始化StatefulSet服务
 
+	// 初始化Pod指标服务，用于收集和缓存监控数据
+	podMetricsService := k8s.NewPodMetricsService(clientManager)
+
+	// 启动后台任务，每1分钟定期收集所有集群的Pod指标
+	ctx, cancelCollect := context.WithCancel(context.Background())
+
+	// 获取所有集群并为每个集群启动指标收集
+	clusters := clientManager.ListClusters()
+	if len(clusters) > 0 {
+		for _, clusterName := range clusters {
+			logger.Info("启动Pod指标收集", "集群", clusterName)
+			podMetricsService.StartPeriodicMetricsCollection(ctx, clusterName, 1*time.Minute)
+		}
+	} else {
+		logger.Warn("无法启动Pod指标收集", "错误", nil)
+	}
+
+	// 启动定期清理过期缓存的任务
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				logger.Debug("清理过期的Pod指标缓存")
+				podMetricsService.CleanExpiredMetricsCache()
+			}
+		}
+	}()
+
 	// create API handlers
 	nodeHandler := api.NewNodeHandler(nodeService)
 	podHandler := api.NewPodHandler(podService)
@@ -108,6 +141,10 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	logger.Info("Shutting down the server...")
+
+	// 停止指标收集
+	cancelCollect()
+	logger.Info("已停止指标数据收集")
 
 	// Set a 5-second timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

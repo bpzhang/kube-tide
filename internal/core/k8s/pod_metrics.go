@@ -53,6 +53,12 @@ type ContainerMetrics struct {
 	MemoryLimits   string  `json:"memoryLimits"`
 	DiskRequests   string  `json:"diskRequests"`
 	DiskLimits     string  `json:"diskLimits"`
+	// 容器级别的历史数据
+	HistoricalData struct {
+		CPUUsage    []MetricDataPoint `json:"cpuUsage"`
+		MemoryUsage []MetricDataPoint `json:"memoryUsage"`
+		DiskUsage   []MetricDataPoint `json:"diskUsage"`
+	} `json:"historicalData"`
 }
 
 // GetPodMetrics 获取Pod监控指标
@@ -292,6 +298,131 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 			// 确保使用率不超过100%
 			if diskUsagePercentage > 100 {
 				diskUsagePercentage = 100
+			} // 初始化容器的历史数据结构
+			containerHistorical := struct {
+				CPUUsage    []MetricDataPoint `json:"cpuUsage"`
+				MemoryUsage []MetricDataPoint `json:"memoryUsage"`
+				DiskUsage   []MetricDataPoint `json:"diskUsage"`
+			}{
+				CPUUsage:    make([]MetricDataPoint, 0),
+				MemoryUsage: make([]MetricDataPoint, 0),
+				DiskUsage:   make([]MetricDataPoint, 0),
+			}
+
+			// 添加当前的资源使用数据作为历史数据的起点
+			currentTime := time.Now().Format(time.RFC3339)
+			containerHistorical.CPUUsage = append(containerHistorical.CPUUsage, MetricDataPoint{
+				Timestamp: currentTime,
+				Value:     cpuUsagePercentage,
+			})
+
+			containerHistorical.MemoryUsage = append(containerHistorical.MemoryUsage, MetricDataPoint{
+				Timestamp: currentTime,
+				Value:     memoryUsagePercentage,
+			})
+
+			containerHistorical.DiskUsage = append(containerHistorical.DiskUsage, MetricDataPoint{
+				Timestamp: currentTime,
+				Value:     diskUsagePercentage,
+			})
+
+			// 从缓存中获取容器的历史数据
+			if containerCache, err := GetPodResourceUsage(client, config, namespace, podName); err == nil && containerCache != nil {
+				// 从资源使用缓存中查找容器的历史数据
+				for _, container := range containerCache.Containers {
+					if container.Name == containerMetrics.Name {
+						// 获取容器的CPU历史数据
+						if cpuData, ok := containerCache.Historical["cpu"]; ok && len(cpuData) > 0 {
+							for _, point := range cpuData {
+								// 计算CPU使用率百分比
+								cpuPercentage := float64(0)
+								if cpuLimits > 0 {
+									cpuPercentage = point.Value * 1000 / float64(cpuLimits) * 100
+								} else if cpuRequests > 0 {
+									cpuPercentage = point.Value * 1000 / float64(cpuRequests) * 100
+								} else if capacity, ok := nodeCapacity["cpu"]; ok {
+									cpuPercentage = point.Value * 1000 / float64(capacity["capacity"]) * 100
+								} else {
+									// 如果没有限制或请求，使用当前实际值
+									cpuPercentage = cpuUsagePercentage
+								}
+
+								// 确保值在有效范围内
+								if cpuPercentage < 0 {
+									cpuPercentage = 0
+								} else if cpuPercentage > 100 {
+									cpuPercentage = 100
+								}
+
+								containerHistorical.CPUUsage = append(containerHistorical.CPUUsage, MetricDataPoint{
+									Timestamp: point.Timestamp.Format(time.RFC3339),
+									Value:     cpuPercentage,
+								})
+							}
+						}
+
+						// 获取容器的内存历史数据
+						if memoryData, ok := containerCache.Historical["memory"]; ok && len(memoryData) > 0 {
+							for _, point := range memoryData {
+								// 计算内存使用率百分比
+								memoryPercentage := float64(0)
+								if memoryLimits > 0 {
+									memoryPercentage = point.Value / float64(memoryLimits) * 100
+								} else if memoryRequests > 0 {
+									memoryPercentage = point.Value / float64(memoryRequests) * 100
+								} else if capacity, ok := nodeCapacity["memory"]; ok {
+									memoryPercentage = point.Value / float64(capacity["capacity"]) * 100
+								} else {
+									// 如果没有限制或请求，使用当前实际值
+									memoryPercentage = memoryUsagePercentage
+								}
+
+								// 确保值在有效范围内
+								if memoryPercentage < 0 {
+									memoryPercentage = 0
+								} else if memoryPercentage > 100 {
+									memoryPercentage = 100
+								}
+
+								containerHistorical.MemoryUsage = append(containerHistorical.MemoryUsage, MetricDataPoint{
+									Timestamp: point.Timestamp.Format(time.RFC3339),
+									Value:     memoryPercentage,
+								})
+							}
+						}
+
+						// 获取容器的磁盘历史数据
+						if diskData, ok := containerCache.Historical["disk"]; ok && len(diskData) > 0 {
+							for _, point := range diskData {
+								// 计算磁盘使用率百分比
+								diskPercentage := float64(0)
+								if diskLimits > 0 {
+									diskPercentage = point.Value / float64(diskLimits) * 100
+								} else if diskRequests > 0 {
+									diskPercentage = point.Value / float64(diskRequests) * 100
+								} else if _, ok := nodeCapacity["disk"]; ok {
+									diskPercentage = point.Value / float64(nodeCapacity["disk"]["capacity"]) * 100
+								} else {
+									// 如果没有限制或请求，使用当前实际值
+									diskPercentage = diskUsagePercentage
+								}
+
+								// 确保值在有效范围内
+								if diskPercentage < 0 {
+									diskPercentage = 0
+								} else if diskPercentage > 100 {
+									diskPercentage = 100
+								}
+
+								containerHistorical.DiskUsage = append(containerHistorical.DiskUsage, MetricDataPoint{
+									Timestamp: point.Timestamp.Format(time.RFC3339),
+									Value:     diskPercentage,
+								})
+							}
+						}
+						break
+					}
+				}
 			} // 添加到容器指标列表
 			metrics.Containers = append(metrics.Containers, ContainerMetrics{
 				Name:           containerMetrics.Name,
@@ -304,6 +435,7 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 				MemoryLimits:   formatMemory(memoryLimits),
 				DiskRequests:   FormatStorage(diskRequests),
 				DiskLimits:     FormatStorage(diskLimits),
+				HistoricalData: containerHistorical,
 			})
 		}
 	} else {
@@ -377,6 +509,133 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 				diskUsagePercentage = 100
 			}
 
+			// 初始化容器的历史数据结构
+			containerHistorical := struct {
+				CPUUsage    []MetricDataPoint `json:"cpuUsage"`
+				MemoryUsage []MetricDataPoint `json:"memoryUsage"`
+				DiskUsage   []MetricDataPoint `json:"diskUsage"`
+			}{
+				CPUUsage:    make([]MetricDataPoint, 0),
+				MemoryUsage: make([]MetricDataPoint, 0),
+				DiskUsage:   make([]MetricDataPoint, 0),
+			}
+
+			// 添加当前的资源使用数据作为历史数据的起点
+			currentTime := time.Now().Format(time.RFC3339)
+			containerHistorical.CPUUsage = append(containerHistorical.CPUUsage, MetricDataPoint{
+				Timestamp: currentTime,
+				Value:     cpuUsagePercentage,
+			})
+
+			containerHistorical.MemoryUsage = append(containerHistorical.MemoryUsage, MetricDataPoint{
+				Timestamp: currentTime,
+				Value:     memoryUsagePercentage,
+			})
+
+			containerHistorical.DiskUsage = append(containerHistorical.DiskUsage, MetricDataPoint{
+				Timestamp: currentTime,
+				Value:     diskUsagePercentage,
+			})
+
+			// 从缓存中获取容器的历史数据
+			if containerCache, err := GetPodResourceUsage(client, config, namespace, podName); err == nil && containerCache != nil {
+				// 从资源使用缓存中查找容器的历史数据
+				for _, container := range containerCache.Containers {
+					if container.Name == containerMetrics.Name {
+						// 获取容器的CPU历史数据
+						if cpuData, ok := containerCache.Historical["cpu"]; ok && len(cpuData) > 0 {
+							for _, point := range cpuData {
+								// 计算CPU使用率百分比
+								cpuPercentage := float64(0)
+								if cpuLimits > 0 {
+									cpuPercentage = point.Value * 1000 / float64(cpuLimits) * 100
+								} else if cpuRequests > 0 {
+									cpuPercentage = point.Value * 1000 / float64(cpuRequests) * 100
+								} else if capacity, ok := nodeCapacity["cpu"]; ok {
+									cpuPercentage = point.Value * 1000 / float64(capacity["capacity"]) * 100
+								} else {
+									// 如果没有限制或请求，使用当前实际值
+									cpuPercentage = cpuUsagePercentage
+								}
+
+								// 确保值在有效范围内
+								if cpuPercentage < 0 {
+									cpuPercentage = 0
+								} else if cpuPercentage > 100 {
+									cpuPercentage = 100
+								}
+
+								containerHistorical.CPUUsage = append(containerHistorical.CPUUsage, MetricDataPoint{
+									Timestamp: point.Timestamp.Format(time.RFC3339),
+									Value:     cpuPercentage,
+								})
+							}
+						}
+
+						// 获取容器的内存历史数据
+						if memoryData, ok := containerCache.Historical["memory"]; ok && len(memoryData) > 0 {
+							for _, point := range memoryData {
+								// 计算内存使用率百分比
+								memoryPercentage := float64(0)
+								if memoryLimits > 0 {
+									memoryPercentage = point.Value / float64(memoryLimits) * 100
+								} else if memoryRequests > 0 {
+									memoryPercentage = point.Value / float64(memoryRequests) * 100
+								} else if capacity, ok := nodeCapacity["memory"]; ok {
+									memoryPercentage = point.Value / float64(capacity["capacity"]) * 100
+								} else {
+									// 如果没有限制或请求，使用当前实际值
+									memoryPercentage = memoryUsagePercentage
+								}
+
+								// 确保值在有效范围内
+								if memoryPercentage < 0 {
+									memoryPercentage = 0
+								} else if memoryPercentage > 100 {
+									memoryPercentage = 100
+								}
+
+								containerHistorical.MemoryUsage = append(containerHistorical.MemoryUsage, MetricDataPoint{
+									Timestamp: point.Timestamp.Format(time.RFC3339),
+									Value:     memoryPercentage,
+								})
+							}
+						}
+
+						// 获取容器的磁盘历史数据
+						if diskData, ok := containerCache.Historical["disk"]; ok && len(diskData) > 0 {
+							for _, point := range diskData {
+								// 计算磁盘使用率百分比
+								diskPercentage := float64(0)
+								if diskLimits > 0 {
+									diskPercentage = point.Value / float64(diskLimits) * 100
+								} else if diskRequests > 0 {
+									diskPercentage = point.Value / float64(diskRequests) * 100
+								} else if _, ok := nodeCapacity["disk"]; ok {
+									diskPercentage = point.Value / float64(nodeCapacity["disk"]["capacity"]) * 100
+								} else {
+									// 如果没有限制或请求，使用当前实际值
+									diskPercentage = diskUsagePercentage
+								}
+
+								// 确保值在有效范围内
+								if diskPercentage < 0 {
+									diskPercentage = 0
+								} else if diskPercentage > 100 {
+									diskPercentage = 100
+								}
+
+								containerHistorical.DiskUsage = append(containerHistorical.DiskUsage, MetricDataPoint{
+									Timestamp: point.Timestamp.Format(time.RFC3339),
+									Value:     diskPercentage,
+								})
+							}
+						}
+						break
+					}
+				}
+			}
+
 			// 添加到容器指标列表
 			metrics.Containers = append(metrics.Containers, ContainerMetrics{
 				Name:           containerMetrics.Name,
@@ -389,6 +648,7 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 				MemoryLimits:   formatMemory(memoryLimits),
 				DiskRequests:   FormatStorage(diskRequests),
 				DiskLimits:     FormatStorage(diskLimits),
+				HistoricalData: containerHistorical,
 			})
 		}
 	}

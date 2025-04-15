@@ -57,6 +57,12 @@ export interface ContainerMetrics {
   memoryLimits: string;
   diskRequests: string;
   diskLimits: string;
+  // 容器级别的历史数据
+  historicalData?: {
+    cpuUsage: MetricDataPoint[];
+    memoryUsage: MetricDataPoint[];
+    diskUsage: MetricDataPoint[];
+  };
 }
 
 // 获取Pod的CPU和内存指标
