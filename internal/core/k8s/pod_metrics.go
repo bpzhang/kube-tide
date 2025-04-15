@@ -445,50 +445,105 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 		metrics.DiskUsage = 100
 	}
 
-	// 生成模拟的历史数据
+	// 使用真实数据来替代模拟数据
+	// 首先尝试通过 pod_resource_usage.go 中的实现获取真实的历史数据
+	resourceUsage, err = GetPodResourceUsage(client, config, namespace, podName)
+
+	// 检查是否成功获取了真实历史数据
+	if err == nil && resourceUsage != nil && len(resourceUsage.Historical) > 0 {
+		// 如果有CPU历史数据，使用它
+		if cpuHistory, ok := resourceUsage.Historical["cpu"]; ok && len(cpuHistory) > 0 {
+			// 清空现有的模拟数据
+			metrics.HistoricalData.CPUUsage = []MetricDataPoint{}
+
+			// 添加真实的CPU历史数据
+			for _, point := range cpuHistory {
+				// 计算CPU使用率百分比
+				cpuPercentage := float64(0)
+				if totalCPULimits > 0 {
+					cpuPercentage = point.Value * 1000 / float64(totalCPULimits) * 100 // 转换为毫核再计算百分比
+				} else if totalCPURequests > 0 {
+					cpuPercentage = point.Value * 1000 / float64(totalCPURequests) * 100
+				} else if capacity, ok := nodeCapacity["cpu"]; ok {
+					cpuPercentage = point.Value * 1000 / float64(capacity["capacity"]) * 100
+				} else {
+					// 如果没有限制或请求，使用当前实际值
+					cpuPercentage = metrics.CPUUsage
+				}
+
+				// 确保值在有效范围内
+				if cpuPercentage < 0 {
+					cpuPercentage = 0
+				} else if cpuPercentage > 100 {
+					cpuPercentage = 100
+				}
+
+				metrics.HistoricalData.CPUUsage = append(metrics.HistoricalData.CPUUsage, MetricDataPoint{
+					Timestamp: point.Timestamp.Format(time.RFC3339),
+					Value:     cpuPercentage,
+				})
+			}
+		}
+
+		// 如果有内存历史数据，使用它
+		if memoryHistory, ok := resourceUsage.Historical["memory"]; ok && len(memoryHistory) > 0 {
+			// 清空现有的模拟数据
+			metrics.HistoricalData.MemoryUsage = []MetricDataPoint{}
+
+			// 添加真实的内存历史数据
+			for _, point := range memoryHistory {
+				// 计算内存使用率百分比
+				memoryPercentage := float64(0)
+				if totalMemoryLimits > 0 {
+					memoryPercentage = point.Value / float64(totalMemoryLimits) * 100
+				} else if totalMemoryRequests > 0 {
+					memoryPercentage = point.Value / float64(totalMemoryRequests) * 100
+				} else if capacity, ok := nodeCapacity["memory"]; ok {
+					memoryPercentage = point.Value / float64(capacity["capacity"]) * 100
+				} else {
+					// 如果没有限制或请求，使用当前实际值
+					memoryPercentage = metrics.MemoryUsage
+				}
+
+				// 确保值在有效范围内
+				if memoryPercentage < 0 {
+					memoryPercentage = 0
+				} else if memoryPercentage > 100 {
+					memoryPercentage = 100
+				}
+
+				metrics.HistoricalData.MemoryUsage = append(metrics.HistoricalData.MemoryUsage, MetricDataPoint{
+					Timestamp: point.Timestamp.Format(time.RFC3339),
+					Value:     memoryPercentage,
+				})
+			}
+		}
+	}
+
+	// 如果没有获取到历史数据或获取历史数据失败，添加当前的实际值作为唯一数据点
 	now := time.Now()
-	for i := 23; i >= 0; i-- {
-		t := now.Add(time.Duration(-i) * time.Hour)
-		// 简单模拟一些波动的数据
-		cpuVariation := float64(i%5) * 0.8
-		memoryVariation := float64(i%3) * 0.5
-		diskVariation := float64(i%4) * 0.3 // 硬盘使用率变化通常比CPU和内存小
 
-		// 确保CPU和内存使用率不小于0且不超过100%
-		cpuValue := metrics.CPUUsage + cpuVariation
-		if cpuValue < 0 {
-			cpuValue = 0
-		} else if cpuValue > 100 {
-			cpuValue = 100
-		}
-
-		memoryValue := metrics.MemoryUsage + memoryVariation
-		if memoryValue < 0 {
-			memoryValue = 0
-		} else if memoryValue > 100 {
-			memoryValue = 100
-		}
-
-		diskValue := metrics.DiskUsage + diskVariation
-		if diskValue < 0 {
-			diskValue = 0
-		} else if diskValue > 100 {
-			diskValue = 100
-		}
-
+	// 如果CPU历史数据为空，添加当前值
+	if len(metrics.HistoricalData.CPUUsage) == 0 {
 		metrics.HistoricalData.CPUUsage = append(metrics.HistoricalData.CPUUsage, MetricDataPoint{
-			Timestamp: t.Format(time.RFC3339),
-			Value:     cpuValue,
+			Timestamp: now.Format(time.RFC3339),
+			Value:     metrics.CPUUsage,
 		})
+	}
 
+	// 如果内存历史数据为空，添加当前值
+	if len(metrics.HistoricalData.MemoryUsage) == 0 {
 		metrics.HistoricalData.MemoryUsage = append(metrics.HistoricalData.MemoryUsage, MetricDataPoint{
-			Timestamp: t.Format(time.RFC3339),
-			Value:     memoryValue,
+			Timestamp: now.Format(time.RFC3339),
+			Value:     metrics.MemoryUsage,
 		})
+	}
 
+	// 如果磁盘历史数据为空，添加当前值
+	if len(metrics.HistoricalData.DiskUsage) == 0 {
 		metrics.HistoricalData.DiskUsage = append(metrics.HistoricalData.DiskUsage, MetricDataPoint{
-			Timestamp: t.Format(time.RFC3339),
-			Value:     diskValue,
+			Timestamp: now.Format(time.RFC3339),
+			Value:     metrics.DiskUsage,
 		})
 	}
 
