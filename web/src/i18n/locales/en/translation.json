@@ -294,6 +294,7 @@
     "container": "Container",
     "tabs": {
       "info": "Basic Information",
+      "monitoring": "Monitoring",
       "logs": "Logs",
       "terminal": "Terminal"
     },
@@ -308,6 +309,18 @@
       "creationTime": "Creation Time",
       "qos": "QoS Class",
       "phase": "Phase"
+    },
+    "monitoring": {
+      "cpuUsage": "CPU Usage",
+      "memoryUsage": "Memory Usage",
+      "requests": "Requests",
+      "limits": "Limits",
+      "cpuHistory": "CPU Usage History",
+      "memoryHistory": "Memory Usage History",
+      "overview": "Overview",
+      "containers": "Containers",
+      "noContainerMetrics": "No container metrics available",
+      "noMetricsData": "No monitoring data available"
     },
     "containers": {
       "title": "Containers",

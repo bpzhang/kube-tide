@@ -6,6 +6,7 @@ import { getPodDetails } from '../../api/pod';
 import PodDetail from '../../components/k8s/pod/PodDetail';
 import PodTerminal from '../../components/k8s/pod/PodTerminal';
 import PodLogs from '../../components/k8s/pod/PodLogs';
+import PodMonitoring from '../../components/k8s/pod/PodMonitoring';
 import { useTranslation } from 'react-i18next';
 
 const { Option } = Select;
@@ -79,6 +80,17 @@ const PodDetailPage: React.FC = () => {
       key: 'info',
       label: t('podDetail.tabs.info'),
       children: <PodDetail pod={pod} clusterName={clusterName!} />
+    },
+    {
+      key: 'monitoring',
+      label: t('podDetail.tabs.monitoring'),
+      children: (
+        <PodMonitoring
+          clusterName={clusterName!}
+          namespace={namespace!}
+          podName={podName!}
+        />
+      )
     },
     {
       key: 'logs',

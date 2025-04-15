@@ -117,6 +117,8 @@ func InitRouter(app *App) *gin.Engine {
 		v1.DELETE("/clusters/:cluster/namespaces/:namespace/pods/:pod", app.PodHandler.DeletePod)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/logs", app.PodHandler.GetPodLogs)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/logs/stream", app.PodHandler.StreamPodLogs)
+		// Pod metrics API
+		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/metrics", app.PodHandler.GetPodMetrics)
 		// Pod existence check API
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/exists", app.PodHandler.CheckPodExists)
 		// Pod terminal WebSocket route

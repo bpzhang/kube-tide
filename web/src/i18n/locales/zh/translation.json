@@ -292,6 +292,7 @@
     "container": "容器",
     "tabs": {
       "info": "基本信息",
+      "monitoring": "监控",
       "logs": "日志",
       "terminal": "终端"
     },
@@ -305,6 +306,18 @@
       "creationTime": "创建时间",
       "qos": "QoS 等级",
       "phase": "阶段"
+    },
+    "monitoring": {
+      "cpuUsage": "CPU 使用率",
+      "memoryUsage": "内存使用率",
+      "requests": "请求",
+      "limits": "限制",
+      "cpuHistory": "CPU 使用历史",
+      "memoryHistory": "内存使用历史",
+      "overview": "总览",
+      "containers": "容器",
+      "noContainerMetrics": "无可用的容器指标",
+      "noMetricsData": "无可用的监控数据"
     },
     "containers": {
       "title": "容器",
