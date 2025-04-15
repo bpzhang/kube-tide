@@ -69,7 +69,7 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
     return (
       <div>
         <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12}>
+          <Col xs={24} sm={8}>
             <Card title={t('podDetail.monitoring.cpuUsage')}>
               <Statistic
                 value={metrics.cpuUsage.toFixed(2)}
@@ -92,7 +92,7 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
             </Card>
           </Col>
           
-          <Col xs={24} sm={12}>
+          <Col xs={24} sm={8}>
             <Card title={t('podDetail.monitoring.memoryUsage')}>
               <Statistic
                 value={metrics.memoryUsage.toFixed(2)}
@@ -114,10 +114,54 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
               </Descriptions>
             </Card>
           </Col>
+          
+          <Col xs={24} sm={8}>
+            <Card title={t('podDetail.monitoring.diskUsage')}>
+              {metrics.diskUsage !== undefined ? (
+                <>
+                  <Statistic
+                    value={metrics.diskUsage.toFixed(2)}
+                    suffix="%"
+                    valueStyle={{ color: metrics.diskUsage > 80 ? '#cf1322' : '#3f8600' }}
+                  />
+                  <Progress
+                    percent={Math.min(100, parseFloat(metrics.diskUsage.toFixed(2)))}
+                    status={metrics.diskUsage > 80 ? 'exception' : 'normal'}
+                    showInfo={false}
+                    strokeColor={{
+                      '0%': '#108ee9',
+                      '100%': metrics.diskUsage > 80 ? '#ff4d4f' : '#87d068',
+                    }}
+                  />
+                </>
+              ) : (
+                <>
+                  <Statistic
+                    value={0}
+                    suffix="%"
+                    valueStyle={{ color: '#3f8600' }}
+                  />
+                  <Progress
+                    percent={0}
+                    status="normal"
+                    showInfo={false}
+                    strokeColor={{
+                      '0%': '#108ee9',
+                      '100%': '#87d068',
+                    }}
+                  />
+                </>
+              )}
+              <Descriptions column={1} size="small" style={{ marginTop: 16 }}>
+                <Descriptions.Item label={t('podDetail.monitoring.requests')}>{metrics.diskRequests || 'N/A'}</Descriptions.Item>
+                <Descriptions.Item label={t('podDetail.monitoring.limits')}>{metrics.diskLimits || 'N/A'}</Descriptions.Item>
+              </Descriptions>
+            </Card>
+          </Col>
         </Row>
         
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-          <Col xs={24} md={12}>
+          <Col xs={24} md={8}>
             <Card title={t('podDetail.monitoring.cpuHistory')}>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart
@@ -144,7 +188,7 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
             </Card>
           </Col>
           
-          <Col xs={24} md={12}>
+          <Col xs={24} md={8}>
             <Card title={t('podDetail.monitoring.memoryHistory')}>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart
@@ -164,6 +208,33 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
                     dataKey="value"
                     name={t('podDetail.monitoring.memoryUsage')}
                     stroke="#82ca9d"
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          </Col>
+          
+          <Col xs={24} md={8}>
+            <Card title={t('podDetail.monitoring.diskHistory')}>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart
+                  data={(metrics.historicalData.diskUsage || []).map(item => ({
+                    name: formatTime(item.timestamp),
+                    value: item.value
+                  }))}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis unit="%" />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    name={t('podDetail.monitoring.diskUsage')}
+                    stroke="#f5a442"
                     activeDot={{ r: 8 }}
                   />
                 </LineChart>
@@ -190,7 +261,7 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
             style={{ marginBottom: 16 }}
           >
             <Row gutter={[16, 16]}>
-              <Col xs={24} sm={12}>
+              <Col xs={24} sm={8}>
                 <Card title={t('podDetail.monitoring.cpuUsage')} size="small">
                   <Statistic
                     value={container.cpuUsage.toFixed(2)}
@@ -209,7 +280,7 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
                 </Card>
               </Col>
               
-              <Col xs={24} sm={12}>
+              <Col xs={24} sm={8}>
                 <Card title={t('podDetail.monitoring.memoryUsage')} size="small">
                   <Statistic
                     value={container.memoryUsage.toFixed(2)}
@@ -224,6 +295,25 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
                   <Descriptions column={1} size="small" style={{ marginTop: 8 }}>
                     <Descriptions.Item label={t('podDetail.monitoring.requests')}>{container.memoryRequests}</Descriptions.Item>
                     <Descriptions.Item label={t('podDetail.monitoring.limits')}>{container.memoryLimits}</Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              </Col>
+              
+              <Col xs={24} sm={8}>
+                <Card title={t('podDetail.monitoring.diskUsage')} size="small">
+                  <Statistic
+                    value={container.diskUsage.toFixed(2)}
+                    suffix="%"
+                    valueStyle={{ color: container.diskUsage > 80 ? '#cf1322' : '#3f8600' }}
+                  />
+                  <Progress
+                    percent={Math.min(100, parseFloat(container.diskUsage.toFixed(2)))}
+                    status={container.diskUsage > 80 ? 'exception' : 'normal'}
+                    showInfo={false}
+                  />
+                  <Descriptions column={1} size="small" style={{ marginTop: 8 }}>
+                    <Descriptions.Item label={t('podDetail.monitoring.requests')}>{container.diskRequests}</Descriptions.Item>
+                    <Descriptions.Item label={t('podDetail.monitoring.limits')}>{container.diskLimits}</Descriptions.Item>
                   </Descriptions>
                 </Card>
               </Col>

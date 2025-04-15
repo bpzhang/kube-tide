@@ -313,10 +313,12 @@
     "monitoring": {
       "cpuUsage": "CPU Usage",
       "memoryUsage": "Memory Usage",
+      "diskUsage": "Disk Usage",
       "requests": "Requests",
       "limits": "Limits",
       "cpuHistory": "CPU Usage History",
       "memoryHistory": "Memory Usage History",
+      "diskHistory": "Disk Usage History",
       "overview": "Overview",
       "containers": "Containers",
       "noContainerMetrics": "No container metrics available",
