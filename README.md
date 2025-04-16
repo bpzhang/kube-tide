@@ -27,8 +27,11 @@ A Kubernetes multi-cluster management platform based on Go and React, providing 
 - ✅ Pod viewing, details and deletion
 - ✅ Real-time Pod logs viewing
 - ✅ Pod terminal connection
+- ✅ Pod resource monitoring (CPU, Memory, Disk usage)
+- ✅ Pod metrics historical data visualization
 - ✅ Deployment creation and management
 - ✅ Deployment scaling and restart
+- ✅ StatefulSet management
 - ✅ Service management
 
 ## Technology Stack

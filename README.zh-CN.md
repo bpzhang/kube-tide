@@ -25,6 +25,8 @@
 - ✅ Pod查看、详情和删除
 - ✅ Pod日志实时查看
 - ✅ Pod终端(Terminal)连接
+- ✅ Pod资源监控（CPU、内存、磁盘使用情况）
+- ✅ Pod指标历史数据可视化
 - ✅ Deployment创建和管理
 - ✅ Deployment扩缩容和重启
 - ✅ Service管理
