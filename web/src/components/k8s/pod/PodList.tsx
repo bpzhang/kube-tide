@@ -77,16 +77,23 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
 
   // 处理原始 Pod 数据
   const processedPods: ProcessedPod[] = useMemo(() => 
-    localPods.map(pod => ({
-      name: pod.metadata?.name || '',
-      namespace: pod.metadata?.namespace || namespace,
-      status: pod.status?.phase || 'Unknown',
-      podIP: pod.status?.podIP || '-',
-      nodeName: pod.spec?.nodeName || '-',
-      createdAt: pod.metadata?.creationTimestamp || '-',
-      labels: pod.metadata?.labels || {},
-      rawPod: pod,
-    })), 
+    localPods.map(pod => {
+      // 判断Pod是否处于删除状态
+      const status = pod.metadata?.deletionTimestamp 
+        ? "Terminating" 
+        : pod.status?.phase || 'Unknown';
+        
+      return {
+        name: pod.metadata?.name || '',
+        namespace: pod.metadata?.namespace || namespace,
+        status: status,
+        podIP: pod.status?.podIP || '-',
+        nodeName: pod.spec?.nodeName || '-',
+        createdAt: pod.metadata?.creationTimestamp || '-',
+        labels: pod.metadata?.labels || {},
+        rawPod: pod,
+      };
+    }), 
     [localPods, namespace]
   );
 
@@ -168,9 +175,22 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
       await deletePod(clusterName, namespace, podName);
       message.success(t('pods.deleteSuccess'));
       
-      // 在本地删除该Pod，而不是重新获取整个列表
-      // 这样可以保持当前的筛选状态
-      setLocalPods(prevPods => prevPods.filter(pod => pod.metadata?.name !== podName));
+      // 不要立即从列表中移除Pod，而是将其状态更新为Terminating
+      setLocalPods(prevPods => prevPods.map(pod => {
+        if (pod.metadata?.name === podName) {
+          // 深拷贝Pod对象，避免直接修改原对象
+          const updatedPod = JSON.parse(JSON.stringify(pod));
+          // 添加删除时间戳，这样后端就会将其识别为Terminating状态
+          updatedPod.metadata.deletionTimestamp = new Date().toISOString();
+          return updatedPod;
+        }
+        return pod;
+      }));
+      
+      // 延迟刷新以获取最新数据
+      setTimeout(() => {
+        refreshPodList();
+      }, 1000);
     } catch (err) {
       message.error(t('pods.deleteFailed'));
     }
@@ -188,6 +208,7 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
       Unknown: 'grey',
       Succeeded: 'blue',
       Terminated: 'red',
+      Terminating: 'orange', // 添加Terminating状态的颜色
     };
     return colors[status] || 'blue';
   };

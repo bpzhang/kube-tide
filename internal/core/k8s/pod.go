@@ -167,6 +167,25 @@ func (s *PodService) StreamPodLogs(ctx context.Context, clusterName, namespace, 
 
 // GetPodStatus 获取Pod状态
 func (s *PodService) GetPodStatus(pod *corev1.Pod) string {
+	// 检查Pod是否处于删除状态（存在deletion timestamp）
+	if pod.DeletionTimestamp != nil {
+		return "Terminating"
+	}
+
+	// 如果容器状态不为空，可能需要更详细的状态判断
+	if len(pod.Status.ContainerStatuses) > 0 {
+		for _, containerStatus := range pod.Status.ContainerStatuses {
+			// 检查容器是否处于特殊状态
+			if containerStatus.State.Waiting != nil && containerStatus.State.Waiting.Reason != "" {
+				return containerStatus.State.Waiting.Reason
+			}
+			if containerStatus.State.Terminated != nil && containerStatus.State.Terminated.Reason != "" {
+				return containerStatus.State.Terminated.Reason
+			}
+		}
+	}
+
+	// 默认返回Phase状态
 	return string(pod.Status.Phase)
 }
 
@@ -313,7 +332,7 @@ func (s *PodService) GetPodEvents(ctx context.Context, clusterName, namespace, p
 	}
 
 	// pod, err := s.GetPodDetails(ctx, clusterName, namespace, podName)
-	// if err != nil {
+	// if (err != nil) {
 	// 	return nil, fmt.Errorf("获取Pod详情失败: %w", err)
 	// }
 
