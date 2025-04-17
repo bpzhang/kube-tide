@@ -167,8 +167,10 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
     try {
       await deletePod(clusterName, namespace, podName);
       message.success(t('pods.deleteSuccess'));
-      // 在本地刷新数据，而不是调用父组件的onRefresh
-      refreshPodList();
+      
+      // 在本地删除该Pod，而不是重新获取整个列表
+      // 这样可以保持当前的筛选状态
+      setLocalPods(prevPods => prevPods.filter(pod => pod.metadata?.name !== podName));
     } catch (err) {
       message.error(t('pods.deleteFailed'));
     }
