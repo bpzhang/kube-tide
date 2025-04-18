@@ -2,7 +2,6 @@ package k8s
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -45,7 +44,7 @@ func (cm *ClientManager) ValidateKubeconfig(path string) error {
 // ValidateKubeconfigContent 验证kubeconfig内容是否有效
 func (cm *ClientManager) ValidateKubeconfigContent(content string) error {
 	// 创建临时文件
-	tmpfile, err := ioutil.TempFile("", "kubeconfig-*.yaml")
+	tmpfile, err := os.CreateTemp("", "kubeconfig-*.yaml")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file: %w", err)
 	}
@@ -120,7 +119,7 @@ func (cm *ClientManager) AddClusterWithContent(clusterName, content string) erro
 	kubeconfigPath := filepath.Join(tmpDir, fmt.Sprintf("kubeconfig-%s.yaml", clusterName))
 
 	// 写入内容到临时文件
-	if err := ioutil.WriteFile(kubeconfigPath, []byte(content), 0600); err != nil {
+	if err := os.WriteFile(kubeconfigPath, []byte(content), 0600); err != nil {
 		return fmt.Errorf("failed to write kubeconfig content to file: %w", err)
 	}
 
