@@ -13,11 +13,11 @@ import (
 type Response struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
+	Data    any        `json:"data,omitempty"`
 }
 
 // ResponseSuccess Success response
-func ResponseSuccess(c *gin.Context, data interface{}) {
+func ResponseSuccess(c *gin.Context, data any) {
 	// Get language from context
 	lang := middleware.GetLanguage(c)
 
@@ -29,7 +29,7 @@ func ResponseSuccess(c *gin.Context, data interface{}) {
 }
 
 // ResponseError Error response
-func ResponseError(c *gin.Context, code int, messageKey string, args ...interface{}) {
+func ResponseError(c *gin.Context, code int, messageKey string, args ...any) {
 	// Get language from context
 	lang := middleware.GetLanguage(c)
 
@@ -40,7 +40,7 @@ func ResponseError(c *gin.Context, code int, messageKey string, args ...interfac
 }
 
 // Fail Returns a failure response
-func Fail(c *gin.Context, httpCode int, messageKey string, args ...interface{}) {
+func Fail(c *gin.Context, httpCode int, messageKey string, args ...any) {
 	// Get language from context
 	lang := middleware.GetLanguage(c)
 
@@ -51,7 +51,7 @@ func Fail(c *gin.Context, httpCode int, messageKey string, args ...interface{}) 
 }
 
 // FailWithError Returns a failure response with error
-func FailWithError(c *gin.Context, httpCode int, messageKey string, err error, args ...interface{}) {
+func FailWithError(c *gin.Context, httpCode int, messageKey string, err error, args ...any) {
 	// Get language from context
 	lang := middleware.GetLanguage(c)
 
