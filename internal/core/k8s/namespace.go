@@ -3,8 +3,8 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"sort"
 	"kube-tide/internal/utils/logger"
+	"sort"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

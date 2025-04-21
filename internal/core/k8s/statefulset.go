@@ -312,7 +312,7 @@ func (s *StatefulSetService) GetStatefulSetDetails(ctx context.Context, clusterN
 	paused := false
 	if sts.Spec.UpdateStrategy.RollingUpdate != nil && sts.Spec.UpdateStrategy.RollingUpdate.Partition != nil {
 		// 如果partition等于副本数，视为暂停
-		paused = (*sts.Spec.UpdateStrategy.RollingUpdate.Partition == *sts.Spec.Replicas)
+		paused = *sts.Spec.UpdateStrategy.RollingUpdate.Partition == *sts.Spec.Replicas
 	}
 
 	details := &StatefulSetDetails{

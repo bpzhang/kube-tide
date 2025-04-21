@@ -173,7 +173,6 @@
     "title": "甲子引擎",
     "description": "Kubernetes管理平台"
   },
-
   "navigation": {
     "dashboard": "仪表盘",
     "clusters": "集群",

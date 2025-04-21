@@ -386,7 +386,7 @@ func (s *NodeService) AddNodeLabel(ctx context.Context, clusterName, nodeName, k
 
 	client, err := s.clientManager.GetClient(clusterName)
 	if err != nil {
-		logger.Error("获取客户端失败", (err))
+		logger.Error("获取客户端失败", err)
 		return err
 	}
 
@@ -418,7 +418,7 @@ func (s *NodeService) AddNodeLabel(ctx context.Context, clusterName, nodeName, k
 	logger.Debug("正在更新节点")
 	_, err = client.CoreV1().Nodes().Update(ctx, node, metav1.UpdateOptions{})
 	if err != nil {
-		logger.Error("添加标签失败", (err))
+		logger.Error("添加标签失败", err)
 		return fmt.Errorf("添加标签失败: %w", err)
 	}
 
@@ -433,7 +433,7 @@ func (s *NodeService) RemoveNodeLabel(ctx context.Context, clusterName, nodeName
 
 	client, err := s.clientManager.GetClient(clusterName)
 	if err != nil {
-		logger.Error("获取客户端失败", (err))
+		logger.Error("获取客户端失败", err)
 		return err
 	}
 
@@ -441,7 +441,7 @@ func (s *NodeService) RemoveNodeLabel(ctx context.Context, clusterName, nodeName
 	logger.Debug("正在获取节点")
 	node, err := client.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
-		logger.Error("获取节点失败", (err))
+		logger.Error("获取节点失败", err)
 		return fmt.Errorf("获取节点失败: %w", err)
 	}
 

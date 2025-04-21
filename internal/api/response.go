@@ -11,9 +11,9 @@ import (
 
 // Response  Unified response structure
 type Response struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    any        `json:"data,omitempty"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    any    `json:"data,omitempty"`
 }
 
 // ResponseSuccess Success response

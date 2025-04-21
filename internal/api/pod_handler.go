@@ -365,7 +365,7 @@ func (h *PodHandler) CheckPodExists(c *gin.Context) {
 
 	ResponseSuccess(c, gin.H{
 		"exists": exists,
-		"pod": podDetail,
+		"pod":    podDetail,
 	})
 }
 
