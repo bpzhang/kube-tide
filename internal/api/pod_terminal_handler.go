@@ -11,13 +11,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"k8s.io/client-go/tools/remotecommand"
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 )
 
 var upgradeOptions = websocket.AcceptOptions{
 	InsecureSkipVerify: true, // It should be set appropriately in production environment
-	// nhooyr.io/websocket There is no direct HandshakeTimeout option
+	// coder/websocket There is no direct HandshakeTimeout option
 }
 
 // TerminalMessage Define terminal message format

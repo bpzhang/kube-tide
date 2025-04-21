@@ -13,7 +13,7 @@ require (
 	k8s.io/client-go v0.32.3
 	k8s.io/kubectl v0.32.3
 	k8s.io/metrics v0.32.3
-	nhooyr.io/websocket v1.8.17
+	github.com/coder/websocket v0.0.0-20240423022858-6725c15f1c0f
 )
 
 require (
