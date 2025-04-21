@@ -112,65 +112,65 @@ export interface DeploymentDetailResponse {
 }
 
 /**
- * 获取集群所有Deployment列表
- * @param clusterName 集群名称
- * @returns Deployments列表响应
+ * get all Deployments list
+ * @param clusterName cluster name
+ * @returns Deployments list response
  */
 export const listAllDeployments = (clusterName: string) => {
   return api.get<DeploymentResponse>(`/clusters/${clusterName}/deployments`);
 };
 
 /**
- * 获取指定命名空间的Deployment列表
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @returns Deployments列表响应
+ * get Deployments list by namespace
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @returns Deployments list response
  */
 export const listDeploymentsByNamespace = (clusterName: string, namespace: string) => {
   return api.get<DeploymentResponse>(`/clusters/${clusterName}/namespaces/${namespace}/deployments`);
 };
 
 /**
- * 获取Deployment详情
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param deploymentName Deployment名称
- * @returns Deployment详情响应
+ * get Deployment details
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param deploymentName Deployment name
+ * @returns Deployment details response
  */
 export const getDeploymentDetails = (clusterName: string, namespace: string, deploymentName: string) => {
   return api.get<DeploymentDetailResponse>(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}`);
 };
 
 /**
- * 调整Deployment副本数
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param deploymentName Deployment名称
- * @param replicas 副本数
- * @returns 操作结果
+ * scale Deployment replicas
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param deploymentName Deployment name
+ * @param replicas replicas count
+ * @returns operation result
  */
 export const scaleDeployment = (clusterName: string, namespace: string, deploymentName: string, replicas: number) => {
   return api.put(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/scale`, { replicas });
 };
 
 /**
- * 重启Deployment
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param deploymentName Deployment名称
- * @returns 操作结果
+ * restart Deployment
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param deploymentName Deployment name
+ * @returns operation result
  */
 export const restartDeployment = (clusterName: string, namespace: string, deploymentName: string) => {
   return api.post(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/restart`);
 };
 
 /**
- * 更新Deployment配置
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param deploymentName Deployment名称
- * @param updateData 更新数据
- * @returns 操作结果
+ * update Deployment configuration
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param deploymentName Deployment name
+ * @param updateData update data
+ * @returns operation result
  */
 export interface UpdateDeploymentRequest {
   replicas?: number;
@@ -284,11 +284,11 @@ export const updateDeployment = (
 };
 
 /**
- * 创建Deployment
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param deploymentData 部署数据
- * @returns 操作结果
+ * create a new Deployment
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param deploymentData deployment data
+ * @returns operation result
  */
 export interface CreateDeploymentRequest {
   name: string;
@@ -436,11 +436,11 @@ export interface DeploymentEventsResponse {
 }
 
 /**
- * 获取Deployment相关的事件
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param deploymentName Deployment名称
- * @returns Deployment事件列表响应
+ * get Deployment events
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param deploymentName Deployment name
+ * @returns Deployment events list response
  */
 export const getDeploymentEvents = (clusterName: string, namespace: string, deploymentName: string) => {
   return api.get<DeploymentEventsResponse>(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/events`);
@@ -459,11 +459,11 @@ export interface AllDeploymentEventsResponse {
 }
 
 /**
- * 获取Deployment及其关联资源（ReplicaSet和Pod）的所有事件
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param deploymentName Deployment名称
- * @returns 所有相关事件响应
+ * get all events related to Deployment and its associated resources (ReplicaSet and Pod)
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param deploymentName Deployment name
+ * @returns all related events response
  */
 export const getAllDeploymentEvents = (clusterName: string, namespace: string, deploymentName: string) => {
   return api.get<AllDeploymentEventsResponse>(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/all-events`);

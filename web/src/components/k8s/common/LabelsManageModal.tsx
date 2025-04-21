@@ -23,7 +23,7 @@ const LabelsManageModal: React.FC<LabelsManageModalProps> = ({
 
   useEffect(() => {
     if (open) {
-      // 将对象格式的标签和选择器转换为数组格式
+      // transfer initial labels and selector from object to array format
       const labelsArray = Object.entries(initialLabels || {}).map(([key, value]) => ({ key, value }));
       const selectorArray = Object.entries(initialSelector || {}).map(([key, value]) => ({ key, value }));
       
@@ -38,7 +38,7 @@ const LabelsManageModal: React.FC<LabelsManageModalProps> = ({
     try {
       const values = await form.validateFields();
       
-      // 将数组格式的标签和选择器转换回对象格式
+      // transfer labels and selector from array back to object format
       const labels: Record<string, string> = {};
       const selector: Record<string, string> = {};
       

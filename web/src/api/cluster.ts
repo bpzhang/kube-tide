@@ -4,7 +4,7 @@ interface Cluster {
   name: string;
   kubeconfigPath?: string;
   kubeconfigContent?: string;
-  addType?: 'path' | 'content'; // 添加类型：path（文件路径）或content（内容）
+  addType?: 'path' | 'content'; // addType: 'path' (file path) or 'content' (content)
 }
 
 export interface ClusterResponse {
@@ -24,7 +24,7 @@ export interface ClusterDetail {
   totalCPU: number;
   totalMemory: string;
   platform: string;
-  addType?: 'path' | 'content' | 'unknown'; // 添加方式：path(文件路径)、content(内容)或unknown(未知)
+  addType?: 'path' | 'content' | 'unknown'; // addType: 'path' (file path) or 'content' (content) or 'unknown'
 }
 
 export interface ClusterDetailResponse {
@@ -37,13 +37,13 @@ export interface ClusterDetailResponse {
 
 export interface ClusterMetrics {
   timestamp: string;
-  cpuUsage: number;       // CPU使用率（百分比）
-  memoryUsage: number;    // 内存使用率（百分比）
-  cpuRequestsPercentage: number;   // CPU请求百分比
-  cpuLimitsPercentage: number;     // CPU限制百分比
-  memoryRequestsPercentage: number; // 内存请求百分比
-  memoryLimitsPercentage: number;   // 内存限制百分比
-  podCount: number;       // Pod总数
+  cpuUsage: number;       // CPU usage (percentage)
+  memoryUsage: number;    // Memory usage (percentage)
+  cpuRequestsPercentage: number;   // CPU requests percentage
+  cpuLimitsPercentage: number;     // CPU limits percentage
+  memoryRequestsPercentage: number; // Memory requests percentage
+  memoryLimitsPercentage: number;   // Memory limits percentage
+  podCount: number;       // Total pods
   nodeCounts: {
     ready: number;
     notReady: number;
@@ -52,7 +52,7 @@ export interface ClusterMetrics {
     available: number;
     total: number;
   };
-  // 过去24小时的监控数据点（每小时一个数据点）
+  // monitoring data for the last 24 hours
   historicalData: {
     cpuUsage: Array<{ timestamp: string; value: number }>;
     memoryUsage: Array<{ timestamp: string; value: number }>;

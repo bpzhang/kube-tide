@@ -15,7 +15,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ name, onRemove }) => {
   const [loading, setLoading] = useState(false);
   const [addType, setAddType] = useState<'path' | 'content' | 'unknown'>('unknown');
 
-  // 获取集群添加方式
+  // get cluster details
   useEffect(() => {
     const fetchClusterDetails = async () => {
       try {
@@ -24,7 +24,8 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ name, onRemove }) => {
           setAddType(response.data.data.cluster.addType);
         }
       } catch (error) {
-        console.error("获取集群详情失败:", error);
+        console.error("get cluster details failed:", error);
+        message.error(t('clusters.fetchDetailsFailed'));
       }
     };
     
@@ -64,7 +65,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ name, onRemove }) => {
     }
   };
 
-  // 根据添加方式显示不同的标签颜色
+  // show color based on addType
   const getTagColor = () => {
     switch (addType) {
       case 'path':
@@ -76,7 +77,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({ name, onRemove }) => {
     }
   };
 
-  // 获取添加方式的显示文本
+  // get addType text
   const getAddTypeText = () => {
     switch (addType) {
       case 'path':

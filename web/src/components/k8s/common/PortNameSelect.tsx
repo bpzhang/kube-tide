@@ -4,9 +4,13 @@ import { Select } from 'antd';
 const { Option } = Select;
 
 /**
- * 端口名称选择组件
- * 用于选择常见的网络协议作为端口名称
- * 支持输入筛选
+ * PortNameSelect
+ * functional component for selecting port names
+ * supports search and clear
+ * @param {string} value - selected value
+ * @param {(value: string) => void} onChange - callback function when value changes
+ * @param {string} placeholder - placeholder text
+ * @param {React.CSSProperties} style - custom styles
  */
 interface PortNameSelectProps {
     value?: string;
@@ -14,6 +18,7 @@ interface PortNameSelectProps {
     placeholder?: string;
     style?: React.CSSProperties;
 }
+
 
 const PortNameSelect: React.FC<PortNameSelectProps> = ({
     value,

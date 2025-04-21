@@ -17,7 +17,7 @@ export interface StatefulSetInfo {
   volumeClaimTemplates: string[];
 }
 
-// StatefulSet详情响应
+// StatefulSet detail response
 export interface StatefulSetDetailResponse {
   code: number;
   message: string;
@@ -117,7 +117,7 @@ export interface StatefulSetDetailResponse {
   };
 }
 
-// StatefulSet列表响应
+// StatefulSet list response
 export interface StatefulSetListResponse {
   code: number;
   message: string;
@@ -126,7 +126,7 @@ export interface StatefulSetListResponse {
   };
 }
 
-// StatefulSet事件响应
+// StatefulSet events response
 export interface StatefulSetEventsResponse {
   code: number;
   message: string;
@@ -135,7 +135,7 @@ export interface StatefulSetEventsResponse {
   };
 }
 
-// StatefulSet所有关联事件响应
+// StatefulSet all associated events response
 export interface AllStatefulSetEventsResponse {
   code: number;
   message: string;
@@ -147,7 +147,7 @@ export interface AllStatefulSetEventsResponse {
   };
 }
 
-// 操作响应
+// Operation response 
 export interface OperationResponse {
   code: number;
   message: string;
@@ -160,7 +160,7 @@ export interface OperationResponse {
   };
 }
 
-// 创建StatefulSet请求
+// Create StatefulSet request
 export interface CreateStatefulSetRequest {
   name: string;
   namespace: string;
@@ -219,7 +219,7 @@ export interface CreateStatefulSetRequest {
   }>;
 }
 
-// 更新StatefulSet请求
+// Update StatefulSet request
 export interface UpdateStatefulSetRequest {
   replicas?: number;
   image?: { [containerName: string]: string };
@@ -242,76 +242,76 @@ export interface UpdateStatefulSetRequest {
 }
 
 /**
- * 获取StatefulSet列表
- * @param clusterName 集群名称
- * @returns 所有StatefulSet
+ * Get StatefulSet list
+ * @param clusterName Cluster name
+ * @returns All StatefulSets
  */
 export const getStatefulSetList = (clusterName: string) => {
   return api.get<StatefulSetListResponse>(`/clusters/${clusterName}/statefulsets`);
 };
 
 /**
- * 获取指定命名空间的StatefulSet列表
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @returns 命名空间内的StatefulSet
+ * Get StatefulSet list by namespace
+ * @param clusterName Cluster name
+ * @param namespace Namespace
+ * @returns StatefulSets in the namespace
  */
 export const listStatefulSetsByNamespace = (clusterName: string, namespace: string) => {
   return api.get<StatefulSetListResponse>(`/clusters/${clusterName}/namespaces/${namespace}/statefulsets`);
 };
 
 /**
- * 获取StatefulSet详情
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param statefulsetName StatefulSet名称
- * @returns StatefulSet详情
+ * Get StatefulSet details
+ * @param clusterName Cluster name
+ * @param namespace Namespace
+ * @param statefulsetName StatefulSet name
+ * @returns StatefulSet details
  */
 export const getStatefulSetDetails = (clusterName: string, namespace: string, statefulsetName: string) => {
   return api.get<StatefulSetDetailResponse>(`/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}`);
 };
 
 /**
- * 创建StatefulSet
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param statefulsetData StatefulSet数据
- * @returns 操作结果
+ * Create StatefulSet
+ * @param clusterName Cluster name
+ * @param namespace Namespace
+ * @param statefulsetData StatefulSet data
+ * @returns Operation result
  */
 export const createStatefulSet = (clusterName: string, namespace: string, statefulsetData: CreateStatefulSetRequest) => {
   return api.post<OperationResponse>(`/clusters/${clusterName}/namespaces/${namespace}/statefulsets`, statefulsetData);
 };
 
 /**
- * 更新StatefulSet
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param statefulsetName StatefulSet名称
- * @param updateData 更新数据
- * @returns 操作结果
+ * Update StatefulSet
+ * @param clusterName Cluster name
+ * @param namespace Namespace
+ * @param statefulsetName StatefulSet name
+ * @param updateData Update data
+ * @returns Operation result
  */
 export const updateStatefulSet = (clusterName: string, namespace: string, statefulsetName: string, updateData: UpdateStatefulSetRequest) => {
   return api.put<OperationResponse>(`/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}`, updateData);
 };
 
 /**
- * 删除StatefulSet
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param statefulsetName StatefulSet名称
- * @returns 操作结果
+ * Delete StatefulSet
+ * @param clusterName Cluster name
+ * @param namespace Namespace
+ * @param statefulsetName StatefulSet name
+ * @returns Operation result
  */
 export const deleteStatefulSet = (clusterName: string, namespace: string, statefulsetName: string) => {
   return api.delete<OperationResponse>(`/clusters/${clusterName}/namespaces/${namespace}/statefulsets/${statefulsetName}`);
 };
 
 /**
- * 扩缩容StatefulSet
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param statefulsetName StatefulSet名称
- * @param replicas 副本数
- * @returns 操作结果
+ * Scale StatefulSet
+ * @param clusterName Cluster name
+ * @param namespace Namespace
+ * @param statefulsetName StatefulSet name
+ * @param replicas Replicas
+ * @returns Operation result
  */
 export const scaleStatefulSet = (clusterName: string, namespace: string, statefulsetName: string, replicas: number) => {
   return api.put<OperationResponse>(
@@ -321,11 +321,11 @@ export const scaleStatefulSet = (clusterName: string, namespace: string, statefu
 };
 
 /**
- * 重启StatefulSet
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param statefulsetName StatefulSet名称
- * @returns 操作结果
+ * restart StatefulSet
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param statefulsetName StatefulSet name
+ * @returns operation result
  */
 export const restartStatefulSet = (clusterName: string, namespace: string, statefulsetName: string) => {
   return api.post<OperationResponse>(
@@ -334,11 +334,11 @@ export const restartStatefulSet = (clusterName: string, namespace: string, state
 };
 
 /**
- * 获取StatefulSet事件
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param statefulsetName StatefulSet名称
- * @returns 事件列表
+ * Get StatefulSet events
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param statefulsetName StatefulSet name
+ * @returns event list
  */
 export const getStatefulSetEvents = (clusterName: string, namespace: string, statefulsetName: string) => {
   return api.get<StatefulSetEventsResponse>(
@@ -347,11 +347,11 @@ export const getStatefulSetEvents = (clusterName: string, namespace: string, sta
 };
 
 /**
- * 获取StatefulSet及其关联Pod的所有事件
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param statefulsetName StatefulSet名称
- * @returns 所有相关事件
+ * Get StatefulSet and its associated Pod events
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param statefulsetName StatefulSet name
+ * @returns all related events
  */
 export const getAllStatefulSetEvents = (clusterName: string, namespace: string, statefulsetName: string) => {
   return api.get<AllStatefulSetEventsResponse>(
@@ -360,11 +360,11 @@ export const getAllStatefulSetEvents = (clusterName: string, namespace: string, 
 };
 
 /**
- * 获取StatefulSet关联的Pod
- * @param clusterName 集群名称
- * @param namespace 命名空间
- * @param statefulsetName StatefulSet名称
- * @returns Pod列表
+ * Get StatefulSet and its associated Pod
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param statefulsetName StatefulSet name
+ * @returns Pod list
  */
 export const getStatefulSetPods = (clusterName: string, namespace: string, statefulsetName: string) => {
   return api.get<PodListResponse>(

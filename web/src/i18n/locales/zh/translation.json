@@ -40,7 +40,9 @@
     "value": "值",
     "pleaseEnterKey": "请输入键",
     "pleaseEnterValue": "请输入值",
-    "addLabel": "添加标签"
+    "addLabel": "添加标签",
+    "events": "事件",
+    "noDataFound": "未找到数据"
   },
   "navigation": {
     "dashboard": "仪表盘",
@@ -1077,6 +1079,7 @@
       "type": "类型",
       "reason": "原因",
       "message": "消息",
+      "involved": "对象",
       "source": "来源",
       "firstTimestamp": "首次出现",
       "lastTimestamp": "最后出现",

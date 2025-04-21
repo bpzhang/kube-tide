@@ -9,9 +9,9 @@ export interface NamespaceListResponse {
 }
 
 /**
- * 获取指定集群的命名空间列表
- * @param clusterName 集群名称
- * @returns 命名空间列表响应
+ * get namespace list
+ * @param clusterName cluster name
+ * @returns namespace list response
  */
 export const getNamespaceList = (clusterName: string) => {
   return axios.get<NamespaceListResponse>(`/clusters/${clusterName}/namespaces`);

@@ -59,7 +59,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
   const [pods, setPods] = useState<any[]>([]);
   const [podsLoading, setPodsLoading] = useState(false);
 
-  // 获取相关的Pod列表
+  // get Pods by selector
   const fetchPods = async () => {
     if (!deployment.selector) return;
 
@@ -71,10 +71,10 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
         deployment.selector
       );
       if (response.data.code === 0) {
-        // 设置Pods数据
+        // set Pods data
         setPods(response.data.data.pods);
         
-        // 提取Pod中的健康检查探针数据
+        // extract health check probe data from Pods
         extractProbesFromPods(response.data.data.pods);
       } else {
         message.error(response.data.message || t('pods.fetchFailed'));
@@ -87,35 +87,35 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
     }
   };
 
-  // 从Pods中提取健康检查探针数据
+  // extract health check probe data from Pods
   const extractProbesFromPods = (pods: any[]) => {
     console.log(t('deployments.detail.extractingProbes'), pods.length);
     
     if (!pods || pods.length === 0) return;
     
-    // 创建容器名称到容器的映射
+    // create a mapping from container names to containers
     const containerMap: { [key: string]: any } = {};
     deployment.containers.forEach(container => {
       containerMap[container.name] = container;
     });
     
-    // 遍历所有Pod
+    // for each Pod, check its containers
     pods.forEach(pod => {
       console.log(t('deployments.detail.processingPod'), pod.metadata?.name);
       const containers = pod.spec?.containers || [];
       
-      // 遍历Pod中的容器
+      // for each container in the Pod
       containers.forEach((podContainer: any) => {
         const containerName = podContainer.name;
-        // 检查这个容器是否属于当前Deployment
+        // check if this container belongs to the current Deployment
         if (containerMap[containerName]) {
           console.log(t('deployments.detail.foundContainer', { name: containerName }));
           
-          // 更新健康检查探针
+          // update health check probes
           ['livenessProbe', 'readinessProbe', 'startupProbe'].forEach(probeType => {
             if (podContainer[probeType]) {
               console.log(t('deployments.detail.foundProbe', { container: containerName, type: probeType }));
-              // 将探针数据添加到deployment的容器中
+              // add probe data to the deployment's container
               containerMap[containerName][probeType] = podContainer[probeType];
             }
           });
@@ -128,12 +128,12 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
 
   useEffect(() => {
     fetchPods();
-    // 每30秒刷新一次Pod列表
+    // refresh Pods every 30 seconds
     const timer = setInterval(fetchPods, 30000);
     return () => clearInterval(timer);
   }, [deployment.selector, deployment.namespace, clusterName]);
 
-  // 处理编辑模态框的显示和隐藏
+  // handle showing and hiding the edit modal
   const showEditModal = () => {
     setEditModalVisible(true);
   };
@@ -142,7 +142,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
     setEditModalVisible(false);
   };
 
-  // 处理更新提交
+  // handle update submission
   const handleUpdateSubmit = async (updateData: UpdateDeploymentRequest) => {
     try {
       await updateDeployment(
@@ -152,7 +152,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
         updateData
       );
       
-      // 如果有更新回调，则调用
+      // If there is an update callback, call it
       if (onUpdate) {
         onUpdate();
       }
@@ -165,7 +165,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
     }
   };
 
-  // 容器列定义
+  // container column definition
   const containerColumns = [
     {
       title: t('deployments.detail.containerColumns.name'),
@@ -192,7 +192,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
     },
   ];
 
-  // 状态条件列定义
+  // condition column definition
   const conditionColumns = [
     {
       title: t('deployments.detail.conditionColumns.type'),

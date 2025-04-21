@@ -1,15 +1,15 @@
 import axios from 'axios';
 
-// 创建axios实例
+// create an axios instance
 const apiClient = axios.create({
-  baseURL: '/api',  // 添加基础URL
-  timeout: 5000,    // 请求超时时间
+  baseURL: '/api',  // add base URL
+  timeout: 5000,    // request timeout
 });
 
-// 请求拦截器
+// request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // 在这里可以添加token等认证信息
+    // You can add token or other authentication information here
     return config;
   },
   (error) => {
@@ -17,19 +17,23 @@ apiClient.interceptors.request.use(
   }
 );
 
-// 响应拦截器
+// response interceptor
 apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
     if (error.response) {
-      // 处理错误响应
+      // handle error response
       const { status, data } = error.response;
       if (status === 401) {
-        // 处理未授权错误
+        // handle unauthorized error  
+        console.error('Unauthorized access - perhaps you need to log in?');
+        return Promise.reject(new Error('Unauthorized access'));
       } else if (status === 500) {
-        // 处理服务器错误
+        // handle server error
+        console.error('Server error - please try again later');
+        return Promise.reject(new Error('Server error'));
       }
     }
     return Promise.reject(error);

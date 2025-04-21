@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dropdown, Menu } from 'antd';
+import { Dropdown } from 'antd';
 import { GlobalOutlined } from '@ant-design/icons';
 
 interface Language {

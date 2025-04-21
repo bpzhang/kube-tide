@@ -87,7 +87,7 @@ export interface AddNodeRequest {
   }>;
   sshPort?: number;
   sshUser?: string;
-  authType?: string; // "key" 或 "password"
+  authType?: string; // "key" or "password"
   sshKeyFile?: string;
   sshPassword?: string;
 }
@@ -108,22 +108,22 @@ export const getNodeMetrics = (clusterName: string, nodeName: string) => {
   return api.get<NodeMetricsResponse>(`/clusters/${clusterName}/nodes/${nodeName}/metrics`);
 };
 
-// 节点排水操作
+// node drain
 export const drainNode = (clusterName: string, nodeName: string, params: DrainNodeParams) => {
   return api.post<OperationResponse>(`/clusters/${clusterName}/nodes/${nodeName}/drain`, params);
 };
 
-// 禁止节点调度
+// Disable node scheduling
 export const cordonNode = (clusterName: string, nodeName: string) => {
   return api.post<OperationResponse>(`/clusters/${clusterName}/nodes/${nodeName}/cordon`);
 };
 
-// 启用节点调度
+// Enable node scheduling
 export const uncordonNode = (clusterName: string, nodeName: string) => {
   return api.post<OperationResponse>(`/clusters/${clusterName}/nodes/${nodeName}/uncordon`);
 };
 
-// 污点管理
+// Taint management
 export const getNodeTaints = (clusterName: string, nodeName: string) => {
   return api.get<TaintsResponse>(`/clusters/${clusterName}/nodes/${nodeName}/taints`);
 };
@@ -138,7 +138,7 @@ export const removeNodeTaint = (clusterName: string, nodeName: string, key: stri
   });
 };
 
-// 标签管理
+// label management
 export const getNodeLabels = (clusterName: string, nodeName: string) => {
   return api.get<LabelsResponse>(`/clusters/${clusterName}/nodes/${nodeName}/labels`);
 };
@@ -157,19 +157,19 @@ export const removeNodeLabel = (clusterName: string, nodeName: string, key: stri
   );
 };
 
-// 添加新节点
+// add new node
 export const addNode = (clusterName: string, params: AddNodeRequest) => {
   return api.post<OperationResponse>(`/clusters/${clusterName}/nodes`, params);
 };
 
-// 移除节点
+// remove node
 export const removeNode = (clusterName: string, nodeName: string, params: RemoveNodeRequest) => {
   return api.delete<OperationResponse>(`/clusters/${clusterName}/nodes/${nodeName}`, {
     data: params
   });
 };
 
-// 获取节点上运行的Pod列表
+// get pods running on the node
 export const getNodePods = (clusterName: string, nodeName: string) => {
   return api.get<any>(`/clusters/${clusterName}/nodes/${nodeName}/pods`);
 };

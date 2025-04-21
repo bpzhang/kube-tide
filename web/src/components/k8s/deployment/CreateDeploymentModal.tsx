@@ -12,7 +12,7 @@ interface CreateDeploymentModalProps {
 }
 
 /**
- * 创建Deployment的模态框
+ * create deployment modal
  */
 const CreateDeploymentModal: React.FC<CreateDeploymentModalProps> = ({
   visible,
@@ -23,9 +23,9 @@ const CreateDeploymentModal: React.FC<CreateDeploymentModalProps> = ({
 }) => {
   const { t } = useTranslation();
   
-  // 创建适配器函数，使其符合 DeploymentModal 期望的类型
+  // create adapter function to match DeploymentModal's expected type
   const handleSubmit = async (values: CreateDeploymentRequest | UpdateDeploymentRequest) => {
-    // 在创建模式下，values 一定是 CreateDeploymentRequest 类型
+    // in create mode, values must be of CreateDeploymentRequest type
     await onSubmit(values as CreateDeploymentRequest);
   };
 

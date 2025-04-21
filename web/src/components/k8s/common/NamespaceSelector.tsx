@@ -21,21 +21,21 @@ interface NamespaceSelectorProps {
   style?: React.CSSProperties;
 }
 
-// 默认命名空间列表
+// default namespaces
 const defaultNamespaces = ['default', 'kube-system', 'kube-public'];
 
-// 全局缓存上次请求的命名空间数据
+// global cache for last fetched namespace data
 const namespaceCache: Record<string, LastFetchInfo> = {};
 
-// 判断是否需要重新获取命名空间列表
-// 如果与上次请求的集群不同，或者距离上次请求超过5分钟，则重新获取
+// Determine whether you need to re-get the namespace list
+// If it is different from the last requested cluster, or is more than 5 minutes away from the last request, re-get it
 const shouldFetchNamespaces = (clusterName: string): boolean => {
   const cachedInfo = namespaceCache[clusterName];
   if (!cachedInfo) return true;
   
-  // 5分钟内使用缓存
+  // use cache within 5 minutes
   const now = Date.now();
-  return (now - cachedInfo.timestamp) > 300000; // 5分钟 = 300000毫秒
+  return (now - cachedInfo.timestamp) > 300000; // 5 minutes = 300000 milliseconds
 };
 
 const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
@@ -51,11 +51,11 @@ const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
   const [namespaces, setNamespaces] = useState<string[]>(defaultNamespaces);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // 获取命名空间列表
+  // get namespace list
   const fetchNamespaces = async (cluster: string) => {
     if (!cluster) return;
 
-    // 检查缓存
+    // check cache 
     if (!shouldFetchNamespaces(cluster) && namespaceCache[cluster]) {
       setNamespaces(namespaceCache[cluster].namespaces);
       return;
@@ -71,7 +71,8 @@ const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
         
         setNamespaces(namespacesList);
         
-        // 更新缓存信息
+        // update cache
+        // If the namespace list is empty, use defaultNamespaces
         namespaceCache[cluster] = {
           cluster,
           timestamp: Date.now(),
@@ -89,14 +90,14 @@ const NamespaceSelector: React.FC<NamespaceSelectorProps> = ({
     }
   };
 
-  // 当集群变化时获取命名空间列表
+  // fetch namespaces when component mounts or clusterName changes
   useEffect(() => {
     if (clusterName) {
       fetchNamespaces(clusterName);
     }
-  }, [clusterName]); // 只在clusterName变化时执行
+  }, [clusterName]); // fetch namespaces when component mounts or clusterName changes
 
-  // 处理命名空间变化
+  // handle namespace change
   const handleNamespaceChange = (value: string) => {
     if (onChange) {
       onChange(value);

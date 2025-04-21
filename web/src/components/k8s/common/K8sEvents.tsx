@@ -14,7 +14,7 @@ interface K8sEventsProps {
 }
 
 /**
- * K8s事件组件，显示与Kubernetes资源相关的事件
+ * K8sEvents Component 
  */
 const K8sEvents: React.FC<K8sEventsProps> = ({ 
   clusterName, 
@@ -27,7 +27,7 @@ const K8sEvents: React.FC<K8sEventsProps> = ({
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // 获取事件的函数
+  // load events from API
   const loadEvents = async () => {
     setLoading(true);
     try {
@@ -45,14 +45,14 @@ const K8sEvents: React.FC<K8sEventsProps> = ({
     }
   };
 
-  // 在组件挂载时获取事件
+  // load events when component mounts
   useEffect(() => {
     if (clusterName && namespace && resourceName) {
       loadEvents();
     }
   }, [clusterName, namespace, resourceName]);
 
-  // 获取事件类型对应的标签颜色
+  // get event type color
   const getEventTypeColor = (type: string) => {
     const typeColors: { [key: string]: string } = {
       Normal: 'green',
@@ -61,7 +61,7 @@ const K8sEvents: React.FC<K8sEventsProps> = ({
     return typeColors[type] || 'blue';
   };
 
-  // 事件表格列定义
+  // event table columns definition
   const columns = [
     {
       title: t('events.columns.type'),

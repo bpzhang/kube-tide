@@ -3,6 +3,7 @@ import { Card, Table, Tag, Button, Spin, Empty, message, Tabs } from 'antd';
 import { SyncOutlined } from '@ant-design/icons';
 import { formatDate } from '@/utils/format';
 import { getAllDeploymentEvents } from '@/api/deployment';
+import { useTranslation } from 'react-i18next';
 
 interface DeploymentEventsProps {
   clusterName: string;
@@ -11,13 +12,15 @@ interface DeploymentEventsProps {
 }
 
 /**
- * Deployment综合事件组件，显示与Deployment及其关联的ReplicaSet和Pod相关的所有Kubernetes事件
+ * Deployment comprehensive event component, 
+ * displaying all kubernetes events related to deployment and its associated replica sets and pods
  */
 const DeploymentEvents: React.FC<DeploymentEventsProps> = ({ 
   clusterName, 
   namespace, 
   deploymentName
 }) => {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<{
     deployment: any[],
     replicaSet: any[],
@@ -30,7 +33,7 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [activeKey, setActiveKey] = useState<string>('all');
 
-  // 获取事件的函数
+  // Function to fetch events
   const fetchEvents = async () => {
     setLoading(true);
     try {
@@ -42,24 +45,24 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
           pod: []
         });
       } else {
-        message.error(response.data.message || '获取事件失败');
+        message.error(response.data.message || 'Failed to fetch events');
       }
     } catch (error) {
-      console.error('获取事件失败:', error);
-      message.error('获取事件失败，请稍后重试');
+      console.error('Failed to fetch events:', error);
+      message.error('Failed to fetch events, please try again later');
     } finally {
       setLoading(false);
     }
   };
 
-  // 在组件挂载时获取事件
+  // Function to fetch events
   useEffect(() => {
     if (clusterName && namespace && deploymentName) {
       fetchEvents();
     }
   }, [clusterName, namespace, deploymentName]);
 
-  // 获取事件类型对应的标签颜色
+  // Function to get the color of event type
   const getEventTypeColor = (type: string) => {
     const typeColors: { [key: string]: string } = {
       Normal: 'green',
@@ -68,17 +71,17 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
     return typeColors[type] || 'blue';
   };
 
-  // 事件表格列定义
+  // Event table column definitions
   const columns = [
     {
-      title: '类型',
+      title: t('events.columns.type'),
       dataIndex: 'type',
       key: 'type',
       render: (type: string) => <Tag color={getEventTypeColor(type)}>{type}</Tag>,
       width: 100,
     },
     {
-      title: '对象',
+      title: t('events.columns.involved'),
       key: 'involved',
       render: (text: any, record: any) => {
         const kind = record.involvedObject?.kind || '';
@@ -93,27 +96,27 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
       width: 180,
     },
     {
-      title: '原因',
+      title: t('events.columns.reason'),
       dataIndex: 'reason',
       key: 'reason',
       width: 150,
     },
     {
-      title: '消息',
+      title: t('events.columns.message'),
       dataIndex: 'message',
       key: 'message',
       width: '40%',
       ellipsis: true,
     },
     {
-      title: '组件',
+      title: t('events.columns.source'),
       dataIndex: 'source',
       key: 'source',
       render: (source: any) => source?.component || '-',
       width: 120,
     },
     {
-      title: '最后发生',
+      title: t('events.columns.lastTimestamp'),
       dataIndex: 'lastTimestamp',
       key: 'lastTimestamp',
       render: (time: string) => formatDate(time),
@@ -125,14 +128,14 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
       defaultSortOrder: 'descend',
     },
     {
-      title: '次数',
+      title: t('events.columns.count'),
       dataIndex: 'count',
       key: 'count',
       width: 70,
     },
   ];
 
-  // 获取所有事件合并后的数组
+  // get all events from different sources
   const getAllEvents = () => {
     return [
       ...(events.deployment || []).map(evt => ({ ...evt, eventSource: 'deployment' })),
@@ -159,16 +162,16 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
     }
   };
 
-  // 获取总事件数
+  // Get total event count
   const getTotalEventCount = () => {
     return (events.deployment?.length || 0) + (events.replicaSet?.length || 0) + (events.pod?.length || 0);
   };
 
-  // Tab项配置
+  // Tab item configuration
   const tabItems = [
     {
       key: 'all',
-      label: `全部 (${getTotalEventCount()})`,
+      label: `${t('events.tabs.all')} (${getTotalEventCount()})`,
       children: (
         <EventsTable 
           events={getAllEvents()} 
@@ -179,7 +182,7 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
     },
     {
       key: 'deployment',
-      label: `Deployment (${events.deployment?.length || 0})`,
+      label: `${t('events.tabs.deployment')} (${events.deployment?.length || 0})`,
       children: (
         <EventsTable 
           events={events.deployment} 
@@ -190,7 +193,7 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
     },
     {
       key: 'replicaSet',
-      label: `ReplicaSet (${events.replicaSet?.length || 0})`,
+      label: `${t('events.tabs.replicaSet')} (${events.replicaSet?.length || 0})`,
       children: (
         <EventsTable 
           events={events.replicaSet} 
@@ -201,7 +204,7 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
     },
     {
       key: 'pod',
-      label: `Pod (${events.pod?.length || 0})`,
+      label: `${t('events.tabs.pod')} (${events.pod?.length || 0})`,
       children: (
         <EventsTable 
           events={events.pod} 
@@ -214,14 +217,14 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
 
   return (
     <Card 
-      title="事件" 
+      title={t('common.events')} 
       extra={
         <Button
           icon={<SyncOutlined />}
           onClick={fetchEvents}
           loading={loading}
         >
-          刷新
+          {t('common.refresh')}
         </Button>
       }
     >
@@ -234,7 +237,7 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
   );
 };
 
-// 事件表格子组件
+// events table component
 interface EventsTableProps {
   events: any[];
   columns: any[];
@@ -242,6 +245,7 @@ interface EventsTableProps {
 }
 
 const EventsTable: React.FC<EventsTableProps> = ({ events, columns, loading }) => {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '20px' }}>
@@ -251,7 +255,7 @@ const EventsTable: React.FC<EventsTableProps> = ({ events, columns, loading }) =
   }
   
   if (events && events.length === 0) {
-    return <Empty description="没有找到相关事件" />;
+    return <Empty description={t('common.noDataFound')} />;
   }
   
   return (

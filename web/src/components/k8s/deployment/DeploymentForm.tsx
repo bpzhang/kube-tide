@@ -13,8 +13,7 @@ import { useTranslation } from 'react-i18next';
 const { Option } = Select;
 
 /**
- * 通用Deployment表单组件
- * 可用于创建和编辑Deployment
+ * DeploymentForm component
  */
 const DeploymentForm: React.FC<DeploymentFormProps> = ({
   initialValues,
@@ -25,7 +24,7 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = React.useState('basic');
   
-  // 渲染基本信息Tab
+  // render basic tab
   const renderBasicTab = useCallback(() => {
     return (
       <>

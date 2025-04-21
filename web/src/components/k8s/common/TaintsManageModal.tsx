@@ -23,7 +23,7 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
   const [taints, setTaints] = useState<NodeTaint[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 获取节点污点
+  // get node taints
   const fetchTaints = async () => {
     try {
       const response = await getNodeTaints(clusterName, nodeName);
@@ -41,7 +41,7 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
     }
   }, [open, clusterName, nodeName]);
 
-  // 添加污点
+  // get taint key and value
   const handleAddTaint = async (values: any) => {
     setLoading(true);
     try {
@@ -60,7 +60,7 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
     }
   };
 
-  // 删除污点
+  // delete taint
   const handleRemoveTaint = async (key: string, effect: string) => {
     setLoading(true);
     try {
@@ -74,7 +74,7 @@ const TaintsManageModal: React.FC<TaintsManageModalProps> = ({
     }
   };
 
-  // 获取污点标签颜色
+  // get taint color
   const getTaintColor = (effect: string) => {
     switch (effect) {
       case 'NoSchedule':
