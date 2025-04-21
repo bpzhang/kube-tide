@@ -9,10 +9,10 @@ import (
 	"kube-tide/internal/core/k8s"
 	"kube-tide/internal/utils/logger"
 
-	"github.com/gin-gonic/gin"
-	"k8s.io/client-go/tools/remotecommand"
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
+	"github.com/gin-gonic/gin"
+	"k8s.io/client-go/tools/remotecommand"
 )
 
 var upgradeOptions = websocket.AcceptOptions{
@@ -22,12 +22,12 @@ var upgradeOptions = websocket.AcceptOptions{
 
 // TerminalMessage Define terminal message format
 type TerminalMessage struct {
-	Type    string      `json:"type"`
-	Data    interface{} `json:"data,omitempty"`
-	Message string      `json:"message,omitempty"`
+	Type    string `json:"type"`
+	Data    any    `json:"data,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
-// TerminalSession 
+// TerminalSession
 type TerminalSession struct {
 	wsConn   *websocket.Conn
 	sizeChan chan remotecommand.TerminalSize
@@ -55,7 +55,7 @@ func (t *TerminalSession) Read(p []byte) (int, error) {
 		return 0, err
 	}
 
-	// process ping message 
+	// process ping message
 	if messageType == websocket.MessageText && len(message) > 1 && message[0] == '{' {
 		var msg TerminalMessage
 		if err := json.Unmarshal(message, &msg); err == nil {

@@ -232,7 +232,7 @@ func (s *StatefulSetService) GetStatefulSetDetails(ctx context.Context, clusterN
 		// 转换容器端口到K8s API类型
 		portMaps := make([]map[string]interface{}, len(ports))
 		for i, port := range ports {
-			portMap := make(map[string]interface{})
+			portMap := make(map[string]any)
 			portMap["name"] = port.Name
 			portMap["containerPort"] = int32(port.ContainerPort)
 			portMap["protocol"] = port.Protocol

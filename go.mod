@@ -3,6 +3,7 @@ module kube-tide
 go 1.24.2
 
 require (
+	github.com/coder/websocket v1.8.13
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.0
 	github.com/spf13/viper v1.18.2
@@ -13,7 +14,6 @@ require (
 	k8s.io/client-go v0.32.3
 	k8s.io/kubectl v0.32.3
 	k8s.io/metrics v0.32.3
-	github.com/coder/websocket v0.0.0-20240423022858-6725c15f1c0f
 )
 
 require (

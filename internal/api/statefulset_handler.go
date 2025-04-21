@@ -93,16 +93,16 @@ func (h *StatefulSetHandler) CreateStatefulSet(c *gin.Context) {
 	}
 
 	var request struct {
-		Name                 string                   `json:"name" binding:"required"`
-		Namespace            string                   `json:"namespace" binding:"required"`
-		Replicas             int32                    `json:"replicas"`
-		ServiceName          string                   `json:"serviceName" binding:"required"`
-		Labels               map[string]string        `json:"labels"`
-		Annotations          map[string]string        `json:"annotations"`
-		Containers           []map[string]interface{} `json:"containers" binding:"required"`
-		PodManagementPolicy  string                   `json:"podManagementPolicy"`
-		UpdateStrategy       string                   `json:"updateStrategy"`
-		VolumeClaimTemplates []map[string]interface{} `json:"volumeClaimTemplates"`
+		Name                 string            `json:"name" binding:"required"`
+		Namespace            string            `json:"namespace" binding:"required"`
+		Replicas             int32             `json:"replicas"`
+		ServiceName          string            `json:"serviceName" binding:"required"`
+		Labels               map[string]string `json:"labels"`
+		Annotations          map[string]string `json:"annotations"`
+		Containers           []map[string]any  `json:"containers" binding:"required"`
+		PodManagementPolicy  string            `json:"podManagementPolicy"`
+		UpdateStrategy       string            `json:"updateStrategy"`
+		VolumeClaimTemplates []map[string]any  `json:"volumeClaimTemplates"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {

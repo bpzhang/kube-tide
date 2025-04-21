@@ -119,7 +119,7 @@ func convertK8sProbeToCustomProbe(probe *corev1.Probe) map[string]interface{} {
 		return nil
 	}
 
-	customProbe := map[string]interface{}{
+	customProbe := map[string]any{
 		"initialDelaySeconds": probe.InitialDelaySeconds,
 		"timeoutSeconds":      probe.TimeoutSeconds,
 		"periodSeconds":       probe.PeriodSeconds,
@@ -129,7 +129,7 @@ func convertK8sProbeToCustomProbe(probe *corev1.Probe) map[string]interface{} {
 
 	// 处理HTTP探针
 	if probe.HTTPGet != nil {
-		httpGet := map[string]interface{}{
+		httpGet := map[string]any{
 			"path":   probe.HTTPGet.Path,
 			"port":   probe.HTTPGet.Port.String(),
 			"scheme": string(probe.HTTPGet.Scheme),
@@ -151,14 +151,14 @@ func convertK8sProbeToCustomProbe(probe *corev1.Probe) map[string]interface{} {
 
 	// 处理TCP探针
 	if probe.TCPSocket != nil {
-		customProbe["tcpSocket"] = map[string]interface{}{
+		customProbe["tcpSocket"] = map[string]any{
 			"port": probe.TCPSocket.Port.String(),
 		}
 	}
 
 	// 处理Exec探针
 	if probe.Exec != nil {
-		customProbe["exec"] = map[string]interface{}{
+		customProbe["exec"] = map[string]any{
 			"command": probe.Exec.Command,
 		}
 	}
