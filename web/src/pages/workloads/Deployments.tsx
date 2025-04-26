@@ -27,10 +27,10 @@ import {
   PlusOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { 
-  listDeploymentsByNamespace, 
-  restartDeployment, 
-  scaleDeployment, 
+import {
+  listDeploymentsByNamespace,
+  restartDeployment,
+  scaleDeployment,
   getDeploymentDetails,
   createDeployment,
   CreateDeploymentRequest
@@ -89,7 +89,7 @@ const DeploymentsPage: React.FC = () => {
   // 获取Deployment列表
   const fetchDeployments = async () => {
     if (!selectedCluster) return;
-    
+
     setLoading(true);
     try {
       const response = await listDeploymentsByNamespace(selectedCluster, namespace);
@@ -110,7 +110,7 @@ const DeploymentsPage: React.FC = () => {
   // 获取Deployment详情
   const fetchDeploymentDetail = async (name: string) => {
     if (!selectedCluster) return;
-    
+
     setDetailLoading(true);
     try {
       const response = await getDeploymentDetails(selectedCluster, namespace, name);
@@ -148,11 +148,11 @@ const DeploymentsPage: React.FC = () => {
   // 搜索过滤
   useEffect(() => {
     if (searchText) {
-      const filtered = deployments.filter(item => 
-          item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-          Object.keys(item.labels || {}).some((key) =>
-            `${key}:${item.labels[key]}`.toLowerCase().includes(searchText.toLowerCase())
-          )
+      const filtered = deployments.filter(item =>
+        item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+        Object.keys(item.labels || {}).some((key) =>
+          `${key}:${item.labels[key]}`.toLowerCase().includes(searchText.toLowerCase())
+        )
       );
       setFilteredDeployments(filtered);
     } else {
@@ -189,7 +189,7 @@ const DeploymentsPage: React.FC = () => {
         currentDeployment.name,
         replicaCount
       );
-      
+
       if (response.data.code === 0) {
         message.success(t('deployments.scaleSuccess', { name: currentDeployment.name, count: replicaCount }));
         handleScaleCancel();
@@ -387,7 +387,7 @@ const DeploymentsPage: React.FC = () => {
             />
           </Tooltip>
           <Tooltip title={t('common.create')}>
-          <Button
+            <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={showCreateModal}
@@ -395,7 +395,7 @@ const DeploymentsPage: React.FC = () => {
             >
               {/* {t('deployments.createDeployment')} */}
             </Button>
-            </Tooltip>
+          </Tooltip>
         </Space>
       }
     >
@@ -439,8 +439,8 @@ const DeploymentsPage: React.FC = () => {
         {detailLoading ? (
           <div style={{ textAlign: 'center', padding: '20px' }}>{t('deployments.loading')}</div>
         ) : currentDeploymentDetail ? (
-          <DeploymentDetail 
-            deployment={currentDeploymentDetail} 
+          <DeploymentDetail
+            deployment={currentDeploymentDetail}
             clusterName={selectedCluster}
             onUpdate={() => {
               handleDetailClose();
