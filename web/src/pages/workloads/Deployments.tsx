@@ -347,15 +347,6 @@ const DeploymentsPage: React.FC = () => {
               {t('deployments.management')}
             </Title>
           </Col>
-          <Col>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={showCreateModal}
-            >
-              {t('deployments.createDeployment')}
-            </Button>
-          </Col>
         </Row>
       }
       extra={
@@ -395,6 +386,16 @@ const DeploymentsPage: React.FC = () => {
               loading={loading}
             />
           </Tooltip>
+          <Tooltip title={t('common.create')}>
+          <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={showCreateModal}
+              style={{ marginLeft: 8, marginRight: 8 }}
+            >
+              {/* {t('deployments.createDeployment')} */}
+            </Button>
+            </Tooltip>
         </Space>
       }
     >
