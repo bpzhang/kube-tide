@@ -39,6 +39,7 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
   const [isMounted, setIsMounted] = useState(false);
   const [podStatus, setPodStatus] = useState<'checking' | 'running' | 'notfound' | 'error'>('checking');
   const [containerList, setContainerList] = useState<string[]>([]);
+  const [containerHeight, setContainerHeight] = useState<string>('calc(100vh - 48px)'); // 只减去卡片头部高度
 
   // 在组件挂载后设置状态，防止在卸载后的状态更新
   useEffect(() => {
@@ -51,6 +52,23 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
       }
     };
   }, [connectionTimeout]);
+
+  // 添加窗口大小变化监听，更新容器高度
+  useEffect(() => {
+    const updateContainerHeight = () => {
+      setContainerHeight('calc(100vh - 48px)'); // 只减去卡片头部高度
+    };
+    
+    // 初始设置
+    updateContainerHeight();
+    
+    // 监听窗口大小变化
+    window.addEventListener('resize', updateContainerHeight);
+    
+    return () => {
+      window.removeEventListener('resize', updateContainerHeight);
+    };
+  }, []);
 
   // 检查Pod是否存在且运行中
   useEffect(() => {
@@ -557,7 +575,7 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
       styles={{ 
         body: { 
           padding: 0, 
-          height: '500px',
+          height: containerHeight, // 使用动态高度
           display: 'flex',
           flexDirection: 'column'
         } 

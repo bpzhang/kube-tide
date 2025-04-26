@@ -61,6 +61,20 @@ const PodTerminalPage: React.FC = () => {
     document.body.style.height = '100vh';
     document.body.style.width = '100vw';
     
+    // 添加一个全局样式来确保终端页面占满整个屏幕
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      #root {
+        height: 100vh !important;
+        width: 100vw !important;
+        overflow: hidden !important;
+      }
+      .ant-layout, .ant-layout-content {
+        height: 100% !important;
+      }
+    `;
+    document.head.appendChild(styleElement);
+    
     return () => {
       // 恢复原始标题和样式
       document.title = 'Kube Tide';
@@ -69,6 +83,11 @@ const PodTerminalPage: React.FC = () => {
       document.body.style.overflow = '';
       document.body.style.height = '';
       document.body.style.width = '';
+      
+      // 移除添加的样式元素
+      if (styleElement && document.head.contains(styleElement)) {
+        document.head.removeChild(styleElement);
+      }
     };
   }, [clusterName, namespace, podName, t]);
 
@@ -93,7 +112,7 @@ const PodTerminalPage: React.FC = () => {
       width: '100%',
       height: '100vh',
       overflow: 'hidden',
-      padding: '8px',
+      padding: '0', // 移除内边距以最大化空间利用
       boxSizing: 'border-box'
     }}>
       {/* 容器选择器 */}
@@ -125,7 +144,7 @@ const PodTerminalPage: React.FC = () => {
       {selectedContainer && (
         <div style={{
           flex: '1 1 auto',
-          minHeight: '0',
+          height: '100%', // 确保占用所有可用高度
           display: 'flex',
           flexDirection: 'column'
         }}>
