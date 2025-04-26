@@ -1,6 +1,6 @@
 # Kube Tide
 
-![Kube Tide Logo](docs/images/logo.png)
+<!-- ![Kube Tide Logo](docs/images/logo.png) -->
 
 A Kubernetes multi-cluster management platform based on Go and React, providing an intuitive web interface to simplify Kubernetes resource management and operations.
 
@@ -59,7 +59,7 @@ The platform adopts a front-end and back-end separation architecture:
 
 ## Directory Structure
 
-```
+```plaintext
 kube-tide/
 ├── cmd/                    # Application entry points
 │   └── server/             # Server entry

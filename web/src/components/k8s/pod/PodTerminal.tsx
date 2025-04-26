@@ -4,7 +4,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { AttachAddon } from '@xterm/addon-attach';
 import '@xterm/xterm/css/xterm.css';
 import { Card, Alert, Spin, Button, Space, message, Modal } from 'antd';
-import { ReloadOutlined, BugOutlined, CloseCircleOutlined, ExpandOutlined, CompressOutlined } from '@ant-design/icons';
+import { ReloadOutlined, BugOutlined } from '@ant-design/icons';
 import { checkPodExists } from '@/api/pod'; // 导入检查Pod存在性的API
 import { useTranslation } from 'react-i18next';
 
@@ -530,7 +530,7 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
       }
       extra={
         <Space>
-          <Button 
+          {/* <Button 
             icon={<BugOutlined />}
             onClick={checkContainers}
             size="small"
@@ -543,7 +543,7 @@ const PodTerminal: React.FC<PodTerminalProps> = ({
             size="small"
           >
             {t('podTerminal.debug')}
-          </Button>
+          </Button> */}
           <Button 
             type="primary" 
             icon={<ReloadOutlined />}

@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Button, Spin, message, Tabs, Select } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Card, Button, Spin, message, Tabs, Space } from 'antd';
+import { ArrowLeftOutlined, CodeOutlined, FileTextOutlined } from '@ant-design/icons';
 import { getPodDetails } from '../../api/pod';
 import PodDetail from '../../components/k8s/pod/PodDetail';
-import PodTerminal from '../../components/k8s/pod/PodTerminal';
-import PodLogs from '../../components/k8s/pod/PodLogs';
 import PodMonitoring from '../../components/k8s/pod/PodMonitoring';
 import { useTranslation } from 'react-i18next';
-
-const { Option } = Select;
 
 const PodDetailPage: React.FC = () => {
   const { t } = useTranslation();
@@ -21,7 +17,6 @@ const PodDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [pod, setPod] = useState<any>(null);
-  const [selectedContainer, setSelectedContainer] = useState<string>('');
 
   useEffect(() => {
     const fetchPodDetails = async () => {
@@ -35,10 +30,6 @@ const PodDetailPage: React.FC = () => {
         const response = await getPodDetails(clusterName, namespace, podName);
         if (response.data.code === 0) {
           setPod(response.data.data.pod);
-          // 默认选择第一个容器
-          if (response.data.data.pod?.spec?.containers?.length > 0) {
-            setSelectedContainer(response.data.data.pod.spec.containers[0].name);
-          }
         } else {
           message.error(response.data.message || t('podDetail.fetchFailed'));
         }
@@ -52,6 +43,18 @@ const PodDetailPage: React.FC = () => {
 
     fetchPodDetails();
   }, [clusterName, namespace, podName, navigate, t]);
+
+  // 在新标签页中打开日志页面
+  const openLogsInNewTab = () => {
+    const url = `/workloads/pods/${clusterName}/${namespace}/${podName}/logs`;
+    window.open(url, '_blank');
+  };
+
+  // 在新标签页中打开终端页面
+  const openTerminalInNewTab = () => {
+    const url = `/workloads/pods/${clusterName}/${namespace}/${podName}/terminal`;
+    window.open(url, '_blank');
+  };
 
   if (loading) {
     return (
@@ -72,9 +75,6 @@ const PodDetailPage: React.FC = () => {
     );
   }
 
-  // 提取Pod的所有容器名称
-  const containerNames = pod.spec.containers.map((container: any) => container.name);
-
   const tabItems = [
     {
       key: 'info',
@@ -91,60 +91,36 @@ const PodDetailPage: React.FC = () => {
           podName={podName!}
         />
       )
-    },
-    {
-      key: 'logs',
-      label: t('podDetail.tabs.logs'),
-      children: (
-        <PodLogs
-          clusterName={clusterName!}
-          namespace={namespace!}
-          podName={podName!}
-          containers={containerNames}
-        />
-      )
-    },
-    {
-      key: 'terminal',
-      label: t('podDetail.tabs.terminal'),
-      children: (
-        <Card>
-          <div style={{ marginBottom: 16 }}>
-            <span style={{ marginRight: 8 }}>{t('podDetail.container')}:</span>
-            <Select
-              value={selectedContainer}
-              onChange={setSelectedContainer}
-              style={{ width: 200 }}
-            >
-              {pod.spec.containers.map((container: any) => (
-                <Option key={container.name} value={container.name}>
-                  {container.name}
-                </Option>
-              ))}
-            </Select>
-          </div>
-          {selectedContainer && (
-            <PodTerminal
-              clusterName={clusterName!}
-              namespace={namespace!}
-              podName={podName!}
-              containerName={selectedContainer}
-            />
-          )}
-        </Card>
-      )
     }
   ];
 
   return (
     <div style={{ padding: '24px' }}>
-      <Button
-        icon={<ArrowLeftOutlined />}
-        onClick={() => navigate('/workloads/pods')}
-        style={{ marginBottom: '16px' }}
-      >
-        {t('podDetail.backToPods')}
-      </Button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate('/workloads/pods')}
+        >
+          {t('podDetail.backToPods')}
+        </Button>
+        
+        <Space>
+          <Button 
+            type="primary" 
+            icon={<FileTextOutlined />} 
+            onClick={openLogsInNewTab}
+          >
+            {t('podDetail.tabs.logs')}
+          </Button>
+          <Button 
+            type="primary" 
+            icon={<CodeOutlined />} 
+            onClick={openTerminalInNewTab}
+          >
+            {t('podDetail.tabs.terminal')}
+          </Button>
+        </Space>
+      </div>
 
       <Tabs defaultActiveKey="info" items={tabItems} />
     </div>
