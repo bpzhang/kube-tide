@@ -1060,14 +1060,12 @@
     "container": "容器",
     "connectionStatus": "连接状态",
     "availableContainers": "可用容器",
-    "connectionDetails": "连接详情",
     "containerListHint": "此Pod中的可用容器:",
     "current": "当前",
     "noContainersFound": "此Pod中没有找到容器",
     "checkingPodStatus": "正在检查Pod状态...",
     "retry": "重试",
-    "checkContainersError": "检查容器错误: {error}",
-    "usingFirstContainer": "使用第一个容器 '{container}'"
+    "checkContainersError": "检查容器错误: {error}"
   },
   "events": {
     "title": "{resourceKind}事件",

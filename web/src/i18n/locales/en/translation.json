@@ -1063,15 +1063,12 @@
     "container": "Container",
     "connectionStatus": "Connection Status",
     "availableContainers": "Available Containers",
-    "connectionDetails": "Connection Details",
     "containerListHint": "Available containers in this pod:",
     "current": "current",
     "noContainersFound": "No containers found in this pod",
     "checkingPodStatus": "Checking pod status...",
-    "connectingToContainer": "Connecting to container...",
     "retry": "Retry",
-    "checkContainersError": "Error checking containers: {error}",
-    "usingFirstContainer": "Using first container '{container}'"
+    "checkContainersError": "Error checking containers: {error}"
   },
   "events": {
     "title": "{resourceKind} Events",

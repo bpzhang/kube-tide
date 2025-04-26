@@ -391,7 +391,7 @@ const PodList: React.FC<PodListProps> = ({ clusterName, namespace, pods, onRefre
           pageSize: tableState.pageSize,
           current: tableState.current,
           showSizeChanger: true,
-          showTotal: total => t('pods.totalCount', { total }),
+          // showTotal: total => t('pods.totalCount', { total }),
           pageSizeOptions: ['10', '20', '50', '100']
         }}
         scroll={{ x: 'max-content' }}

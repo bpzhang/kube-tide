@@ -165,7 +165,7 @@ func (h *PodTerminalHandler) HandleTerminal(c *gin.Context) {
 	}
 
 	// Send connection success message
-	err = wsConn.Write(ctx, websocket.MessageText, []byte("WebSocket connection successful, connecting to container terminal..."))
+	err = wsConn.Write(ctx, websocket.MessageText, []byte("WebSocket connection successful, connecting to container terminal... \r\n"))
 	if err != nil {
 		logger.Errorf("Failed to send test message: %v", err)
 		return
