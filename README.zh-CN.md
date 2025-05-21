@@ -1,4 +1,4 @@
-# K8s Platform Go
+# Kube Tide
 
 一个基于Go语言和React开发的Kubernetes多集群管理平台，提供直观的Web界面，简化Kubernetes资源的管理和操作。
 
@@ -29,6 +29,7 @@
 - ✅ Pod指标历史数据可视化
 - ✅ Deployment创建和管理
 - ✅ Deployment扩缩容和重启
+- ✅ StatefulSet管理
 - ✅ Service管理
 
 ## 技术栈
