@@ -338,12 +338,22 @@ func getZapLogger() *zap.Logger {
 	return globalLogger
 }
 
+// GetZapLogger 公开的获取zap Logger实例的方法
+func GetZapLogger() *zap.Logger {
+	return getZapLogger()
+}
+
 // 获取SugaredLogger实例
 func getZapSugaredLogger() *zap.SugaredLogger {
 	if globalSugaredLogger == nil {
 		Init()
 	}
 	return globalSugaredLogger
+}
+
+// GetZapSugaredLogger 公开的获取SugaredLogger实例的方法
+func GetZapSugaredLogger() *zap.SugaredLogger {
+	return getZapSugaredLogger()
 }
 
 // 将日志记录接口转换为字段

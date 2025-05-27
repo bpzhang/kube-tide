@@ -21,6 +21,8 @@ type App struct {
 	HealthHandler      *HealthCheckHandler
 	PodTerminalHandler *PodTerminalHandler
 	NamespaceHandler   *NamespaceHandler // Add namespace handler
+	// 新增数据库相关处理器
+	DBRouter *DBRouter
 }
 
 // InitRouter Initialize router
@@ -55,6 +57,11 @@ func InitRouter(app *App) *gin.Engine {
 		router.GET("/favicon.ico", func(c *gin.Context) {
 			staticHandler.ServeHTTP(c.Writer, c.Request)
 		})
+	}
+
+	// Setup database API routes (新增)
+	if app.DBRouter != nil {
+		app.DBRouter.SetupRoutes(router)
 	}
 
 	// API version grouping

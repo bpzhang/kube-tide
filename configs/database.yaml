@@ -1,0 +1,29 @@
+# Database configuration
+database:
+  # Database type: postgres or sqlite
+  type: "postgres"
+  
+  # PostgreSQL configuration
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "password"
+  database: "kube_tide"
+  ssl_mode: "disable"
+  
+  # SQLite configuration (used when type is sqlite)
+  sqlite_file_path: "./data/kube_tide.db"
+  
+  # Connection pool settings
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: "5m"
+
+# Alternative SQLite configuration
+# database:
+#   type: "sqlite"
+#   database: "kube_tide"
+#   sqlite_file_path: "./data/kube_tide.db"
+#   max_open_conns: 10
+#   max_idle_conns: 2
+#   conn_max_lifetime: "5m" 

@@ -1,0 +1,728 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+[README.md](mdc:README.md)
+
+# Kube-Tide Cursor Rules
+
+## Project Overview
+Kube-Tide is a Kubernetes multi-cluster management platform built with Go and React. This document outlines coding standards, best practices, and development guidelines for the project.
+
+## Go Language Best Practices
+
+### Code Style and Formatting
+- Follow the official Go code style guidelines (gofmt, goimports)
+- Use meaningful variable and function names in camelCase
+- Package names should be lowercase, single words when possible
+- Constants should be in UPPER_CASE with underscores
+- Use Go modules for dependency management
+
+### Error Handling
+- Always handle errors explicitly, never ignore them
+- Use custom error types for domain-specific errors
+- Wrap errors with context using `fmt.Errorf` or `errors.Wrap`
+- Return errors as the last return value
+- Use early returns to reduce nesting
+
+```go
+// Good
+func processCluster(clusterName string) error {
+    if clusterName == "" {
+        return fmt.Errorf("cluster name cannot be empty")
+    }
+    
+    client, err := getK8sClient(clusterName)
+    if err != nil {
+        return fmt.Errorf("failed to get k8s client for cluster %s: %w", clusterName, err)
+    }
+    
+    // Process cluster...
+    return nil
+}
+```
+
+### Concurrency
+- Use goroutines and channels for concurrent operations
+- Always handle context cancellation in long-running operations
+- Use sync.WaitGroup for waiting on multiple goroutines
+- Prefer channels over shared memory for communication
+
+### Testing
+- Write unit tests for all public functions
+- Use table-driven tests for multiple test cases
+- Mock external dependencies (Kubernetes API, databases)
+- Aim for at least 80% test coverage
+- Use testify/assert for assertions
+
+## Kubernetes Client-Go Best Practices
+
+### Client Management
+- Use shared informers for watching resources
+- Implement proper retry logic with exponential backoff
+- Always set timeouts for API calls
+- Use context for cancellation and timeouts
+
+```go
+// Good
+func (c *ClusterManager) GetPods(ctx context.Context, namespace string) (*v1.PodList, error) {
+    ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+    defer cancel()
+    
+    return c.clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
+}
+```
+
+### Resource Management
+- Use structured logging with consistent fields
+- Implement proper RBAC checks
+- Validate input parameters before making API calls
+- Use field selectors and label selectors to filter resources
+- Implement pagination for large result sets
+
+### Error Handling for K8s Operations
+- Handle specific Kubernetes error types (NotFound, Conflict, etc.)
+- Implement retry logic for transient errors
+- Log errors with sufficient context for debugging
+
+```go
+// Good
+func (c *ClusterManager) DeletePod(ctx context.Context, namespace, name string) error {
+    err := c.clientset.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+    if err != nil {
+        if errors.IsNotFound(err) {
+            return fmt.Errorf("pod %s/%s not found", namespace, name)
+        }
+        return fmt.Errorf("failed to delete pod %s/%s: %w", namespace, name, err)
+    }
+    return nil
+}
+```
+
+## Project Structure Guidelines
+
+### Directory Organization
+```
+internal/
+├── api/           # HTTP handlers and routes
+├── core/          # Business logic and domain models
+│   ├── cluster/   # Cluster management
+│   ├── node/      # Node operations
+│   ├── pod/       # Pod operations
+│   └── k8s/       # Kubernetes client utilities
+├── repository/    # Data access layer
+│   ├── postgres/  # PostgreSQL implementations
+│   ├── mysql/     # MySQL implementations (if needed)
+│   └── interfaces.go # Repository interfaces
+├── database/      # Database utilities and migrations
+│   ├── migrations/ # SQL migration files
+│   ├── migrate.go  # Migration service
+│   └── health.go   # Database health checks
+├── config/        # Configuration management
+├── cache/         # Caching layer (Redis, in-memory)
+└── utils/         # Shared utilities
+```
+
+### Package Design
+- Keep packages focused on a single responsibility
+- Avoid circular dependencies
+- Use interfaces for abstraction and testing
+- Keep the public API minimal and well-documented
+
+### Configuration Management
+- Use environment variables for configuration
+- Provide sensible defaults
+- Validate configuration at startup
+- Support configuration hot-reloading where appropriate
+
+## API Design Best Practices
+
+### RESTful API Design
+- Use standard HTTP methods (GET, POST, PUT, DELETE)
+- Use consistent URL patterns: `/api/v1/clusters/{cluster}/pods`
+- Return appropriate HTTP status codes
+- Use JSON for request/response bodies
+- Implement proper pagination for list endpoints
+
+### Request/Response Handling
+- Validate input data using struct tags or validation libraries
+- Use consistent error response format
+- Implement request logging and metrics
+- Set appropriate timeouts for all operations
+
+```go
+// Good API handler structure
+func (h *PodHandler) GetPods(c *gin.Context) {
+    cluster := c.Param("cluster")
+    namespace := c.Query("namespace")
+    
+    if cluster == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "cluster parameter is required"})
+        return
+    }
+    
+    ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+    defer cancel()
+    
+    pods, err := h.podService.GetPods(ctx, cluster, namespace)
+    if err != nil {
+        h.logger.Error("failed to get pods", "cluster", cluster, "namespace", namespace, "error", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve pods"})
+        return
+    }
+    
+    c.JSON(http.StatusOK, pods)
+}
+```
+
+## Security Best Practices
+
+### Authentication and Authorization
+- Implement proper authentication for API endpoints
+- Use RBAC for fine-grained access control
+- Validate user permissions before performing operations
+- Log security-related events
+
+### Input Validation
+- Sanitize all user inputs
+- Validate Kubernetes resource names and namespaces
+- Use allowlists for acceptable values where possible
+- Implement rate limiting to prevent abuse
+
+### Secrets Management
+- Never log sensitive information
+- Use Kubernetes secrets for storing credentials
+- Rotate credentials regularly
+- Use least privilege principle for service accounts
+
+## Logging and Monitoring
+
+### Structured Logging
+- Use structured logging (JSON format)
+- Include consistent fields: timestamp, level, message, cluster, namespace
+- Log at appropriate levels (DEBUG, INFO, WARN, ERROR)
+- Include correlation IDs for request tracing
+
+```go
+// Good logging example
+logger.Info("pod operation completed",
+    "operation", "delete",
+    "cluster", clusterName,
+    "namespace", namespace,
+    "pod", podName,
+    "duration", time.Since(start),
+)
+```
+
+### Metrics and Monitoring
+- Implement health check endpoints
+- Expose Prometheus metrics for key operations
+- Monitor API response times and error rates
+- Track Kubernetes API call metrics
+
+## Database Best Practices
+
+### Database Design
+- Use PostgreSQL or MySQL for relational data
+- Implement proper database schema versioning with migrations
+- Use foreign keys to maintain data integrity
+- Index frequently queried columns
+- Normalize data to reduce redundancy
+
+### Connection Management
+- Use connection pooling (sql.DB with proper configuration)
+- Set appropriate connection limits (max open/idle connections)
+- Implement connection health checks
+- Use prepared statements to prevent SQL injection
+
+```go
+// Good database configuration
+func NewDB(config *Config) (*sql.DB, error) {
+    db, err := sql.Open("postgres", config.DatabaseURL)
+    if err != nil {
+        return nil, fmt.Errorf("failed to open database: %w", err)
+    }
+    
+    db.SetMaxOpenConns(config.MaxOpenConns)
+    db.SetMaxIdleConns(config.MaxIdleConns)
+    db.SetConnMaxLifetime(config.ConnMaxLifetime)
+    
+    if err := db.Ping(); err != nil {
+        return nil, fmt.Errorf("failed to ping database: %w", err)
+    }
+    
+    return db, nil
+}
+```
+
+### Repository Pattern
+- Use repository pattern for data access layer
+- Implement interfaces for testability
+- Separate business logic from data access
+- Use dependency injection for repositories
+
+```go
+// Repository interface example
+type ClusterRepository interface {
+    Create(ctx context.Context, cluster *Cluster) error
+    GetByID(ctx context.Context, id string) (*Cluster, error)
+    GetByName(ctx context.Context, name string) (*Cluster, error)
+    List(ctx context.Context, filters ClusterFilters) ([]*Cluster, error)
+    Update(ctx context.Context, cluster *Cluster) error
+    Delete(ctx context.Context, id string) error
+}
+
+// Implementation
+type postgresClusterRepo struct {
+    db *sql.DB
+}
+
+func (r *postgresClusterRepo) Create(ctx context.Context, cluster *Cluster) error {
+    query := `
+        INSERT INTO clusters (id, name, config, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5)`
+    
+    _, err := r.db.ExecContext(ctx, query,
+        cluster.ID, cluster.Name, cluster.Config,
+        cluster.CreatedAt, cluster.UpdatedAt)
+    
+    if err != nil {
+        return fmt.Errorf("failed to create cluster: %w", err)
+    }
+    
+    return nil
+}
+```
+
+### Transaction Management
+- Use transactions for multi-table operations
+- Implement proper rollback on errors
+- Keep transactions short-lived
+- Use context for transaction timeouts
+
+```go
+// Transaction example
+func (s *ClusterService) CreateClusterWithNodes(ctx context.Context, cluster *Cluster, nodes []*Node) error {
+    tx, err := s.db.BeginTx(ctx, nil)
+    if err != nil {
+        return fmt.Errorf("failed to begin transaction: %w", err)
+    }
+    defer tx.Rollback()
+    
+    if err := s.clusterRepo.CreateTx(ctx, tx, cluster); err != nil {
+        return fmt.Errorf("failed to create cluster: %w", err)
+    }
+    
+    for _, node := range nodes {
+        if err := s.nodeRepo.CreateTx(ctx, tx, node); err != nil {
+            return fmt.Errorf("failed to create node: %w", err)
+        }
+    }
+    
+    if err := tx.Commit(); err != nil {
+        return fmt.Errorf("failed to commit transaction: %w", err)
+    }
+    
+    return nil
+}
+```
+
+### Database Migrations
+- Use migration tools (golang-migrate, goose)
+- Version all schema changes
+- Make migrations reversible when possible
+- Test migrations on staging environment first
+
+```go
+// Migration example structure
+type Migration struct {
+    Version     int
+    Description string
+    Up          string
+    Down        string
+}
+
+// Migration service
+type MigrationService struct {
+    db *sql.DB
+}
+
+func (m *MigrationService) Migrate(ctx context.Context) error {
+    if err := m.createMigrationsTable(ctx); err != nil {
+        return err
+    }
+    
+    currentVersion, err := m.getCurrentVersion(ctx)
+    if err != nil {
+        return err
+    }
+    
+    for _, migration := range m.getMigrations() {
+        if migration.Version > currentVersion {
+            if err := m.runMigration(ctx, migration); err != nil {
+                return fmt.Errorf("failed to run migration %d: %w", migration.Version, err)
+            }
+        }
+    }
+    
+    return nil
+}
+```
+
+### Query Optimization
+- Use EXPLAIN ANALYZE to optimize slow queries
+- Implement proper pagination with LIMIT/OFFSET
+- Use database-specific features (JSON columns for PostgreSQL)
+- Avoid N+1 query problems
+
+```go
+// Good pagination example
+type PaginationParams struct {
+    Page     int `json:"page" validate:"min=1"`
+    PageSize int `json:"page_size" validate:"min=1,max=100"`
+}
+
+func (r *postgresClusterRepo) List(ctx context.Context, params PaginationParams) (*PaginatedResult, error) {
+    offset := (params.Page - 1) * params.PageSize
+    
+    query := `
+        SELECT id, name, config, created_at, updated_at,
+               COUNT(*) OVER() as total_count
+        FROM clusters
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2`
+    
+    rows, err := r.db.QueryContext(ctx, query, params.PageSize, offset)
+    if err != nil {
+        return nil, fmt.Errorf("failed to query clusters: %w", err)
+    }
+    defer rows.Close()
+    
+    var clusters []*Cluster
+    var totalCount int
+    
+    for rows.Next() {
+        var cluster Cluster
+        err := rows.Scan(&cluster.ID, &cluster.Name, &cluster.Config,
+            &cluster.CreatedAt, &cluster.UpdatedAt, &totalCount)
+        if err != nil {
+            return nil, fmt.Errorf("failed to scan cluster: %w", err)
+        }
+        clusters = append(clusters, &cluster)
+    }
+    
+    return &PaginatedResult{
+        Data:       clusters,
+        TotalCount: totalCount,
+        Page:       params.Page,
+        PageSize:   params.PageSize,
+    }, nil
+}
+```
+
+### Data Models and Validation
+- Use struct tags for validation and JSON serialization
+- Implement proper data validation
+- Use database constraints for data integrity
+- Handle NULL values appropriately
+
+```go
+// Data model example
+type Cluster struct {
+    ID          string    `json:"id" db:"id" validate:"required,uuid"`
+    Name        string    `json:"name" db:"name" validate:"required,min=1,max=100"`
+    Config      string    `json:"config" db:"config" validate:"required"`
+    Status      string    `json:"status" db:"status" validate:"oneof=active inactive"`
+    CreatedAt   time.Time `json:"created_at" db:"created_at"`
+    UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+}
+
+// Validation
+func (c *Cluster) Validate() error {
+    validate := validator.New()
+    return validate.Struct(c)
+}
+```
+
+### Database Testing
+- Use test databases for integration tests
+- Implement database fixtures and seeders
+- Use transactions for test isolation
+- Mock database for unit tests
+
+```go
+// Test helper
+func setupTestDB(t *testing.T) *sql.DB {
+    db, err := sql.Open("postgres", getTestDatabaseURL())
+    require.NoError(t, err)
+    
+    // Run migrations
+    migrationService := NewMigrationService(db)
+    err = migrationService.Migrate(context.Background())
+    require.NoError(t, err)
+    
+    t.Cleanup(func() {
+        db.Close()
+    })
+    
+    return db
+}
+
+// Test with transaction rollback
+func TestClusterRepository_Create(t *testing.T) {
+    db := setupTestDB(t)
+    repo := NewPostgresClusterRepository(db)
+    
+    tx, err := db.Begin()
+    require.NoError(t, err)
+    defer tx.Rollback()
+    
+    cluster := &Cluster{
+        ID:   uuid.New().String(),
+        Name: "test-cluster",
+        Config: "test-config",
+    }
+    
+    err = repo.CreateTx(context.Background(), tx, cluster)
+    assert.NoError(t, err)
+}
+```
+
+## Performance Optimization
+
+### Caching
+- Implement caching for frequently accessed data
+- Use informers for watching Kubernetes resources
+- Cache cluster configurations and client connections
+- Implement cache invalidation strategies
+- Use Redis for distributed caching
+
+```go
+// Redis cache example
+type CacheService struct {
+    client *redis.Client
+}
+
+func (c *CacheService) GetCluster(ctx context.Context, id string) (*Cluster, error) {
+    key := fmt.Sprintf("cluster:%s", id)
+    
+    data, err := c.client.Get(ctx, key).Result()
+    if err == redis.Nil {
+        return nil, ErrNotFound
+    }
+    if err != nil {
+        return nil, fmt.Errorf("failed to get from cache: %w", err)
+    }
+    
+    var cluster Cluster
+    if err := json.Unmarshal([]byte(data), &cluster); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal cluster: %w", err)
+    }
+    
+    return &cluster, nil
+}
+
+func (c *CacheService) SetCluster(ctx context.Context, cluster *Cluster, ttl time.Duration) error {
+    key := fmt.Sprintf("cluster:%s", cluster.ID)
+    
+    data, err := json.Marshal(cluster)
+    if err != nil {
+        return fmt.Errorf("failed to marshal cluster: %w", err)
+    }
+    
+    return c.client.Set(ctx, key, data, ttl).Err()
+}
+```
+
+### Resource Management
+- Use connection pooling for database connections
+- Implement proper cleanup for goroutines and resources
+- Use context for cancellation and timeouts
+- Monitor memory usage and implement garbage collection tuning
+- Implement database connection monitoring and alerting
+
+## Development Workflow
+
+### Code Review Guidelines
+- All code must be reviewed before merging
+- Check for proper error handling and logging
+- Verify test coverage for new functionality
+- Ensure documentation is updated
+
+### Testing Strategy
+- Unit tests for business logic
+- Integration tests for Kubernetes operations
+- End-to-end tests for critical user flows
+- Performance tests for high-load scenarios
+
+### Documentation
+- Document all public APIs
+- Maintain up-to-date README files
+- Include code examples in documentation
+- Document configuration options and environment variables
+
+## Frontend Integration (React)
+
+### API Communication
+- Use consistent error handling for API calls
+- Implement proper loading states
+- Handle network timeouts gracefully
+- Use TypeScript interfaces for API responses
+
+### State Management
+- Use React hooks for local state
+- Implement proper error boundaries
+- Handle real-time updates (WebSocket/SSE)
+- Optimize re-renders with useMemo and useCallback
+
+## Deployment and Operations
+
+### Container Best Practices
+- Use multi-stage Docker builds
+- Run containers as non-root user
+- Implement health checks
+- Use minimal base images
+
+### Kubernetes Deployment
+- Use proper resource limits and requests
+- Implement readiness and liveness probes
+- Use ConfigMaps and Secrets for configuration
+- Implement proper RBAC for the application
+
+## Common Patterns and Anti-Patterns
+
+### Do's
+- Use dependency injection for testability
+- Implement graceful shutdown handling
+- Use context for cancellation and timeouts
+- Follow the single responsibility principle
+
+### Don'ts
+- Don't ignore errors
+- Don't use global variables for state
+- Don't block on I/O operations without timeouts
+- Don't hardcode configuration values
+
+## Code Examples and Templates
+
+### Service Interface Template
+```go
+type PodService interface {
+    GetPods(ctx context.Context, cluster, namespace string) ([]*v1.Pod, error)
+    GetPod(ctx context.Context, cluster, namespace, name string) (*v1.Pod, error)
+    DeletePod(ctx context.Context, cluster, namespace, name string) error
+    GetPodLogs(ctx context.Context, cluster, namespace, name string, opts *v1.PodLogOptions) (io.ReadCloser, error)
+}
+```
+
+### Error Response Template
+```go
+type ErrorResponse struct {
+    Error   string `json:"error"`
+    Code    string `json:"code,omitempty"`
+    Details string `json:"details,omitempty"`
+}
+```
+
+### Database Configuration Template
+```go
+type DatabaseConfig struct {
+    Host            string        `env:"DB_HOST" envDefault:"localhost"`
+    Port            int           `env:"DB_PORT" envDefault:"5432"`
+    User            string        `env:"DB_USER" envDefault:"postgres"`
+    Password        string        `env:"DB_PASSWORD"`
+    Database        string        `env:"DB_NAME" envDefault:"kube_tide"`
+    SSLMode         string        `env:"DB_SSL_MODE" envDefault:"disable"`
+    MaxOpenConns    int           `env:"DB_MAX_OPEN_CONNS" envDefault:"25"`
+    MaxIdleConns    int           `env:"DB_MAX_IDLE_CONNS" envDefault:"5"`
+    ConnMaxLifetime time.Duration `env:"DB_CONN_MAX_LIFETIME" envDefault:"5m"`
+}
+
+func (c *DatabaseConfig) DSN() string {
+    return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+        c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode)
+}
+```
+
+### Database Service Template
+```go
+type DatabaseService struct {
+    db               *sql.DB
+    clusterRepo      ClusterRepository
+    nodeRepo         NodeRepository
+    podRepo          PodRepository
+    migrationService *MigrationService
+}
+
+func NewDatabaseService(config *DatabaseConfig) (*DatabaseService, error) {
+    db, err := NewDB(config)
+    if err != nil {
+        return nil, fmt.Errorf("failed to initialize database: %w", err)
+    }
+    
+    return &DatabaseService{
+        db:               db,
+        clusterRepo:      NewPostgresClusterRepository(db),
+        nodeRepo:         NewPostgresNodeRepository(db),
+        podRepo:          NewPostgresPodRepository(db),
+        migrationService: NewMigrationService(db),
+    }, nil
+}
+
+func (s *DatabaseService) Close() error {
+    return s.db.Close()
+}
+
+func (s *DatabaseService) Health(ctx context.Context) error {
+    return s.db.PingContext(ctx)
+}
+```
+
+### Migration SQL Template
+```sql
+-- migrations/001_create_clusters_table.up.sql
+CREATE TABLE IF NOT EXISTS clusters (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    config JSONB NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'inactive',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_clusters_name ON clusters(name);
+CREATE INDEX idx_clusters_status ON clusters(status);
+CREATE INDEX idx_clusters_created_at ON clusters(created_at);
+
+-- migrations/001_create_clusters_table.down.sql
+DROP TABLE IF EXISTS clusters;
+```
+
+### Database Health Check Template
+```go
+type HealthChecker struct {
+    db *sql.DB
+}
+
+func (h *HealthChecker) CheckDatabase(ctx context.Context) error {
+    ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+    defer cancel()
+    
+    if err := h.db.PingContext(ctx); err != nil {
+        return fmt.Errorf("database ping failed: %w", err)
+    }
+    
+    // Check if we can perform a simple query
+    var result int
+    err := h.db.QueryRowContext(ctx, "SELECT 1").Scan(&result)
+    if err != nil {
+        return fmt.Errorf("database query failed: %w", err)
+    }
+    
+    return nil
+}
+```
+
+This document should be regularly updated as the project evolves and new best practices are identified.
+

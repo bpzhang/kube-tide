@@ -2,23 +2,122 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"time"
 
+	"kube-tide/internal/core"
 	"kube-tide/internal/core/k8s"
+	"kube-tide/internal/database/models"
 	"kube-tide/internal/utils/logger"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // DeploymentHandler Deployment management handler
 type DeploymentHandler struct {
-	service *k8s.DeploymentService
+	service   *k8s.DeploymentService
+	dbService core.DeploymentService // 新增数据库服务
 }
 
 // NewDeploymentHandler Create Deployment management handler
-func NewDeploymentHandler(service *k8s.DeploymentService) *DeploymentHandler {
+func NewDeploymentHandler(service *k8s.DeploymentService, dbService core.DeploymentService) *DeploymentHandler {
 	return &DeploymentHandler{
-		service: service,
+		service:   service,
+		dbService: dbService,
+	}
+}
+
+// syncDeploymentToDB 同步部署信息到数据库
+func (h *DeploymentHandler) syncDeploymentToDB(clusterName, namespace, deploymentName string) {
+	if h.dbService == nil {
+		return // 如果没有数据库服务，跳过同步
+	}
+
+	// 获取 Kubernetes 中的部署详情
+	k8sDeployment, err := h.service.GetDeploymentDetails(clusterName, namespace, deploymentName)
+	if err != nil {
+		logger.Error("Failed to get deployment details for sync: " + err.Error())
+		return
+	}
+
+	// 序列化复杂字段为 JSON 字符串
+	labelsJSON := ""
+	if k8sDeployment.Labels != nil {
+		if labelsData, err := json.Marshal(k8sDeployment.Labels); err == nil {
+			labelsJSON = string(labelsData)
+		}
+	}
+
+	annotationsJSON := ""
+	if k8sDeployment.Annotations != nil {
+		if annotationsData, err := json.Marshal(k8sDeployment.Annotations); err == nil {
+			annotationsJSON = string(annotationsData)
+		}
+	}
+
+	selectorJSON := ""
+	if k8sDeployment.Selector != nil {
+		if selectorData, err := json.Marshal(k8sDeployment.Selector); err == nil {
+			selectorJSON = string(selectorData)
+		}
+	}
+
+	templateJSON := ""
+	if k8sDeployment.Containers != nil {
+		templateData := map[string]interface{}{
+			"containers": k8sDeployment.Containers,
+		}
+		if templateBytes, err := json.Marshal(templateData); err == nil {
+			templateJSON = string(templateBytes)
+		}
+	}
+
+	// 转换为数据库模型
+	dbDeployment := &models.Deployment{
+		ID:                  uuid.New().String(),
+		ClusterID:           clusterName,
+		Namespace:           namespace,
+		Name:                deploymentName,
+		Replicas:            int(k8sDeployment.Replicas),
+		ReadyReplicas:       int(k8sDeployment.ReadyReplicas),
+		AvailableReplicas:   int(k8sDeployment.ReadyReplicas), // 使用 ReadyReplicas 作为 AvailableReplicas
+		UnavailableReplicas: int(k8sDeployment.Replicas - k8sDeployment.ReadyReplicas),
+		UpdatedReplicas:     int(k8sDeployment.ReadyReplicas),
+		StrategyType:        k8sDeployment.Strategy,
+		Labels:              labelsJSON,
+		Annotations:         annotationsJSON,
+		Selector:            selectorJSON,
+		Template:            templateJSON,
+		CreatedAt:           time.Now(),
+		UpdatedAt:           time.Now(),
+	}
+
+	// 检查是否已存在
+	existing, err := h.dbService.GetByClusterNamespaceAndName(context.Background(), clusterName, namespace, deploymentName)
+	if err == nil && existing != nil {
+		// 更新现有记录
+		updates := models.DeploymentUpdateRequest{
+			Replicas:            &dbDeployment.Replicas,
+			ReadyReplicas:       &dbDeployment.ReadyReplicas,
+			AvailableReplicas:   &dbDeployment.AvailableReplicas,
+			UnavailableReplicas: &dbDeployment.UnavailableReplicas,
+			UpdatedReplicas:     &dbDeployment.UpdatedReplicas,
+			StrategyType:        &dbDeployment.StrategyType,
+			Labels:              &dbDeployment.Labels,
+			Annotations:         &dbDeployment.Annotations,
+			Selector:            &dbDeployment.Selector,
+			Template:            &dbDeployment.Template,
+		}
+		if err := h.dbService.Update(context.Background(), existing.ID, updates); err != nil {
+			logger.Error("Failed to update deployment in database: " + err.Error())
+		}
+	} else {
+		// 创建新记录
+		if err := h.dbService.Create(context.Background(), dbDeployment); err != nil {
+			logger.Error("Failed to create deployment in database: " + err.Error())
+		}
 	}
 }
 
@@ -37,6 +136,13 @@ func (h *DeploymentHandler) ListDeployments(c *gin.Context) {
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	// 异步同步到数据库
+	go func() {
+		for _, deployment := range deployments {
+			h.syncDeploymentToDB(clusterName, deployment.Namespace, deployment.Name)
+		}
+	}()
 
 	ResponseSuccess(c, gin.H{
 		"deployments": deployments,
@@ -63,6 +169,13 @@ func (h *DeploymentHandler) ListDeploymentsByNamespace(c *gin.Context) {
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	// 异步同步到数据库
+	go func() {
+		for _, deployment := range deployments {
+			h.syncDeploymentToDB(clusterName, namespace, deployment.Name)
+		}
+	}()
 
 	ResponseSuccess(c, gin.H{
 		"deployments": deployments,
@@ -95,6 +208,9 @@ func (h *DeploymentHandler) GetDeploymentDetails(c *gin.Context) {
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	// 异步同步到数据库
+	go h.syncDeploymentToDB(clusterName, namespace, deploymentName)
 
 	ResponseSuccess(c, gin.H{
 		"deployment": deployment,
@@ -137,6 +253,9 @@ func (h *DeploymentHandler) ScaleDeployment(c *gin.Context) {
 		return
 	}
 
+	// 异步同步到数据库
+	go h.syncDeploymentToDB(clusterName, namespace, deploymentName)
+
 	ResponseSuccess(c, nil)
 }
 
@@ -166,6 +285,9 @@ func (h *DeploymentHandler) RestartDeployment(c *gin.Context) {
 		FailWithError(c, http.StatusInternalServerError, "deployment.restartFailed", err)
 		return
 	}
+
+	// 异步同步到数据库
+	go h.syncDeploymentToDB(clusterName, namespace, deploymentName)
 
 	ResponseSuccess(c, nil)
 }
@@ -204,16 +326,20 @@ func (h *DeploymentHandler) UpdateDeployment(c *gin.Context) {
 		return
 	}
 
+	// 异步同步到数据库
+	go h.syncDeploymentToDB(clusterName, namespace, deploymentName)
+
 	ResponseSuccess(c, gin.H{
 		"message": "Deployment updated successfully",
 	})
 }
 
-// CreateDeployment Create new Deployment
+// CreateDeployment Create a new Deployment
 func (h *DeploymentHandler) CreateDeployment(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	logger.Info("Creating deployment for cluster: " + clusterName + ", namespace: " + namespace)
+
 	if clusterName == "" {
 		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
 		return
@@ -230,35 +356,27 @@ func (h *DeploymentHandler) CreateDeployment(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
-	if createRequest.Name == "" {
-		ResponseError(c, http.StatusBadRequest, "Deployment name cannot be empty")
-		return
-	}
-	if len(createRequest.Containers) == 0 {
-		ResponseError(c, http.StatusBadRequest, "At least one container must be defined")
-		return
-	}
-
-	deployment, err := h.service.CreateDeployment(clusterName, namespace, createRequest)
+	_, err := h.service.CreateDeployment(clusterName, namespace, createRequest)
 	if err != nil {
 		logger.Error("Failed to create deployment: " + err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
+	// 异步同步到数据库
+	go h.syncDeploymentToDB(clusterName, namespace, createRequest.Name)
+
 	ResponseSuccess(c, gin.H{
-		"message":    "Deployment created successfully",
-		"deployment": deployment,
+		"message": "Deployment created successfully",
 	})
 }
 
-// GetAllRelatedEvents Get all events for Deployment and its associated ReplicaSets and Pods
+// GetAllRelatedEvents Get all related events for a deployment
 func (h *DeploymentHandler) GetAllRelatedEvents(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	deploymentName := c.Param("deployment")
-	logger.Info("Getting all related events for cluster: " + clusterName + ", namespace: " + namespace + ", deployment: " + deploymentName)
+	logger.Info("Getting all related events for deployment: " + clusterName + "/" + namespace + "/" + deploymentName)
 
 	if clusterName == "" {
 		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
@@ -273,43 +391,55 @@ func (h *DeploymentHandler) GetAllRelatedEvents(c *gin.Context) {
 		return
 	}
 
-	eventMap, err := h.service.GetAllDeploymentEvents(context.Background(), clusterName, namespace, deploymentName)
+	events, err := h.service.GetAllDeploymentEvents(context.Background(), clusterName, namespace, deploymentName)
 	if err != nil {
-		logger.Error("Failed to get all related events: " + err.Error())
+		logger.Error("Failed to get deployment events: " + err.Error())
 		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	ResponseSuccess(c, gin.H{
-		"events": eventMap,
+		"events": events,
 	})
 }
 
-// DeleteDeployment 删除Deployment
+// DeleteDeployment Delete a Deployment
 func (h *DeploymentHandler) DeleteDeployment(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	namespace := c.Param("namespace")
 	deploymentName := c.Param("deployment")
-	logger.Info("删除deployment: " + clusterName + ", 命名空间: " + namespace + ", 名称: " + deploymentName)
+	logger.Info("Deleting deployment for cluster: " + clusterName + ", namespace: " + namespace + ", deployment: " + deploymentName)
 
 	if clusterName == "" {
-		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
+		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
 		return
 	}
 	if namespace == "" {
-		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
+		ResponseError(c, http.StatusBadRequest, "Namespace cannot be empty")
 		return
 	}
 	if deploymentName == "" {
-		ResponseError(c, http.StatusBadRequest, "deployment.deploymentNameEmpty")
+		ResponseError(c, http.StatusBadRequest, "Deployment name cannot be empty")
 		return
 	}
 
 	err := h.service.DeleteDeployment(clusterName, namespace, deploymentName)
 	if err != nil {
-		logger.Errorf("删除Deployment %s 失败: %v", deploymentName, err)
-		FailWithError(c, http.StatusInternalServerError, "deployment.deleteFailed", err)
+		logger.Error("Failed to delete deployment: " + err.Error())
+		ResponseError(c, http.StatusInternalServerError, err.Error())
 		return
+	}
+
+	// 从数据库中删除记录
+	if h.dbService != nil {
+		go func() {
+			existing, err := h.dbService.GetByClusterNamespaceAndName(context.Background(), clusterName, namespace, deploymentName)
+			if err == nil && existing != nil {
+				if err := h.dbService.Delete(context.Background(), existing.ID); err != nil {
+					logger.Error("Failed to delete deployment from database: " + err.Error())
+				}
+			}
+		}()
 	}
 
 	ResponseSuccess(c, gin.H{
