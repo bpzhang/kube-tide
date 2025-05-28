@@ -7,10 +7,12 @@ Kube-Tide 现在支持**数据库 API 整合**功能！这是一个重大更新�
 ## ✨ 主要特性
 
 ### 🔄 双轨制架构
+
 - **Kubernetes API** - 实时操作和管理
 - **数据库 API** - 数据持久化、统计分析和历史查询
 
 ### 🚀 核心优势
+
 - ✅ **无缝集成** - 前端代码无需修改
 - ✅ **异步同步** - 不影响 Kubernetes API 性能
 - ✅ **智能更新** - 自动检测和更新数据库记录
@@ -20,6 +22,7 @@ Kube-Tide 现在支持**数据库 API 整合**功能！这是一个重大更新�
 ## 🚀 快速开始
 
 ### 1. 启用数据库功能
+
 ```bash
 # 使用 SQLite (推荐用于开发)
 export ENABLE_DATABASE=true
@@ -31,6 +34,7 @@ export DB_SQLITE_PATH=./data/kube_tide.db
 ```
 
 ### 2. 使用现有 API (自动同步)
+
 ```bash
 # 创建部署 (会自动同步到数据库)
 curl -X POST http://localhost:8080/api/clusters/my-cluster/namespaces/default/deployments \
@@ -42,6 +46,7 @@ curl http://localhost:8080/api/clusters/my-cluster/deployments
 ```
 
 ### 3. 使用数据库 API (新增)
+
 ```bash
 # 获取部署统计
 curl http://localhost:8080/api/v1/db/clusters/my-cluster/deployments/count
@@ -83,6 +88,7 @@ curl "http://localhost:8080/api/v1/db/clusters/my-cluster/deployments?page=1&pag
 ## 🔧 配置选项
 
 ### 环境变量
+
 ```bash
 # 基本配置
 ENABLE_DATABASE=true          # 启用数据库功能
@@ -108,12 +114,14 @@ DB_CONN_MAX_LIFETIME=5m      # 连接最大生存时间
 ## 📈 使用场景
 
 ### 1. 开发环境
+
 ```bash
 # 使用 SQLite，简单快速
 ENABLE_DATABASE=true DB_TYPE=sqlite ./bin/server
 ```
 
 ### 2. 生产环境
+
 ```bash
 # 使用 PostgreSQL，高性能高可用
 ENABLE_DATABASE=true \
@@ -125,6 +133,7 @@ DB_PASSWORD=secure_password \
 ```
 
 ### 3. 数据分析
+
 ```bash
 # 获取集群资源统计
 curl http://localhost:8080/api/v1/db/clusters/prod/deployments/count
@@ -137,6 +146,7 @@ curl "http://localhost:8080/api/v1/db/clusters/prod/deployments?page=1&page_size
 ## 🧪 测试
 
 运行集成测试：
+
 ```bash
 # 运行数据库集成测试
 ./scripts/test-database-integration.sh
@@ -151,11 +161,13 @@ curl "http://localhost:8080/api/v1/db/clusters/prod/deployments?page=1&page_size
 ## 🔄 迁移指南
 
 ### 从旧版本升级
+
 1. **无需修改前端代码** - 所有现有 API 保持兼容
 2. **可选启用数据库** - 通过环境变量控制
 3. **渐进式采用** - 可以逐步使用新的数据库 API
 
 ### 数据迁移
+
 ```bash
 # 首次启动会自动运行数据库迁移
 ENABLE_DATABASE=true ./bin/server
@@ -167,6 +179,7 @@ ENABLE_DATABASE=true ./bin/server
 ## 🛠️ 开发指南
 
 ### 添加新资源类型
+
 1. 创建数据模型 (`internal/database/models/`)
 2. 实现仓储接口 (`internal/repository/`)
 3. 创建服务层 (`internal/core/`)
@@ -174,6 +187,7 @@ ENABLE_DATABASE=true ./bin/server
 5. 更新路由配置
 
 ### 自定义查询
+
 ```go
 // 在仓储层添加自定义查询
 func (r *DeploymentRepository) GetByDateRange(ctx context.Context, start, end time.Time) ([]*models.Deployment, error) {
@@ -186,6 +200,7 @@ func (r *DeploymentRepository) GetByDateRange(ctx context.Context, start, end ti
 ### 常见问题
 
 1. **数据库连接失败**
+
    ```bash
    # 检查配置
    echo $ENABLE_DATABASE $DB_TYPE $DB_HOST
@@ -229,4 +244,4 @@ func (r *DeploymentRepository) GetByDateRange(ctx context.Context, start, end ti
 
 ---
 
-**🎉 享受新的数据库 API 整合功能！如有问题，请查看文档或提交 Issue。** 
+**🎉 享受新的数据库 API 整合功能！如有问题，请查看文档或提交 Issue。**
