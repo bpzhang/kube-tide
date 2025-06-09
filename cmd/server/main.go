@@ -11,6 +11,7 @@ import (
 
 	"kube-tide/configs"
 	"kube-tide/internal/api"
+	"kube-tide/internal/core/auth"
 	"kube-tide/internal/core/k8s"
 	"kube-tide/internal/utils/logger"
 
@@ -85,6 +86,22 @@ func main() {
 		}
 	}()
 
+	// 初始化认证服务
+	authStore, err := auth.NewStore("")
+	if err != nil {
+		logger.Fatal("初始化认证存储失败", "error", err.Error())
+	}
+
+	// 使用配置的JWT密钥，如果未配置则使用默认值
+	jwtSecret := config.Server.JWTSecret
+	if jwtSecret == "" {
+		jwtSecret = "kube-tide-default-jwt-secret" // 默认JWT密钥
+		logger.Warn("使用默认JWT密钥，建议在生产环境中配置自定义密钥")
+	}
+
+	// 创建认证服务，JWT过期时间设为24小时
+	authService := auth.NewService(authStore, jwtSecret, 24*time.Hour)
+
 	// create API handlers
 	nodeHandler := api.NewNodeHandler(nodeService)
 	podHandler := api.NewPodHandler(podService)
@@ -96,6 +113,7 @@ func main() {
 	podTerminalHandler := api.NewPodTerminalHandler(podService)
 	namespaceHandler := api.NewNamespaceHandler(namespaceService)       // 初始化命名空间处理器
 	statefulSetHandler := api.NewStatefulSetHandler(statefulSetService) // 初始化StatefulSet处理器
+	authHandler := api.NewAuthHandler(authService)                      // 初始化认证处理器
 
 	// Create an app instance and initialize the route
 	app := &api.App{
@@ -109,10 +127,11 @@ func main() {
 		PodTerminalHandler: podTerminalHandler,
 		NamespaceHandler:   namespaceHandler,   // 添加到App实例
 		StatefulSetHandler: statefulSetHandler, // 添加StatefulSet处理器到App实例
+		AuthHandler:        authHandler,        // 添加认证处理器到App实例
 	}
 
 	// Initialize the router defined in router.go
-	r := api.InitRouter(app)
+	r := api.InitRouter(app, authService)
 
 	// Create HTTP server
 	srv := &http.Server{

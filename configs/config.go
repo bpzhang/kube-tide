@@ -18,8 +18,9 @@ type Config struct {
 
 // ServerConfig Server configuration
 type ServerConfig struct {
-	Port string `mapstructure:"port"`
-	Host string `mapstructure:"host"`
+	Port      string `mapstructure:"port"`
+	Host      string `mapstructure:"host"`
+	JWTSecret string `mapstructure:"jwt_secret"` // JWT密钥
 }
 
 // LoggingConfig Logging configuration
@@ -57,6 +58,7 @@ func LoadConfig() *Config {
 	// Set default values
 	viper.SetDefault("server.port", "8080")
 	viper.SetDefault("server.host", "0.0.0.0")
+	viper.SetDefault("server.jwt_secret", "") // 默认为空，服务启动时会生成随机密钥
 	viper.SetDefault("logging.level", "info")
 
 	// Set default values for file logging

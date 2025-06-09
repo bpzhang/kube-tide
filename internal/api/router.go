@@ -3,6 +3,7 @@ package api
 import (
 	"kube-tide/configs"
 	"kube-tide/internal/api/middleware"
+	"kube-tide/internal/core/auth"
 	"kube-tide/pkg/embed"
 
 	"github.com/gin-contrib/cors"
@@ -21,10 +22,11 @@ type App struct {
 	HealthHandler      *HealthCheckHandler
 	PodTerminalHandler *PodTerminalHandler
 	NamespaceHandler   *NamespaceHandler // Add namespace handler
+	AuthHandler        *AuthHandler      // Add auth handler
 }
 
 // InitRouter Initialize router
-func InitRouter(app *App) *gin.Engine {
+func InitRouter(app *App, authService *auth.Service) *gin.Engine {
 	router := gin.Default()
 
 	// Cross-origin configuration
@@ -60,32 +62,97 @@ func InitRouter(app *App) *gin.Engine {
 	// API version grouping
 	v1 := router.Group("/api")
 	{
+		// Auth routes (no auth required)
+		v1.POST("/auth/login", app.AuthHandler.Login)
+
+		// Auth routes (auth required)
+		authRoutes := v1.Group("/auth")
+		authRoutes.Use(middleware.AuthRequired(authService))
+		{
+			authRoutes.GET("/me", app.AuthHandler.GetCurrentUserInfo)
+
+			// User management (admin only)
+			userRoutes := authRoutes.Group("/users")
+			userRoutes.Use(middleware.RequireAdmin(authService))
+			{
+				userRoutes.GET("", app.AuthHandler.ListUsers)
+				userRoutes.GET("/:id", app.AuthHandler.GetUser)
+				userRoutes.POST("", app.AuthHandler.CreateUser)
+				userRoutes.PUT("/:id", app.AuthHandler.UpdateUser)
+				userRoutes.DELETE("/:id", app.AuthHandler.DeleteUser)
+			}
+
+			// Role management (admin only)
+			roleRoutes := authRoutes.Group("/roles")
+			roleRoutes.Use(middleware.RequireAdmin(authService))
+			{
+				roleRoutes.GET("", app.AuthHandler.ListRoles)
+				roleRoutes.GET("/:id", app.AuthHandler.GetRole)
+				roleRoutes.POST("", app.AuthHandler.CreateRole)
+				roleRoutes.PUT("/:id", app.AuthHandler.UpdateRole)
+				roleRoutes.DELETE("/:id", app.AuthHandler.DeleteRole)
+			}
+		}
+
 		// Health check
 		v1.GET("/health", app.HealthHandler.CheckHealth)
-		// Cluster management
-		v1.GET("/clusters", app.ClusterHandler.ListClusters)
-		v1.POST("/clusters", app.ClusterHandler.AddCluster)
-		v1.DELETE("/clusters/:cluster", app.ClusterHandler.RemoveCluster)
-		// Change to GET method to match the frontend
-		v1.GET("/clusters/:cluster/test", app.ClusterHandler.TestConnection)
-		// Ensure cluster details route exists
-		v1.GET("/clusters/:cluster", app.ClusterHandler.GetClusterDetails)
-		// Cluster monitoring metrics
-		v1.GET("/clusters/:cluster/metrics", app.ClusterHandler.GetClusterMetrics)
-		// Cluster events
-		v1.GET("/clusters/:cluster/events", app.ClusterHandler.GetClusterEvents)
-		// Get cluster add type information
-		v1.GET("/clusters/:cluster/add-type", app.ClusterHandler.GetClusterAddType)
+		// Cluster management (protected with auth)
+		clusterRoutes := v1.Group("/clusters")
+		clusterRoutes.Use(middleware.AuthRequired(authService))
+		{
+			// List clusters - all authenticated users can view
+			clusterRoutes.GET("", app.ClusterHandler.ListClusters)
+
+			// Add cluster - requires "cluster:create" permission
+			clusterRoutes.POST("", middleware.RequirePermission(authService, "cluster", "create"),
+				app.ClusterHandler.AddCluster)
+
+			// Cluster specific operations
+			clusterRoutes.DELETE("/:cluster", middleware.RequirePermission(authService, "cluster", "delete"),
+				app.ClusterHandler.RemoveCluster)
+
+			// Change to GET method to match the frontend
+			clusterRoutes.GET("/:cluster/test", middleware.RequirePermission(authService, "cluster", "read"),
+				app.ClusterHandler.TestConnection)
+
+			// Ensure cluster details route exists
+			clusterRoutes.GET("/:cluster", middleware.RequirePermission(authService, "cluster", "read"),
+				app.ClusterHandler.GetClusterDetails)
+
+			// Cluster monitoring metrics
+			clusterRoutes.GET("/:cluster/metrics", middleware.RequirePermission(authService, "cluster", "read"),
+				app.ClusterHandler.GetClusterMetrics)
+
+			// Cluster events
+			clusterRoutes.GET("/:cluster/events", middleware.RequirePermission(authService, "cluster", "read"),
+				app.ClusterHandler.GetClusterEvents)
+
+			// Get cluster add type information
+			clusterRoutes.GET("/:cluster/add-type", middleware.RequirePermission(authService, "cluster", "read"),
+				app.ClusterHandler.GetClusterAddType)
+		}
 
 		// Namespace management - Use dedicated NamespaceHandler
-		v1.GET("/clusters/:cluster/namespaces", app.NamespaceHandler.ListNamespaces)
+		namespacesRoute := v1.Group("/clusters/:cluster/namespaces")
+		namespacesRoute.Use(middleware.AuthRequired(authService))
+		namespacesRoute.GET("", middleware.RequirePermission(authService, "namespace", "read"),
+			app.NamespaceHandler.ListNamespaces)
 
 		// Node pool management
-		v1.GET("/clusters/:cluster/nodepools", app.NodePoolHandler.ListNodePools)
-		v1.POST("/clusters/:cluster/nodepools", app.NodePoolHandler.CreateNodePool)
-		v1.GET("/clusters/:cluster/nodepools/:pool", app.NodePoolHandler.GetNodePool)
-		v1.PUT("/clusters/:cluster/nodepools/:pool", app.NodePoolHandler.UpdateNodePool)
-		v1.DELETE("/clusters/:cluster/nodepools/:pool", app.NodePoolHandler.DeleteNodePool)
+		nodepoolsRoute := v1.Group("/clusters/:cluster/nodepools")
+		nodepoolsRoute.Use(middleware.AuthRequired(authService))
+		{
+			nodepoolsRoute.GET("", middleware.RequirePermission(authService, "nodepool", "read"),
+				app.NodePoolHandler.ListNodePools)
+			nodepoolsRoute.POST("", middleware.RequirePermission(authService, "nodepool", "create"),
+				app.NodePoolHandler.CreateNodePool)
+			nodepoolsRoute.GET("/:pool", middleware.RequirePermission(authService, "nodepool", "read"),
+				app.NodePoolHandler.GetNodePool)
+			nodepoolsRoute.PUT("/:pool", middleware.RequirePermission(authService, "nodepool", "update"),
+				app.NodePoolHandler.UpdateNodePool)
+			nodepoolsRoute.DELETE("/:pool", middleware.RequirePermission(authService, "nodepool", "delete"),
+				app.NodePoolHandler.DeleteNodePool)
+		}
 
 		// Node management
 		v1.GET("/clusters/:cluster/nodes", app.NodeHandler.ListNodes)
