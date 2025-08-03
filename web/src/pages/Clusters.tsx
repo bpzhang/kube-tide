@@ -38,6 +38,7 @@ const Clusters: React.FC = () => {
 
   const handleAddCluster = async (values: any) => {
     try {
+      setLoading(true);
       // 添加集群类型字段
       const clusterData = {
         ...values,
@@ -55,6 +56,8 @@ const Clusters: React.FC = () => {
       }
     } catch (err) {
       message.error(t('clusters.addFailed'));
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -91,7 +94,10 @@ const Clusters: React.FC = () => {
       <Modal
         title={t('clusters.addCluster')}
         open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={() => {
+          setIsModalVisible(false);
+          setLoading(false); // 重置loading状态
+        }}
         onOk={() => form.submit()}
         confirmLoading={loading}
         width={600}
