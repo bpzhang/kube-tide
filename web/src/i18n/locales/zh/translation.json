@@ -44,7 +44,11 @@
     "pleaseEnterValue": "请输入值",
     "addLabel": "添加标签",
     "events": "事件",
-    "noDataFound": "未找到数据"
+    "noDataFound": "未找到数据",
+    "ready": "就绪",
+    "updating": "更新中",
+    "notReady": "未就绪",
+    "close": "关闭"
   },
   "navigation": {
     "dashboard": "仪表盘",
@@ -643,7 +647,32 @@
         "keyExists": "存在标签键",
         "keyDoesNotExist": "不存在标签键"
       }
-    }
+    },
+    "history": {
+      "title": "版本历史",
+      "revision": "版本",
+      "changeReason": "变更原因",
+      "replicaSet": "副本集",
+      "replicas": "副本数",
+      "creationTime": "创建时间",
+      "viewDetails": "查看详情",
+      "revisionDetails": "版本 #{revision} 详情",
+      "basicInfo": "基本信息",
+      "fetchFailed": "获取版本历史失败"
+    },
+    "rollback": {
+      "title": "回滚",
+      "confirmTitle": "确认回滚",
+      "confirmContent": "确定要回滚到版本 #{revision} 吗？",
+      "success": "成功回滚到版本 #{revision}",
+      "failed": "回滚失败"
+    },
+    "container": {
+      "image": "镜像",
+      "command": "命令",
+      "args": "参数"
+    },
+    "containers": "容器"
   },
   "services": {
     "title": "服务",

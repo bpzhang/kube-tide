@@ -46,7 +46,7 @@
 - [X] Deployment健康检查配置
 - [X] Deployment资源限制配置
 - [X] Deployment节点亲和性配置
-- [ ] Deployment版本管理和回滚
+- [X] Deployment版本管理和回滚
 - [ ] Deployment灰度发布
 
 #### StatefulSet管理

@@ -1512,3 +1512,167 @@ func (ds *DeploymentService) DeleteDeployment(clusterName, namespace, name strin
 	logger.Info("成功删除Deployment:", clusterName, namespace, name)
 	return nil
 }
+
+// RevisionInfo 包含版本信息
+type RevisionInfo struct {
+	Revision          int64                        `json:"revision"`
+	ChangeReason      string                       `json:"changeReason,omitempty"`
+	CreationTime      time.Time                    `json:"creationTime"`
+	Labels            map[string]string            `json:"labels"`
+	Annotations       map[string]string            `json:"annotations"`
+	PodTemplateSpec   corev1.PodTemplateSpec       `json:"podTemplateSpec"`
+	ReplicaSetName    string                       `json:"replicaSetName"`
+	Replicas          *int32                       `json:"replicas"`
+	ReadyReplicas     int32                        `json:"readyReplicas"`
+	AvailableReplicas int32                        `json:"availableReplicas"`
+	Conditions        []appsv1.ReplicaSetCondition `json:"conditions"`
+}
+
+// GetDeploymentRolloutHistory 获取Deployment的版本历史
+func (ds *DeploymentService) GetDeploymentRolloutHistory(clusterName, namespace, name string) ([]RevisionInfo, error) {
+	logger.Info("获取Deployment版本历史:", clusterName, namespace, name)
+	client, err := ds.clientManager.GetClient(clusterName)
+	if err != nil {
+		return nil, fmt.Errorf("获取集群客户端失败: %v", err)
+	}
+
+	// 获取Deployment
+	deployment, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("获取Deployment失败: %v", err)
+	}
+
+	// 获取与Deployment关联的所有ReplicaSets
+	labelSelector := metav1.FormatLabelSelector(deployment.Spec.Selector)
+	replicaSets, err := client.AppsV1().ReplicaSets(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("获取ReplicaSet列表失败: %v", err)
+	}
+
+	var revisions []RevisionInfo
+
+	for _, rs := range replicaSets.Items {
+		// 检查ReplicaSet是否属于该Deployment
+		if !isOwnedByDeployment(rs.OwnerReferences, name) {
+			continue
+		}
+
+		// 获取版本号
+		revisionStr, exists := rs.Annotations["deployment.kubernetes.io/revision"]
+		if !exists {
+			continue
+		}
+
+		var revision int64
+		fmt.Sscanf(revisionStr, "%d", &revision)
+
+		// 获取变更原因
+		changeReason := rs.Annotations["deployment.kubernetes.io/revision-history-limit"]
+		if changeReason == "" {
+			changeReason = rs.Annotations["kubernetes.io/change-cause"]
+		}
+
+		revisionInfo := RevisionInfo{
+			Revision:          revision,
+			ChangeReason:      changeReason,
+			CreationTime:      rs.CreationTimestamp.Time,
+			Labels:            rs.Labels,
+			Annotations:       rs.Annotations,
+			PodTemplateSpec:   rs.Spec.Template,
+			ReplicaSetName:    rs.Name,
+			Replicas:          rs.Spec.Replicas,
+			ReadyReplicas:     rs.Status.ReadyReplicas,
+			AvailableReplicas: rs.Status.AvailableReplicas,
+			Conditions:        rs.Status.Conditions,
+		}
+
+		revisions = append(revisions, revisionInfo)
+	}
+
+	// 按版本号排序（降序，最新的在前）
+	sort.Slice(revisions, func(i, j int) bool {
+		return revisions[i].Revision > revisions[j].Revision
+	})
+
+	logger.Info("成功获取Deployment版本历史，共", len(revisions), "个版本")
+	return revisions, nil
+}
+
+// GetDeploymentRevisionDetails 获取指定版本的详细信息
+func (ds *DeploymentService) GetDeploymentRevisionDetails(clusterName, namespace, name string, revision int64) (*RevisionInfo, error) {
+	logger.Info("获取Deployment版本详情:", clusterName, namespace, name, "版本:", revision)
+
+	revisions, err := ds.GetDeploymentRolloutHistory(clusterName, namespace, name)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, rev := range revisions {
+		if rev.Revision == revision {
+			return &rev, nil
+		}
+	}
+
+	return nil, fmt.Errorf("未找到版本 %d", revision)
+}
+
+// RollbackDeployment 回滚Deployment到指定版本
+func (ds *DeploymentService) RollbackDeployment(clusterName, namespace, name string, revision int64) error {
+	logger.Info("回滚Deployment:", clusterName, namespace, name, "到版本:", revision)
+	client, err := ds.clientManager.GetClient(clusterName)
+	if err != nil {
+		return fmt.Errorf("获取集群客户端失败: %v", err)
+	}
+
+	// 获取当前Deployment
+	deployment, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("获取Deployment失败: %v", err)
+	}
+
+	// 获取目标版本的详细信息
+	targetRevision, err := ds.GetDeploymentRevisionDetails(clusterName, namespace, name, revision)
+	if err != nil {
+		return fmt.Errorf("获取目标版本详情失败: %v", err)
+	}
+
+	// 更新Deployment的PodTemplateSpec为目标版本的内容
+	deployment.Spec.Template = targetRevision.PodTemplateSpec
+
+	// 添加回滚注解
+	if deployment.Annotations == nil {
+		deployment.Annotations = make(map[string]string)
+	}
+	deployment.Annotations["deployment.kubernetes.io/revision"] = fmt.Sprintf("%d", revision)
+	deployment.Annotations["kubernetes.io/change-cause"] = fmt.Sprintf("Rollback to revision %d", revision)
+
+	// 更新Deployment
+	_, err = client.AppsV1().Deployments(namespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf("回滚Deployment失败: %v", err)
+	}
+
+	logger.Info("成功回滚Deployment到版本:", revision)
+	return nil
+}
+
+// RollbackToPreviousRevision 回滚到上一个版本
+func (ds *DeploymentService) RollbackToPreviousRevision(clusterName, namespace, name string) error {
+	logger.Info("回滚Deployment到上一个版本:", clusterName, namespace, name)
+
+	revisions, err := ds.GetDeploymentRolloutHistory(clusterName, namespace, name)
+	if err != nil {
+		return err
+	}
+
+	if len(revisions) < 2 {
+		return fmt.Errorf("没有足够的版本历史进行回滚")
+	}
+
+	// 获取上一个版本（第二个，因为第一个是当前版本）
+	previousRevision := revisions[1].Revision
+
+	return ds.RollbackDeployment(clusterName, namespace, name, previousRevision)
+}

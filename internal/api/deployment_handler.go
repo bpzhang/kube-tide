@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"kube-tide/internal/core/k8s"
@@ -314,5 +315,132 @@ func (h *DeploymentHandler) DeleteDeployment(c *gin.Context) {
 
 	ResponseSuccess(c, gin.H{
 		"message": "Deployment deleted successfully",
+	})
+}
+
+// GetDeploymentRolloutHistory 获取Deployment版本历史
+func (h *DeploymentHandler) GetDeploymentRolloutHistory(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	deploymentName := c.Param("deployment")
+	logger.Info("获取Deployment版本历史: " + clusterName + ", 命名空间: " + namespace + ", 名称: " + deploymentName)
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "Namespace cannot be empty")
+		return
+	}
+	if deploymentName == "" {
+		ResponseError(c, http.StatusBadRequest, "Deployment name cannot be empty")
+		return
+	}
+
+	revisions, err := h.service.GetDeploymentRolloutHistory(clusterName, namespace, deploymentName)
+	if err != nil {
+		logger.Error("获取Deployment版本历史失败: " + err.Error())
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ResponseSuccess(c, gin.H{
+		"revisions": revisions,
+	})
+}
+
+// GetDeploymentRevisionDetails 获取指定版本详情
+func (h *DeploymentHandler) GetDeploymentRevisionDetails(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	deploymentName := c.Param("deployment")
+	revisionStr := c.Param("revision")
+
+	logger.Info("获取Deployment版本详情: " + clusterName + ", 命名空间: " + namespace + ", 名称: " + deploymentName + ", 版本: " + revisionStr)
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "Namespace cannot be empty")
+		return
+	}
+	if deploymentName == "" {
+		ResponseError(c, http.StatusBadRequest, "Deployment name cannot be empty")
+		return
+	}
+	if revisionStr == "" {
+		ResponseError(c, http.StatusBadRequest, "Revision cannot be empty")
+		return
+	}
+
+	var revision int64
+	if _, err := fmt.Sscanf(revisionStr, "%d", &revision); err != nil {
+		ResponseError(c, http.StatusBadRequest, "Invalid revision number")
+		return
+	}
+
+	revisionDetails, err := h.service.GetDeploymentRevisionDetails(clusterName, namespace, deploymentName, revision)
+	if err != nil {
+		logger.Error("获取Deployment版本详情失败: " + err.Error())
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ResponseSuccess(c, gin.H{
+		"revision": revisionDetails,
+	})
+}
+
+// RollbackDeployment 回滚Deployment到指定版本
+func (h *DeploymentHandler) RollbackDeployment(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	deploymentName := c.Param("deployment")
+
+	logger.Info("回滚Deployment: " + clusterName + ", 命名空间: " + namespace + ", 名称: " + deploymentName)
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "Namespace cannot be empty")
+		return
+	}
+	if deploymentName == "" {
+		ResponseError(c, http.StatusBadRequest, "Deployment name cannot be empty")
+		return
+	}
+
+	var rollbackRequest struct {
+		Revision *int64 `json:"revision,omitempty"`
+	}
+
+	if err := c.ShouldBindJSON(&rollbackRequest); err != nil {
+		logger.Error("Failed to bind JSON: " + err.Error())
+		ResponseError(c, http.StatusBadRequest, "Invalid request parameters: "+err.Error())
+		return
+	}
+
+	var err error
+	if rollbackRequest.Revision != nil {
+		// 回滚到指定版本
+		err = h.service.RollbackDeployment(clusterName, namespace, deploymentName, *rollbackRequest.Revision)
+	} else {
+		// 回滚到上一个版本
+		err = h.service.RollbackToPreviousRevision(clusterName, namespace, deploymentName)
+	}
+
+	if err != nil {
+		logger.Error("回滚Deployment失败: " + err.Error())
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ResponseSuccess(c, gin.H{
+		"message": "Deployment rollback successfully",
 	})
 }

@@ -25,6 +25,7 @@ import {
   ScissorOutlined,
   SyncOutlined,
   PlusOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -39,6 +40,7 @@ import { getClusterList } from '@/api/cluster';
 import { formatDate } from '@/utils/format';
 import DeploymentDetail from '@/components/k8s/deployment/DeploymentDetail';
 import CreateDeploymentModal from '@/components/k8s/deployment/CreateDeploymentModal';
+import DeploymentHistory from '@/components/k8s/deployment/DeploymentHistory';
 import NamespaceSelector from '@/components/k8s/common/NamespaceSelector';
 
 const { Title } = Typography;
@@ -51,7 +53,10 @@ interface DeploymentType {
   readyReplicas: number;
   strategy: string;
   labels: { [key: string]: string };
-  createdAt: string;
+  creationTime: string;
+  selector: { [key: string]: string };
+  containerCount: number;
+  images: string[];
 }
 
 const DeploymentsPage: React.FC = () => {
@@ -70,6 +75,8 @@ const DeploymentsPage: React.FC = () => {
   const [currentDeploymentDetail, setCurrentDeploymentDetail] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [historyVisible, setHistoryVisible] = useState(false);
+  const [historyDeploymentName, setHistoryDeploymentName] = useState<string>('');
 
   // 获取集群列表
   const fetchClusters = async () => {
@@ -257,6 +264,23 @@ const DeploymentsPage: React.FC = () => {
     }
   };
 
+  // 显示版本历史
+  const handleShowHistory = (deploymentName: string) => {
+    setHistoryDeploymentName(deploymentName);
+    setHistoryVisible(true);
+  };
+
+  // 关闭版本历史
+  const handleHistoryClose = () => {
+    setHistoryVisible(false);
+    setHistoryDeploymentName('');
+  };
+
+  // 回滚成功回调
+  const handleRollbackSuccess = () => {
+    fetchDeployments();
+  };
+
   // 表格列定义
   const columns = [
     {
@@ -321,6 +345,14 @@ const DeploymentsPage: React.FC = () => {
               icon={<ScissorOutlined />}
               size="small"
               onClick={() => showScaleModal(record)}
+            />
+          </Tooltip>
+          <Tooltip title={t('deployment.history.title')}>
+            <Button
+              type="link"
+              icon={<HistoryOutlined />}
+              size="small"
+              onClick={() => handleShowHistory(record.name)}
             />
           </Tooltip>
           <Tooltip title={t('deployments.restart')}>
@@ -459,6 +491,16 @@ const DeploymentsPage: React.FC = () => {
         onSubmit={handleCreateSubmit}
         clusterName={selectedCluster}
         namespace={namespace}
+      />
+
+      {/* 版本历史模态框 */}
+      <DeploymentHistory
+        visible={historyVisible}
+        onClose={handleHistoryClose}
+        clusterName={selectedCluster}
+        namespace={namespace}
+        deploymentName={historyDeploymentName}
+        onRollbackSuccess={handleRollbackSuccess}
       />
     </Card>
   );

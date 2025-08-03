@@ -468,3 +468,58 @@ export interface AllDeploymentEventsResponse {
 export const getAllDeploymentEvents = (clusterName: string, namespace: string, deploymentName: string) => {
   return api.get<AllDeploymentEventsResponse>(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/all-events`);
 };
+
+// Deployment版本管理相关接口
+
+/**
+ * RevisionInfo 版本信息
+ */
+export interface RevisionInfo {
+  revision: number;
+  changeReason?: string;
+  creationTime: string;
+  labels: { [key: string]: string };
+  annotations: { [key: string]: string };
+  podTemplateSpec: any;
+  replicaSetName: string;
+  replicas?: number;
+  readyReplicas: number;
+  availableReplicas: number;
+  conditions: any[];
+}
+
+/**
+ * 获取Deployment版本历史
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param deploymentName Deployment name
+ * @returns version history
+ */
+export const getDeploymentRolloutHistory = (clusterName: string, namespace: string, deploymentName: string) => {
+  return api.get<{ revisions: RevisionInfo[] }>(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/history`);
+};
+
+/**
+ * 获取指定版本详情
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param deploymentName Deployment name
+ * @param revision revision number
+ * @returns revision details
+ */
+export const getDeploymentRevisionDetails = (clusterName: string, namespace: string, deploymentName: string, revision: number) => {
+  return api.get<{ revision: RevisionInfo }>(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/revisions/${revision}`);
+};
+
+/**
+ * 回滚Deployment到指定版本
+ * @param clusterName cluster name
+ * @param namespace namespace
+ * @param deploymentName Deployment name
+ * @param revision revision number (可选，不提供则回滚到上一个版本)
+ * @returns operation result
+ */
+export const rollbackDeployment = (clusterName: string, namespace: string, deploymentName: string, revision?: number) => {
+  const data = revision !== undefined ? { revision } : {};
+  return api.post(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/rollback`, data);
+};

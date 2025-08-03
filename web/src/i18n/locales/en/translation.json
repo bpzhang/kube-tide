@@ -42,7 +42,11 @@
     "scale": "Scale",
     "restart": "Restart",
     "view": "View",
-    "cluster": "Cluster:"
+    "cluster": "Cluster:",
+    "ready": "Ready",
+    "updating": "Updating",
+    "notReady": "Not Ready",
+    "close": "Close"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -646,7 +650,32 @@
         "keyExists": "Key Exists",
         "keyDoesNotExist": "Key Does Not Exist"
       }
-    }
+    },
+    "history": {
+      "title": "Version History",
+      "revision": "Revision",
+      "changeReason": "Change Reason",
+      "replicaSet": "ReplicaSet",
+      "replicas": "Replicas",
+      "creationTime": "Creation Time",
+      "viewDetails": "View Details",
+      "revisionDetails": "Revision #{revision} Details",
+      "basicInfo": "Basic Information",
+      "fetchFailed": "Failed to fetch version history"
+    },
+    "rollback": {
+      "title": "Rollback",
+      "confirmTitle": "Confirm Rollback",
+      "confirmContent": "Are you sure you want to rollback to revision #{revision}?",
+      "success": "Successfully rolled back to revision #{revision}",
+      "failed": "Rollback failed"
+    },
+    "container": {
+      "image": "Image",
+      "command": "Command",
+      "args": "Arguments"
+    },
+    "containers": "Containers"
   },
   "services": {
     "title": "Services",

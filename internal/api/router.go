@@ -148,6 +148,10 @@ func InitRouter(app *App) *gin.Engine {
 		v1.PUT("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/scale", app.DeploymentHandler.ScaleDeployment)
 		v1.POST("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/restart", app.DeploymentHandler.RestartDeployment)
 		v1.DELETE("/clusters/:cluster/namespaces/:namespace/deployments/:deployment", app.DeploymentHandler.DeleteDeployment)
+		// Deployment版本管理和回滚
+		v1.GET("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/history", app.DeploymentHandler.GetDeploymentRolloutHistory)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/revisions/:revision", app.DeploymentHandler.GetDeploymentRevisionDetails)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/rollback", app.DeploymentHandler.RollbackDeployment)
 
 		// StatefulSet management
 		v1.GET("/clusters/:cluster/statefulsets", app.StatefulSetHandler.ListStatefulSets)
