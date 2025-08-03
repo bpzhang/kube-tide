@@ -34,6 +34,8 @@
     "createTime": "Creation Time",
     "key": "Key",
     "value": "Value",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
     "pleaseEnterKey": "Please enter key",
     "pleaseEnterValue": "Please enter value",
     "addLabel": "Add Label",
@@ -228,7 +230,18 @@
         "NoSchedule": "NoSchedule (prevents new pods from scheduling)",
         "PreferNoSchedule": "PreferNoSchedule (tries to avoid new pods scheduling)",
         "NoExecute": "NoExecute (prevents new pods and evicts existing pods)"
-      }
+      },
+      "autoScaling": "Auto Scaling",
+      "minNodes": "Min Nodes",
+      "maxNodes": "Max Nodes",
+      "pleaseEnterMinNodes": "Please enter minimum nodes",
+      "pleaseEnterMaxNodes": "Please enter maximum nodes",
+      "advancedSettings": "Advanced Settings",
+      "scaleDownDelay": "Scale Down Delay",
+      "scaleDownUnneededTime": "Scale Down Unneeded Time",
+      "scaleDownThreshold": "Scale Down Threshold",
+      "scaleUpThreshold": "Scale Up Threshold",
+      "scaleDownDelayAfterAdd": "Scale Down Delay After Add"
     },
     "addNodeModal": {
       "title": "Add Node",

@@ -8,6 +8,18 @@ export interface NodePool {
     value?: string;
     effect: string;
   }>;
+  autoScaling?: AutoScalingConfig;
+}
+
+export interface AutoScalingConfig {
+  enabled: boolean;
+  minNodes: number;
+  maxNodes: number;
+  scaleDownDelay?: string;
+  scaleDownThreshold?: string;
+  scaleUpThreshold?: string;
+  scaleDownUnneededTime?: string;
+  scaleDownDelayAfterAdd?: string;
 }
 
 export interface NodePoolResponse {

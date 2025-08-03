@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, Button, Space, Table, Typography, message, Popconfirm, Select } from 'antd';
+import { Modal, Form, Input, Button, Space, Table, Typography, message, Popconfirm, Select, Switch, InputNumber, Collapse } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { NodePool } from '@/api/nodepool';
@@ -19,6 +19,16 @@ interface NodePoolFormData {
   name: string;
   labels: { key: string; value: string }[];
   taints: { key: string; value?: string; effect: string }[];
+  autoScaling: {
+    enabled: boolean;
+    minNodes: number;
+    maxNodes: number;
+    scaleDownDelay: string;
+    scaleDownThreshold: string;
+    scaleUpThreshold: string;
+    scaleDownUnneededTime: string;
+    scaleDownDelayAfterAdd: string;
+  };
 }
 
 const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
@@ -48,6 +58,16 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
           value: t.value,
           effect: t.effect,
         })) || [],
+        autoScaling: values.autoScaling.enabled ? {
+          enabled: values.autoScaling.enabled,
+          minNodes: values.autoScaling.minNodes,
+          maxNodes: values.autoScaling.maxNodes,
+          scaleDownDelay: values.autoScaling.scaleDownDelay || '10m',
+          scaleDownThreshold: values.autoScaling.scaleDownThreshold || '0.5',
+          scaleUpThreshold: values.autoScaling.scaleUpThreshold || '0.7',
+          scaleDownUnneededTime: values.autoScaling.scaleDownUnneededTime || '10m',
+          scaleDownDelayAfterAdd: values.autoScaling.scaleDownDelayAfterAdd || '10m',
+        } : undefined,
       };
 
       if (editingPool) {
@@ -80,6 +100,16 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
         value,
       })),
       taints: pool.taints || [],
+      autoScaling: {
+        enabled: pool.autoScaling?.enabled || false,
+        minNodes: pool.autoScaling?.minNodes || 1,
+        maxNodes: pool.autoScaling?.maxNodes || 10,
+        scaleDownDelay: pool.autoScaling?.scaleDownDelay || '10m',
+        scaleDownThreshold: pool.autoScaling?.scaleDownThreshold || '0.5',
+        scaleUpThreshold: pool.autoScaling?.scaleUpThreshold || '0.7',
+        scaleDownUnneededTime: pool.autoScaling?.scaleDownUnneededTime || '10m',
+        scaleDownDelayAfterAdd: pool.autoScaling?.scaleDownDelayAfterAdd || '10m',
+      },
     };
     form.setFieldsValue(formData);
   };
@@ -131,6 +161,26 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
               {taint.key}={taint.value || ''}:{taint.effect}
             </Text>
           ))}
+        </div>
+      ),
+    },
+    {
+      title: t('nodes.nodePool.autoScaling'),
+      key: 'autoScaling',
+      render: (_: any, record: NodePool) => (
+        <div>
+          {record.autoScaling?.enabled ? (
+            <div>
+              <Text style={{ color: '#52c41a' }}>{t('common.enabled')}</Text>
+              <br />
+              <Text style={{ fontSize: '12px', color: '#666' }}>
+                {t('nodes.nodePool.minNodes')}: {record.autoScaling.minNodes} | 
+                {t('nodes.nodePool.maxNodes')}: {record.autoScaling.maxNodes}
+              </Text>
+            </div>
+          ) : (
+            <Text style={{ color: '#999' }}>{t('common.disabled')}</Text>
+          )}
         </div>
       ),
     },
@@ -299,6 +349,89 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
               </>
             )}
           </Form.List>
+
+          <Typography.Title level={5} style={{ marginTop: 16 }}>{t('nodes.nodePool.autoScaling')}</Typography.Title>
+          <Form.Item
+            name={['autoScaling', 'enabled']}
+            valuePropName="checked"
+            style={{ marginBottom: 16 }}
+          >
+            <Switch checkedChildren={t('common.enabled')} unCheckedChildren={t('common.disabled')} />
+          </Form.Item>
+
+          <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => 
+            prevValues.autoScaling?.enabled !== currentValues.autoScaling?.enabled
+          }>
+            {({ getFieldValue }) => {
+              const autoScalingEnabled = getFieldValue(['autoScaling', 'enabled']);
+              return autoScalingEnabled ? (
+                <div style={{ marginLeft: 20, marginBottom: 16 }}>
+                  <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+                    <Form.Item
+                      name={['autoScaling', 'minNodes']}
+                      label={t('nodes.nodePool.minNodes')}
+                      rules={[{ required: true, message: t('nodes.nodePool.pleaseEnterMinNodes') }]}
+                      style={{ flex: 1 }}
+                    >
+                      <InputNumber min={0} placeholder={t('nodes.nodePool.pleaseEnterMinNodes')} style={{ width: '100%' }} />
+                    </Form.Item>
+                    <Form.Item
+                      name={['autoScaling', 'maxNodes']}
+                      label={t('nodes.nodePool.maxNodes')}
+                      rules={[{ required: true, message: t('nodes.nodePool.pleaseEnterMaxNodes') }]}
+                      style={{ flex: 1 }}
+                    >
+                      <InputNumber min={1} placeholder={t('nodes.nodePool.pleaseEnterMaxNodes')} style={{ width: '100%' }} />
+                    </Form.Item>
+                  </div>
+                  
+                  <Collapse ghost>
+                    <Collapse.Panel header={t('nodes.nodePool.advancedSettings')} key="advanced">
+                      <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
+                        <Form.Item
+                          name={['autoScaling', 'scaleDownDelay']}
+                          label={t('nodes.nodePool.scaleDownDelay')}
+                          style={{ minWidth: '200px' }}
+                        >
+                          <Input placeholder="10m" />
+                        </Form.Item>
+                        <Form.Item
+                          name={['autoScaling', 'scaleDownUnneededTime']}
+                          label={t('nodes.nodePool.scaleDownUnneededTime')}
+                          style={{ minWidth: '200px' }}
+                        >
+                          <Input placeholder="10m" />
+                        </Form.Item>
+                      </div>
+                      <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
+                        <Form.Item
+                          name={['autoScaling', 'scaleDownThreshold']}
+                          label={t('nodes.nodePool.scaleDownThreshold')}
+                          style={{ minWidth: '200px' }}
+                        >
+                          <Input placeholder="0.5" />
+                        </Form.Item>
+                        <Form.Item
+                          name={['autoScaling', 'scaleUpThreshold']}
+                          label={t('nodes.nodePool.scaleUpThreshold')}
+                          style={{ minWidth: '200px' }}
+                        >
+                          <Input placeholder="0.7" />
+                        </Form.Item>
+                      </div>
+                      <Form.Item
+                        name={['autoScaling', 'scaleDownDelayAfterAdd']}
+                        label={t('nodes.nodePool.scaleDownDelayAfterAdd')}
+                        style={{ minWidth: '200px' }}
+                      >
+                        <Input placeholder="10m" />
+                      </Form.Item>
+                    </Collapse.Panel>
+                  </Collapse>
+                </div>
+              ) : null;
+            }}
+          </Form.Item>
 
           <Form.Item style={{ marginTop: 24 }}>
             <Space>

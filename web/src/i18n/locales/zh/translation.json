@@ -38,6 +38,8 @@
     "labels": "标签",
     "key": "键",
     "value": "值",
+    "enabled": "已启用",
+    "disabled": "已禁用",
     "pleaseEnterKey": "请输入键",
     "pleaseEnterValue": "请输入值",
     "addLabel": "添加标签",
@@ -228,7 +230,18 @@
         "NoSchedule": "NoSchedule (不允许新Pod调度到节点)",
         "PreferNoSchedule": "PreferNoSchedule (尽量避免新Pod调度到节点)",
         "NoExecute": "NoExecute (不允许新Pod调度且驱逐现有Pod)"
-      }
+      },
+      "autoScaling": "自动扩缩容",
+      "minNodes": "最小节点数",
+      "maxNodes": "最大节点数",
+      "pleaseEnterMinNodes": "请输入最小节点数",
+      "pleaseEnterMaxNodes": "请输入最大节点数",
+      "advancedSettings": "高级设置",
+      "scaleDownDelay": "缩容延迟",
+      "scaleDownUnneededTime": "不需要时间",
+      "scaleDownThreshold": "缩容阈值",
+      "scaleUpThreshold": "扩容阈值",
+      "scaleDownDelayAfterAdd": "添加后缩容延迟"
     },
     "addNodeModal": {
       "title": "添加节点",

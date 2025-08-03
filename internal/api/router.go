@@ -18,6 +18,7 @@ type App struct {
 	DeploymentHandler  *DeploymentHandler
 	StatefulSetHandler *StatefulSetHandler // 添加StatefulSet处理器
 	NodePoolHandler    *NodePoolHandler
+	AutoScalerHandler  *AutoScalerHandler // 添加自动扩缩容处理器
 	HealthHandler      *HealthCheckHandler
 	PodTerminalHandler *PodTerminalHandler
 	NamespaceHandler   *NamespaceHandler // Add namespace handler
@@ -86,6 +87,11 @@ func InitRouter(app *App) *gin.Engine {
 		v1.GET("/clusters/:cluster/nodepools/:pool", app.NodePoolHandler.GetNodePool)
 		v1.PUT("/clusters/:cluster/nodepools/:pool", app.NodePoolHandler.UpdateNodePool)
 		v1.DELETE("/clusters/:cluster/nodepools/:pool", app.NodePoolHandler.DeleteNodePool)
+
+		// Auto scaler management
+		v1.GET("/clusters/:cluster/autoscaler/config", app.AutoScalerHandler.GetAutoScalerConfig)
+		v1.PUT("/clusters/:cluster/autoscaler/config", app.AutoScalerHandler.UpdateAutoScalerConfig)
+		v1.GET("/clusters/:cluster/autoscaler/status", app.AutoScalerHandler.GetAutoScalerStatus)
 
 		// Node management
 		v1.GET("/clusters/:cluster/nodes", app.NodeHandler.ListNodes)

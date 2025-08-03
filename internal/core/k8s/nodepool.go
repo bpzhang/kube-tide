@@ -12,9 +12,22 @@ import (
 
 // NodePool 节点池配置
 type NodePool struct {
-	Name   string            `json:"name"`
-	Labels map[string]string `json:"labels,omitempty"`
-	Taints []corev1.Taint    `json:"taints,omitempty"`
+	Name        string             `json:"name"`
+	Labels      map[string]string  `json:"labels,omitempty"`
+	Taints      []corev1.Taint     `json:"taints,omitempty"`
+	AutoScaling *AutoScalingConfig `json:"autoScaling,omitempty"`
+}
+
+// AutoScalingConfig 自动扩缩容配置
+type AutoScalingConfig struct {
+	Enabled                bool   `json:"enabled"`
+	MinNodes               int32  `json:"minNodes"`
+	MaxNodes               int32  `json:"maxNodes"`
+	ScaleDownDelay         string `json:"scaleDownDelay,omitempty"`         // 缩容延迟时间，默认 10m
+	ScaleDownThreshold     string `json:"scaleDownThreshold,omitempty"`     // 缩容阈值，默认 0.5 (50%)
+	ScaleUpThreshold       string `json:"scaleUpThreshold,omitempty"`       // 扩容阈值，默认 0.7 (70%)
+	ScaleDownUnneededTime  string `json:"scaleDownUnneededTime,omitempty"`  // 节点空闲多长时间后可以被缩容，默认 10m
+	ScaleDownDelayAfterAdd string `json:"scaleDownDelayAfterAdd,omitempty"` // 添加节点后多长时间内不进行缩容，默认 10m
 }
 
 // NodePoolService 节点池服务
