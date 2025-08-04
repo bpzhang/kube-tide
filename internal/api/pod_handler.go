@@ -400,3 +400,95 @@ func (h *PodHandler) GetPodEvents(c *gin.Context) {
 		"events": events,
 	})
 }
+
+// GetPodRestartPolicy 获取Pod重启策略
+func (h *PodHandler) GetPodRestartPolicy(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	podName := c.Param("pod")
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
+		return
+	}
+	if podName == "" {
+		ResponseError(c, http.StatusBadRequest, "pod.podNameEmpty")
+		return
+	}
+
+	restartPolicy, err := h.service.GetPodRestartPolicy(context.Background(), clusterName, namespace, podName)
+	if err != nil {
+		if k8s.IsNotFoundError(err) {
+			ResponseError(c, http.StatusNotFound, "pod.notFound")
+			return
+		}
+		logger.Errorf("Failed to get pod restart policy: %s", err.Error())
+		FailWithError(c, http.StatusInternalServerError, "pod.restartPolicy.fetchFailed", err)
+		return
+	}
+
+	ResponseSuccess(c, gin.H{
+		"restartPolicy": restartPolicy,
+	})
+}
+
+// UpdatePodRestartPolicy 更新Pod重启策略
+func (h *PodHandler) UpdatePodRestartPolicy(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	podName := c.Param("pod")
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
+		return
+	}
+	if podName == "" {
+		ResponseError(c, http.StatusBadRequest, "pod.podNameEmpty")
+		return
+	}
+
+	var config struct {
+		RestartPolicy  string `json:"restartPolicy"`
+		DeleteOriginal bool   `json:"deleteOriginal"`
+	}
+	if err := c.ShouldBindJSON(&config); err != nil {
+		ResponseError(c, http.StatusBadRequest, "api.invalidJSON")
+		return
+	}
+
+	// 验证重启策略
+	if config.RestartPolicy == "" {
+		ResponseError(c, http.StatusBadRequest, "pod.restartPolicy.required")
+		return
+	}
+
+	// 使用重新创建的方法
+	err := h.service.RecreatePodWithRestartPolicy(context.Background(), clusterName, namespace, podName, config.RestartPolicy, config.DeleteOriginal)
+	if err != nil {
+		if k8s.IsNotFoundError(err) {
+			ResponseError(c, http.StatusNotFound, "pod.notFound")
+			return
+		}
+		logger.Errorf("Failed to recreate pod with restart policy: %s", err.Error())
+		FailWithError(c, http.StatusInternalServerError, "pod.restartPolicy.updateFailed", err)
+		return
+	}
+
+	if config.DeleteOriginal {
+		ResponseSuccess(c, gin.H{
+			"message": "pod.restartPolicy.recreateSuccess",
+		})
+	} else {
+		ResponseSuccess(c, gin.H{
+			"message": "pod.restartPolicy.createSuccess",
+		})
+	}
+}

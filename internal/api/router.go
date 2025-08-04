@@ -127,6 +127,9 @@ func InitRouter(app *App) *gin.Engine {
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/metrics", app.PodHandler.GetPodMetrics)
 		// Pod existence check API
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/exists", app.PodHandler.CheckPodExists)
+		// Pod restart policy management API
+		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/restart-policy", app.PodHandler.GetPodRestartPolicy)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/pods/:pod/restart-policy", app.PodHandler.UpdatePodRestartPolicy)
 		// Pod terminal WebSocket route
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/exec", app.PodTerminalHandler.HandleTerminal)
 

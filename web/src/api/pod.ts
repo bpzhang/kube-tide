@@ -42,6 +42,27 @@ export interface PodEventsResponse {
   };
 }
 
+export interface PodRestartPolicyResponse {
+  code: number;
+  message: string;
+  data: {
+    restartPolicy: string;
+  };
+}
+
+export interface UpdateRestartPolicyRequest {
+  restartPolicy: string;
+  deleteOriginal?: boolean;
+}
+
+export interface UpdateRestartPolicyResponse {
+  code: number;
+  message: string;
+  data: {
+    message: string;
+  };
+}
+
 // Pod list
 export const getPodsByNamespace = (clusterName: string, namespace: string) => {
   return api.get<PodListResponse>(`/clusters/${clusterName}/namespaces/${namespace}/pods`);
@@ -182,4 +203,37 @@ export const checkPodExists = (clusterName: string, namespace: string, podName: 
  */
 export const getPodEvents = (clusterName: string, namespace: string, podName: string) => {
   return api.get<PodEventsResponse>(`/clusters/${clusterName}/namespaces/${namespace}/pods/${podName}/events`);
+};
+
+/**
+ * Get Pod restart policy
+ * @param clusterName Cluster name
+ * @param namespace Namespace
+ * @param podName Pod name
+ * @returns Pod restart policy response
+ */
+export const getPodRestartPolicy = (clusterName: string, namespace: string, podName: string) => {
+  return api.get<PodRestartPolicyResponse>(`/clusters/${clusterName}/namespaces/${namespace}/pods/${podName}/restart-policy`);
+};
+
+/**
+ * Update Pod restart policy
+ * @param clusterName Cluster name
+ * @param namespace Namespace
+ * @param podName Pod name
+ * @param restartPolicy Restart policy (Always, OnFailure, Never)
+ * @param deleteOriginal Whether to delete the original Pod
+ * @returns Update result response
+ */
+export const updatePodRestartPolicy = (
+  clusterName: string, 
+  namespace: string, 
+  podName: string, 
+  restartPolicy: string,
+  deleteOriginal?: boolean
+) => {
+  return api.put<UpdateRestartPolicyResponse>(
+    `/clusters/${clusterName}/namespaces/${namespace}/pods/${podName}/restart-policy`,
+    { restartPolicy, deleteOriginal }
+  );
 };

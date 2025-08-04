@@ -301,7 +301,24 @@
     "openTerminal": "打开终端",
     "noPodsFound": "此命名空间中未找到 Pod",
     "labels": "标签",
-    "annotations": "注解"
+    "annotations": "注解",
+    "restartPolicy": {
+      "title": "重启策略",
+      "current": "当前策略",
+      "update": "更新策略",
+      "updateSuccess": "重启策略更新成功",
+      "recreateSuccess": "Pod重新创建成功，已应用新的重启策略",
+      "createSuccess": "已创建新Pod，应用了指定的重启策略",
+      "updateFailed": "重启策略更新失败",
+      "fetchFailed": "获取重启策略失败",
+      "required": "重启策略不能为空",
+      "always": "Always（总是重启）",
+      "onFailure": "OnFailure（仅失败时重启）",
+      "never": "Never（从不重启）",
+      "confirm": "确定要更新Pod的重启策略吗？",
+      "description": "重启策略决定了Pod中容器的重启行为",
+      "configure": "配置重启策略"
+    }
   },
   "podDetail": {
     "title": "Pod 详情",

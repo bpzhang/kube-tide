@@ -359,3 +359,159 @@ func (s *PodService) GetPodMetrics(ctx context.Context, clusterName, namespace, 
 	// 直接使用指标服务获取Pod指标（会优先从缓存获取，缓存中没有再从API获取）
 	return s.metricsService.GetPodMetrics(ctx, clusterName, namespace, podName)
 }
+
+// RestartPolicyConfig 重启策略配置结构
+type RestartPolicyConfig struct {
+	RestartPolicy string `json:"restartPolicy"`
+}
+
+// UpdatePodRestartPolicy 更新Pod的重启策略
+// 实际实现：由于Kubernetes不允许直接修改Pod的重启策略，此方法提供Pod重新创建的功能
+func (s *PodService) UpdatePodRestartPolicy(ctx context.Context, clusterName, namespace, podName, restartPolicy string) error {
+	client, err := s.clientManager.GetClient(clusterName)
+	if err != nil {
+		return err
+	}
+
+	// 验证重启策略的有效性
+	if !isValidRestartPolicy(restartPolicy) {
+		return fmt.Errorf("invalid restart policy: %s. Valid values are: Always, OnFailure, Never", restartPolicy)
+	}
+
+	// 获取原Pod
+	originalPod, err := client.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get Pod: %w", err)
+	}
+
+	// 检查Pod状态
+	if originalPod.DeletionTimestamp != nil {
+		return fmt.Errorf("cannot update restart policy for pod in deletion state")
+	}
+
+	// 检查当前重启策略是否已经相同
+	if string(originalPod.Spec.RestartPolicy) == restartPolicy {
+		return fmt.Errorf("restart policy is already set to %s", restartPolicy)
+	}
+
+	// 创建新的Pod定义
+	newPod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        originalPod.Name + "-new",
+			Namespace:   originalPod.Namespace,
+			Labels:      originalPod.Labels,
+			Annotations: originalPod.Annotations,
+		},
+		Spec: originalPod.Spec,
+	}
+
+	// 更新重启策略
+	newPod.Spec.RestartPolicy = corev1.RestartPolicy(restartPolicy)
+
+	// 清理不应该被复制的字段
+	newPod.ObjectMeta.ResourceVersion = ""
+	newPod.ObjectMeta.UID = ""
+	newPod.ObjectMeta.CreationTimestamp = metav1.Time{}
+	newPod.Spec.NodeName = ""
+
+	// 删除状态相关的annotation
+	if newPod.ObjectMeta.Annotations != nil {
+		delete(newPod.ObjectMeta.Annotations, "kubectl.kubernetes.io/last-applied-configuration")
+	}
+
+	// 创建新Pod
+	_, err = client.CoreV1().Pods(namespace).Create(ctx, newPod, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create new Pod: %w", err)
+	}
+
+	// 删除原Pod（可选，用户确认后执行）
+	// 这里我们返回成功，让用户手动决定是否删除原Pod
+	return nil
+}
+
+// RecreatePodWithRestartPolicy 重新创建Pod并设置新的重启策略
+func (s *PodService) RecreatePodWithRestartPolicy(ctx context.Context, clusterName, namespace, podName, restartPolicy string, deleteOriginal bool) error {
+	client, err := s.clientManager.GetClient(clusterName)
+	if err != nil {
+		return err
+	}
+
+	// 验证重启策略的有效性
+	if !isValidRestartPolicy(restartPolicy) {
+		return fmt.Errorf("invalid restart policy: %s. Valid values are: Always, OnFailure, Never", restartPolicy)
+	}
+
+	// 获取原Pod
+	originalPod, err := client.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get Pod: %w", err)
+	}
+
+	// 创建新的Pod定义，使用相同的名称（如果要删除原Pod）
+	newPodName := podName
+	if !deleteOriginal {
+		// Kubernetes resource names must be lowercase and <= 63 characters
+		safePolicy := strings.ToLower(restartPolicy)
+		maxNameLen := 63
+		baseName := podName + "-" + safePolicy
+		if len(baseName) > maxNameLen {
+			baseName = baseName[:maxNameLen]
+		}
+		newPodName = baseName
+	}
+
+	newPod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        newPodName,
+			Namespace:   originalPod.Namespace,
+			Labels:      originalPod.Labels,
+			Annotations: originalPod.Annotations,
+		},
+		Spec: originalPod.Spec,
+	}
+
+	// 更新重启策略
+	newPod.Spec.RestartPolicy = corev1.RestartPolicy(restartPolicy)
+
+	// 清理不应该被复制的字段
+	newPod.ObjectMeta.ResourceVersion = ""
+	newPod.ObjectMeta.UID = ""
+	newPod.ObjectMeta.CreationTimestamp = metav1.Time{}
+	// 创建新Pod
+	_, err = client.CoreV1().Pods(namespace).Create(ctx, newPod, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create new Pod: %w", err)
+	}
+
+	// 如果要删除原Pod，确保新Pod创建成功后再删除
+	if deleteOriginal {
+		err = client.CoreV1().Pods(namespace).Delete(ctx, podName, metav1.DeleteOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to delete original Pod after new Pod creation: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// GetPodRestartPolicy 获取Pod的重启策略
+func (s *PodService) GetPodRestartPolicy(ctx context.Context, clusterName, namespace, podName string) (string, error) {
+	pod, err := s.GetPodDetails(ctx, clusterName, namespace, podName)
+	if err != nil {
+		return "", err
+	}
+
+	return string(pod.Spec.RestartPolicy), nil
+}
+
+// isValidRestartPolicy 检查重启策略是否有效
+func isValidRestartPolicy(policy string) bool {
+	validPolicies := []string{"Always", "OnFailure", "Never"}
+	for _, validPolicy := range validPolicies {
+		if policy == validPolicy {
+			return true
+		}
+	}
+	return false
+}

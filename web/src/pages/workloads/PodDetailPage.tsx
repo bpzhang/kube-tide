@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Button, Spin, message, Tabs, Space } from 'antd';
-import { ArrowLeftOutlined, CodeOutlined, FileTextOutlined } from '@ant-design/icons';
+import { Button, Spin, message, Tabs, Space } from 'antd';
+import { ArrowLeftOutlined, CodeOutlined, FileTextOutlined, SettingOutlined } from '@ant-design/icons';
 import { getPodDetails } from '../../api/pod';
 import PodDetail from '../../components/k8s/pod/PodDetail';
 import PodMonitoring from '../../components/k8s/pod/PodMonitoring';
+import PodRestartPolicyConfig from '../../components/k8s/pod/PodRestartPolicyConfig';
 import { useTranslation } from 'react-i18next';
 
 const PodDetailPage: React.FC = () => {
@@ -89,6 +90,23 @@ const PodDetailPage: React.FC = () => {
           clusterName={clusterName!}
           namespace={namespace!}
           podName={podName!}
+        />
+      )
+    },
+    {
+      key: 'restartPolicy',
+      label: (
+        <span>
+          <SettingOutlined />
+          {t('pod.restartPolicy.configure')}
+        </span>
+      ),
+      children: (
+        <PodRestartPolicyConfig
+          clusterName={clusterName!}
+          namespace={namespace!}
+          podName={podName!}
+          disabled={pod.status.phase === 'Terminating' || pod.status.phase === 'Failed'}
         />
       )
     }

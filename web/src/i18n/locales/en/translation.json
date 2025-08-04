@@ -301,7 +301,24 @@
     "openTerminal": "Open Terminal",
     "noPodsFound": "No pods found in this namespace",
     "labels": "Labels",
-    "annotations": "Annotations"
+    "annotations": "Annotations",
+    "restartPolicy": {
+      "title": "Restart Policy",
+      "current": "Current Policy",
+      "update": "Update Policy",
+      "updateSuccess": "Restart policy updated successfully",
+      "recreateSuccess": "Pod recreated successfully with new restart policy",
+      "createSuccess": "New Pod created successfully with the specified restart policy",
+      "updateFailed": "Failed to update restart policy",
+      "fetchFailed": "Failed to fetch restart policy",
+      "required": "Restart policy is required",
+      "always": "Always (Always restart)",
+      "onFailure": "OnFailure (Restart only on failure)",
+      "never": "Never (Never restart)",
+      "confirm": "Are you sure you want to update the Pod's restart policy?",
+      "description": "Restart policy determines the restart behavior of containers in the Pod",
+      "configure": "Configure Restart Policy"
+    }
   },
   "podDetail": {
     "title": "Pod Details",
