@@ -237,3 +237,132 @@ export const updatePodRestartPolicy = (
     { restartPolicy, deleteOriginal }
   );
 };
+
+// Pod Lifecycle Management interfaces
+export interface PodLifecycleRequest {
+  action: 'start' | 'stop' | 'restart' | 'pause' | 'resume';
+  gracePeriod?: number;
+  force?: boolean;
+  waitTimeout?: number;
+}
+
+export interface ContainerLifecycleStatus {
+  name: string;
+  ready: boolean;
+  restartCount: number;
+  state: {
+    running?: { startedAt: string };
+    waiting?: { reason: string; message: string };
+    terminated?: {
+      exitCode: number;
+      signal: number;
+      reason: string;
+      message: string;
+      startedAt: string;
+      finishedAt: string;
+    };
+  };
+  lastState: {
+    terminated?: {
+      exitCode: number;
+      signal: number;
+      reason: string;
+      message: string;
+      startedAt: string;
+      finishedAt: string;
+    };
+  };
+}
+
+export interface PodLifecycleStatus {
+  phase: string;
+  ready: boolean;
+  containerStatuses: ContainerLifecycleStatus[];
+  startTime?: string;
+  restartCount: number;
+}
+
+export interface PodLifecycleResponse {
+  success: boolean;
+  message: string;
+  podStatus: PodLifecycleStatus;
+  duration: number;
+}
+
+export interface PodLifecycleEvent {
+  timestamp: string;
+  type: string;
+  reason: string;
+  message: string;
+  source: string;
+}
+
+export interface PodLifecycleHistoryResponse {
+  code: number;
+  message: string;
+  data: {
+    history: PodLifecycleEvent[];
+  };
+}
+
+export interface PodLifecycleStatusResponse {
+  code: number;
+  message: string;
+  data: {
+    status: PodLifecycleStatus;
+  };
+}
+
+/**
+ * Manage Pod lifecycle
+ * @param clusterName Cluster name
+ * @param namespace Namespace
+ * @param podName Pod name
+ * @param request Lifecycle request
+ * @returns Lifecycle operation response
+ */
+export const managePodLifecycle = (
+  clusterName: string,
+  namespace: string,
+  podName: string,
+  request: PodLifecycleRequest
+) => {
+  return api.post<{ data: PodLifecycleResponse }>(
+    `/clusters/${clusterName}/namespaces/${namespace}/pods/${podName}/lifecycle`,
+    request
+  );
+};
+
+/**
+ * Get Pod lifecycle history
+ * @param clusterName Cluster name
+ * @param namespace Namespace
+ * @param podName Pod name
+ * @returns Lifecycle history response
+ */
+export const getPodLifecycleHistory = (
+  clusterName: string,
+  namespace: string,
+  podName: string
+) => {
+  return api.get<PodLifecycleHistoryResponse>(
+    `/clusters/${clusterName}/namespaces/${namespace}/pods/${podName}/lifecycle/history`
+  );
+};
+
+/**
+ * Get Pod lifecycle status
+ * @param clusterName Cluster name
+ * @param namespace Namespace
+ * @param podName Pod name
+ * @returns Lifecycle status response
+ */
+export const getPodLifecycleStatus = (
+  clusterName: string,
+  namespace: string,
+  podName: string
+) => {
+  return api.get<PodLifecycleStatusResponse>(
+    `/clusters/${clusterName}/namespaces/${namespace}/pods/${podName}/lifecycle/status`
+  );
+};

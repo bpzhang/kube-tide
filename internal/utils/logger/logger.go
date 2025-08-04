@@ -9,6 +9,9 @@ import (
 type Logger interface {
 	// 设置上下文
 	WithContext(ctx context.Context) Logger
+	
+	// 设置结构化字段
+	WithFields(fields map[string]interface{}) Logger
 
 	// 基本日志方法 - 不暴露zapcore.Field
 	Debug(msg string, args ...any)
@@ -27,7 +30,8 @@ type Logger interface {
 
 // 默认logger实现
 type defaultLogger struct {
-	ctx context.Context
+	ctx    context.Context
+	fields map[string]interface{}
 }
 
 // NewLogger 创建一个新的logger实例
@@ -37,32 +41,73 @@ func NewLogger() Logger {
 
 // WithContext 设置上下文
 func (l *defaultLogger) WithContext(ctx context.Context) Logger {
-	return &defaultLogger{ctx: ctx}
+	return &defaultLogger{ctx: ctx, fields: l.fields}
+}
+
+// WithFields 设置结构化字段
+func (l *defaultLogger) WithFields(fields map[string]interface{}) Logger {
+	// 合并现有字段和新字段
+	mergedFields := make(map[string]interface{})
+	
+	// 复制现有字段
+	if l.fields != nil {
+		for k, v := range l.fields {
+			mergedFields[k] = v
+		}
+	}
+	
+	// 添加新字段
+	for k, v := range fields {
+		mergedFields[k] = v
+	}
+	
+	return &defaultLogger{ctx: l.ctx, fields: mergedFields}
+}
+
+// mergeFieldsWithArgs 将结构化字段与参数合并
+func (l *defaultLogger) mergeFieldsWithArgs(args ...any) []any {
+	if l.fields == nil || len(l.fields) == 0 {
+		return args
+	}
+	
+	// 将 fields 转换为 key-value 对
+	var fieldArgs []any
+	for k, v := range l.fields {
+		fieldArgs = append(fieldArgs, k, v)
+	}
+	
+	// 合并字段参数和传入参数
+	return append(fieldArgs, args...)
 }
 
 // Debug 记录Debug级别日志
 func (l *defaultLogger) Debug(msg string, args ...any) {
-	getZapLogger().Debug(msg, toZapFields(args...)...)
+	allArgs := l.mergeFieldsWithArgs(args...)
+	getZapLogger().Debug(msg, toZapFields(allArgs...)...)
 }
 
 // Info 记录Info级别日志
 func (l *defaultLogger) Info(msg string, args ...any) {
-	getZapLogger().Info(msg, toZapFields(args...)...)
+	allArgs := l.mergeFieldsWithArgs(args...)
+	getZapLogger().Info(msg, toZapFields(allArgs...)...)
 }
 
 // Warn 记录Warn级别日志
 func (l *defaultLogger) Warn(msg string, args ...any) {
-	getZapLogger().Warn(msg, toZapFields(args...)...)
+	allArgs := l.mergeFieldsWithArgs(args...)
+	getZapLogger().Warn(msg, toZapFields(allArgs...)...)
 }
 
 // Error 记录Error级别日志
 func (l *defaultLogger) Error(msg string, args ...any) {
-	getZapLogger().Error(msg, toZapFields(args...)...)
+	allArgs := l.mergeFieldsWithArgs(args...)
+	getZapLogger().Error(msg, toZapFields(allArgs...)...)
 }
 
 // Fatal 记录Fatal级别日志
 func (l *defaultLogger) Fatal(msg string, args ...any) {
-	getZapLogger().Fatal(msg, toZapFields(args...)...)
+	allArgs := l.mergeFieldsWithArgs(args...)
+	getZapLogger().Fatal(msg, toZapFields(allArgs...)...)
 }
 
 // Debugf 记录Debug级别格式化日志
@@ -143,6 +188,11 @@ func Errorf(template string, args ...any) {
 // Fatalf 全局Fatal格式化日志
 func Fatalf(template string, args ...any) {
 	defaultLoggerInstance.Fatalf(template, args...)
+}
+
+// WithFields 全局结构化字段日志
+func WithFields(fields map[string]interface{}) Logger {
+	return defaultLoggerInstance.WithFields(fields)
 }
 
 // 以下是通用的切面日志工具

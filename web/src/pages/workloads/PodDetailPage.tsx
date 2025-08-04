@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Spin, message, Tabs, Space } from 'antd';
-import { ArrowLeftOutlined, CodeOutlined, FileTextOutlined, SettingOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, CodeOutlined, FileTextOutlined, SettingOutlined, ControlOutlined } from '@ant-design/icons';
 import { getPodDetails } from '../../api/pod';
 import PodDetail from '../../components/k8s/pod/PodDetail';
 import PodMonitoring from '../../components/k8s/pod/PodMonitoring';
 import PodRestartPolicyConfig from '../../components/k8s/pod/PodRestartPolicyConfig';
+import PodLifecycleManager from '../../components/k8s/pod/PodLifecycleManager';
 import { useTranslation } from 'react-i18next';
 
 const PodDetailPage: React.FC = () => {
@@ -83,6 +84,25 @@ const PodDetailPage: React.FC = () => {
       children: <PodDetail pod={pod} clusterName={clusterName!} />
     },
     {
+      key: 'lifecycle',
+      label: (
+        <span>
+          <ControlOutlined />
+          {t('podDetail.tabs.lifecycle')}
+        </span>
+      ),
+      children: (
+        <PodLifecycleManager
+          clusterName={clusterName!}
+          namespace={namespace!}
+          podName={podName!}
+          onStatusChange={(status) => {
+            console.log('Pod生命周期状态变化:', status);
+          }}
+        />
+      )
+    },
+    {
       key: 'monitoring',
       label: t('podDetail.tabs.monitoring'),
       children: (
@@ -98,7 +118,7 @@ const PodDetailPage: React.FC = () => {
       label: (
         <span>
           <SettingOutlined />
-          {t('pod.restartPolicy.configure')}
+          {t('pods.restartPolicy.configure')}
         </span>
       ),
       children: (

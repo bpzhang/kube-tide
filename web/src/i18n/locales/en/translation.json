@@ -46,7 +46,8 @@
     "ready": "Ready",
     "updating": "Updating",
     "notReady": "Not Ready",
-    "close": "Close"
+    "close": "Close",
+    "seconds": "seconds"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -320,6 +321,39 @@
       "configure": "Configure Restart Policy"
     }
   },
+  "podLifecycle": {
+    "title": "Lifecycle Management",
+    "start": "Start",
+    "stop": "Stop",
+    "restart": "Restart",
+    "pause": "Pause",
+    "resume": "Resume",
+    "currentStatus": "Current Status",
+    "ready": "Ready",
+    "notReady": "Not Ready",
+    "totalRestarts": "Total Restarts",
+    "containerStatus": "Container Status",
+    "restarts": "Restarts",
+    "viewHistory": "View History",
+    "lifecycleHistory": "Lifecycle History",
+    "source": "Source",
+    "noHistoryData": "No history data",
+    "gracePeriod": "Grace Period",
+    "gracePeriodHelp": "Time to wait before force killing the pod (seconds)",
+    "forceDelete": "Force Delete",
+    "gracefulDelete": "Graceful Delete",
+    "waitTimeout": "Wait Timeout",
+    "waitTimeoutHelp": "Maximum time to wait for operation completion (seconds)",
+    "startConfirm": "Are you sure you want to start this Pod?",
+    "stopConfirm": "Are you sure you want to stop this Pod? The Pod will be deleted.",
+    "restartConfirm": "Are you sure you want to restart this Pod? The Pod will be deleted and recreated.",
+    "pauseConfirm": "Are you sure you want to pause this Pod?",
+    "resumeConfirm": "Are you sure you want to resume this Pod?",
+    "failedPodTip": "Pod is in failed state. You can try restarting or check logs for details.",
+    "fetchStatusFailed": "Failed to fetch Pod lifecycle status",
+    "fetchHistoryFailed": "Failed to fetch Pod lifecycle history",
+    "operationFailed": "Pod lifecycle operation failed"
+  },
   "podDetail": {
     "title": "Pod Details",
     "podNotFound": "Pod information not found",
@@ -328,6 +362,7 @@
     "container": "Container",
     "tabs": {
       "info": "Basic Information",
+      "lifecycle": "Lifecycle",
       "monitoring": "Monitoring",
       "logs": "Logs",
       "terminal": "Terminal"

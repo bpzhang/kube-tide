@@ -48,7 +48,8 @@
     "ready": "就绪",
     "updating": "更新中",
     "notReady": "未就绪",
-    "close": "关闭"
+    "close": "关闭",
+    "seconds": "秒"
   },
   "navigation": {
     "dashboard": "仪表盘",
@@ -320,6 +321,39 @@
       "configure": "配置重启策略"
     }
   },
+  "podLifecycle": {
+    "title": "生命周期管理",
+    "start": "启动",
+    "stop": "停止",
+    "restart": "重启",
+    "pause": "暂停",
+    "resume": "恢复",
+    "currentStatus": "当前状态",
+    "ready": "就绪",
+    "notReady": "未就绪",
+    "totalRestarts": "总重启次数",
+    "containerStatus": "容器状态",
+    "restarts": "重启次数",
+    "viewHistory": "查看历史",
+    "lifecycleHistory": "生命周期历史",
+    "source": "来源",
+    "noHistoryData": "暂无历史数据",
+    "gracePeriod": "优雅关闭时间",
+    "gracePeriodHelp": "Pod关闭前等待的时间（秒）",
+    "forceDelete": "强制删除",
+    "gracefulDelete": "优雅删除",
+    "waitTimeout": "等待超时",
+    "waitTimeoutHelp": "等待操作完成的最大时间（秒）",
+    "startConfirm": "确定要启动这个Pod吗？",
+    "stopConfirm": "确定要停止这个Pod吗？Pod将被删除。",
+    "restartConfirm": "确定要重启这个Pod吗？Pod将被删除并重新创建。",
+    "pauseConfirm": "确定要暂停这个Pod吗？",
+    "resumeConfirm": "确定要恢复这个Pod吗？",
+    "failedPodTip": "Pod处于失败状态，您可以尝试重启或查看日志了解详情。",
+    "fetchStatusFailed": "获取Pod生命周期状态失败",
+    "fetchHistoryFailed": "获取Pod生命周期历史失败",
+    "operationFailed": "Pod生命周期操作失败"
+  },
   "podDetail": {
     "title": "Pod 详情",
     "podNotFound": "未找到 Pod 信息",
@@ -328,6 +362,7 @@
     "container": "容器",
     "tabs": {
       "info": "基本信息",
+      "lifecycle": "生命周期",
       "monitoring": "监控",
       "logs": "日志",
       "terminal": "终端"

@@ -30,16 +30,19 @@ func IsNotFoundError(err error) bool {
 
 // PodService Pod服务
 type PodService struct {
-	clientManager  *ClientManager
-	metricsService *PodMetricsService
+	clientManager    *ClientManager
+	metricsService   *PodMetricsService
+	lifecycleService *PodLifecycleService
 }
 
 // NewPodService 创建Pod服务
 func NewPodService(clientManager *ClientManager) *PodService {
 	metricsService := NewPodMetricsService(clientManager)
+	lifecycleService := NewPodLifecycleService(clientManager)
 	return &PodService{
-		clientManager:  clientManager,
-		metricsService: metricsService,
+		clientManager:    clientManager,
+		metricsService:   metricsService,
+		lifecycleService: lifecycleService,
 	}
 }
 
@@ -514,4 +517,19 @@ func isValidRestartPolicy(policy string) bool {
 		}
 	}
 	return false
+}
+
+// ManagePodLifecycle 管理Pod生命周期
+func (s *PodService) ManagePodLifecycle(ctx context.Context, clusterName, namespace, podName string, request *PodLifecycleRequest) (*PodLifecycleResponse, error) {
+	return s.lifecycleService.ManagePodLifecycle(ctx, clusterName, namespace, podName, request)
+}
+
+// GetPodLifecycleHistory 获取Pod生命周期历史
+func (s *PodService) GetPodLifecycleHistory(ctx context.Context, clusterName, namespace, podName string) ([]PodLifecycleEvent, error) {
+	return s.lifecycleService.GetPodLifecycleHistory(ctx, clusterName, namespace, podName)
+}
+
+// GetClientManager 获取客户端管理器（供生命周期服务使用）
+func (s *PodService) GetClientManager() *ClientManager {
+	return s.clientManager
 }

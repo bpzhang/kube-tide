@@ -130,6 +130,10 @@ func InitRouter(app *App) *gin.Engine {
 		// Pod restart policy management API
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/restart-policy", app.PodHandler.GetPodRestartPolicy)
 		v1.PUT("/clusters/:cluster/namespaces/:namespace/pods/:pod/restart-policy", app.PodHandler.UpdatePodRestartPolicy)
+		// Pod lifecycle management API
+		v1.POST("/clusters/:cluster/namespaces/:namespace/pods/:pod/lifecycle", app.PodHandler.ManagePodLifecycle)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/lifecycle/history", app.PodHandler.GetPodLifecycleHistory)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/lifecycle/status", app.PodHandler.GetPodLifecycleStatus)
 		// Pod terminal WebSocket route
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/exec", app.PodTerminalHandler.HandleTerminal)
 

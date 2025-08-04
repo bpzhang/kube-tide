@@ -492,3 +492,173 @@ func (h *PodHandler) UpdatePodRestartPolicy(c *gin.Context) {
 		})
 	}
 }
+
+// ManagePodLifecycle 管理Pod生命周期
+func (h *PodHandler) ManagePodLifecycle(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	podName := c.Param("pod")
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
+		return
+	}
+	if podName == "" {
+		ResponseError(c, http.StatusBadRequest, "pod.podNameEmpty")
+		return
+	}
+
+	var request k8s.PodLifecycleRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		ResponseError(c, http.StatusBadRequest, "request.invalidJSON")
+		logger.Errorf("Invalid request JSON: %s", err.Error())
+		return
+	}
+
+	// 记录操作开始日志
+	logger.WithFields(map[string]interface{}{
+		"cluster":   clusterName,
+		"namespace": namespace,
+		"pod":       podName,
+		"action":    request.Action,
+		"user":      c.GetString("user"), // 假设有用户信息
+		"requestId": c.GetString("requestId"),
+	}).Info("开始执行Pod生命周期操作")
+
+	// 设置默认超时时间
+	if request.WaitTimeout == 0 {
+		request.WaitTimeout = 5 * time.Minute
+	}
+
+	startTime := time.Now()
+	response, err := h.service.ManagePodLifecycle(context.Background(), clusterName, namespace, podName, &request)
+	duration := time.Since(startTime)
+
+	// 记录操作结果日志
+	logFields := map[string]interface{}{
+		"cluster":   clusterName,
+		"namespace": namespace,
+		"pod":       podName,
+		"action":    request.Action,
+		"duration":  duration.String(),
+		"user":      c.GetString("user"),
+		"requestId": c.GetString("requestId"),
+	}
+
+	if err != nil {
+		// 处理不同类型的错误
+		if lifecycleErr, ok := err.(*k8s.PodLifecycleError); ok {
+			logFields["errorType"] = lifecycleErr.Type
+			logFields["errorCode"] = lifecycleErr.Code
+			logFields["errorDetails"] = lifecycleErr.Details
+			
+			// 根据错误类型设置不同的HTTP状态码
+			var statusCode int
+			switch lifecycleErr.Type {
+			case k8s.ErrorTypeValidation:
+				statusCode = http.StatusBadRequest
+			case k8s.ErrorTypePermission:
+				statusCode = http.StatusForbidden
+			case k8s.ErrorTypeResource:
+				statusCode = http.StatusNotFound
+			case k8s.ErrorTypeTimeout:
+				statusCode = http.StatusRequestTimeout
+			case k8s.ErrorTypeNetwork, k8s.ErrorTypeKubernetes:
+				statusCode = http.StatusServiceUnavailable
+			default:
+				statusCode = http.StatusInternalServerError
+			}
+
+			logger.WithFields(logFields).Errorf("Pod生命周期操作失败: %s", lifecycleErr.Message)
+			
+			// 返回结构化错误响应
+			c.JSON(statusCode, gin.H{
+				"code":    1,
+				"message": lifecycleErr.Message,
+				"error": gin.H{
+					"type":    lifecycleErr.Type,
+					"code":    lifecycleErr.Code,
+					"details": lifecycleErr.Details,
+				},
+			})
+			return
+		}
+
+		logger.WithFields(logFields).Errorf("Pod生命周期操作失败: %s", err.Error())
+		FailWithError(c, http.StatusInternalServerError, "pod.lifecycleManagementFailed", err)
+		return
+	}
+
+	logger.WithFields(logFields).Info("Pod生命周期操作成功完成")
+	ResponseSuccess(c, response)
+}
+
+// GetPodLifecycleHistory 获取Pod生命周期历史
+func (h *PodHandler) GetPodLifecycleHistory(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	podName := c.Param("pod")
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
+		return
+	}
+	if podName == "" {
+		ResponseError(c, http.StatusBadRequest, "pod.podNameEmpty")
+		return
+	}
+
+	history, err := h.service.GetPodLifecycleHistory(context.Background(), clusterName, namespace, podName)
+	if err != nil {
+		logger.Errorf("Failed to get pod lifecycle history: %s", err.Error())
+		FailWithError(c, http.StatusInternalServerError, "pod.lifecycleHistoryFailed", err)
+		return
+	}
+
+	ResponseSuccess(c, gin.H{
+		"history": history,
+	})
+}
+
+// GetPodLifecycleStatus 获取Pod当前生命周期状态
+func (h *PodHandler) GetPodLifecycleStatus(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	podName := c.Param("pod")
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "namespace.namespaceNameEmpty")
+		return
+	}
+	if podName == "" {
+		ResponseError(c, http.StatusBadRequest, "pod.podNameEmpty")
+		return
+	}
+
+	pod, err := h.service.GetPodDetails(context.Background(), clusterName, namespace, podName)
+	if err != nil {
+		logger.Errorf("Failed to get pod details: %s", err.Error())
+		FailWithError(c, http.StatusInternalServerError, "pod.detailsFetchFailed", err)
+		return
+	}
+
+	// 创建生命周期服务实例来获取状态
+	lifecycleService := k8s.NewPodLifecycleService(h.service.GetClientManager())
+	status := lifecycleService.GetPodLifecycleStatus(pod)
+
+	ResponseSuccess(c, gin.H{
+		"status": status,
+	})
+}
