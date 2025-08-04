@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"kube-tide/internal/utils/logger"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"kube-tide/internal/utils/logger"
 )
 
 // PodLifecycleService Pod生命周期管理服务
@@ -54,26 +55,26 @@ func (e *PodLifecycleError) Error() string {
 
 // 错误类型常量
 const (
-	ErrorTypeValidation    = "validation"
-	ErrorTypeResource      = "resource"
-	ErrorTypeTimeout       = "timeout"
-	ErrorTypePermission    = "permission"
-	ErrorTypeController    = "controller"
-	ErrorTypeKubernetes    = "kubernetes"
-	ErrorTypeNetwork       = "network"
-	ErrorTypeInternal      = "internal"
+	ErrorTypeValidation = "validation"
+	ErrorTypeResource   = "resource"
+	ErrorTypeTimeout    = "timeout"
+	ErrorTypePermission = "permission"
+	ErrorTypeController = "controller"
+	ErrorTypeKubernetes = "kubernetes"
+	ErrorTypeNetwork    = "network"
+	ErrorTypeInternal   = "internal"
 )
 
 // 错误代码常量
 const (
-	ErrorCodePodNotFound       = "POD_NOT_FOUND"
-	ErrorCodeInvalidAction     = "INVALID_ACTION"
-	ErrorCodeOperationTimeout  = "OPERATION_TIMEOUT"
+	ErrorCodePodNotFound        = "POD_NOT_FOUND"
+	ErrorCodeInvalidAction      = "INVALID_ACTION"
+	ErrorCodeOperationTimeout   = "OPERATION_TIMEOUT"
 	ErrorCodeControllerNotFound = "CONTROLLER_NOT_FOUND"
-	ErrorCodeKubernetesAPI     = "KUBERNETES_API_ERROR"
-	ErrorCodePodNotReady       = "POD_NOT_READY"
-	ErrorCodePermissionDenied  = "PERMISSION_DENIED"
-	ErrorCodeClusterConnection = "CLUSTER_CONNECTION"
+	ErrorCodeKubernetesAPI      = "KUBERNETES_API_ERROR"
+	ErrorCodePodNotReady        = "POD_NOT_READY"
+	ErrorCodePermissionDenied   = "PERMISSION_DENIED"
+	ErrorCodeClusterConnection  = "CLUSTER_CONNECTION"
 )
 
 // NewPodLifecycleError 创建Pod生命周期错误
@@ -154,7 +155,7 @@ func (s *PodLifecycleService) ManagePodLifecycle(ctx context.Context, clusterNam
 	startTime := time.Now()
 
 	// 记录开始操作的日志
-	logger.Infof("开始Pod生命周期操作 - 集群: %s, 命名空间: %s, Pod: %s, 操作: %s", 
+	logger.Infof("开始Pod生命周期操作 - 集群: %s, 命名空间: %s, Pod: %s, 操作: %s",
 		clusterName, namespace, podName, request.Action)
 
 	// 验证操作类型
@@ -169,7 +170,7 @@ func (s *PodLifecycleService) ManagePodLifecycle(ctx context.Context, clusterNam
 			fmt.Sprintf("不支持的生命周期动作: %s", request.Action),
 			nil,
 			map[string]interface{}{
-				"action": request.Action,
+				"action":       request.Action,
 				"validActions": []string{"start", "stop", "restart", "pause", "resume"},
 			},
 		)
@@ -198,9 +199,9 @@ func (s *PodLifecycleService) ManagePodLifecycle(ctx context.Context, clusterNam
 				fmt.Sprintf("Pod '%s' 在命名空间 '%s' 中不存在", podName, namespace),
 				err,
 				map[string]interface{}{
-					"cluster": clusterName,
+					"cluster":   clusterName,
 					"namespace": namespace,
-					"pod": podName,
+					"pod":       podName,
 				},
 			)
 		}
@@ -210,9 +211,9 @@ func (s *PodLifecycleService) ManagePodLifecycle(ctx context.Context, clusterNam
 			"获取Pod详情失败",
 			err,
 			map[string]interface{}{
-				"cluster": clusterName,
+				"cluster":   clusterName,
 				"namespace": namespace,
-				"pod": podName,
+				"pod":       podName,
 			},
 		)
 	}
@@ -260,11 +261,11 @@ func (s *PodLifecycleService) ManagePodLifecycle(ctx context.Context, clusterNam
 	}
 
 	response.Duration = time.Since(startTime)
-	
+
 	// 记录操作完成的日志
-	logger.Infof("Pod生命周期操作完成 - 集群: %s, 命名空间: %s, Pod: %s, 操作: %s, 耗时: %v, 成功: %t", 
+	logger.Infof("Pod生命周期操作完成 - 集群: %s, 命名空间: %s, Pod: %s, 操作: %s, 耗时: %v, 成功: %t",
 		clusterName, namespace, podName, request.Action, response.Duration, response.Success)
-	
+
 	return response, nil
 }
 

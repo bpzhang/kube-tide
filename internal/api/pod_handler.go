@@ -555,7 +555,7 @@ func (h *PodHandler) ManagePodLifecycle(c *gin.Context) {
 			logFields["errorType"] = lifecycleErr.Type
 			logFields["errorCode"] = lifecycleErr.Code
 			logFields["errorDetails"] = lifecycleErr.Details
-			
+
 			// 根据错误类型设置不同的HTTP状态码
 			var statusCode int
 			switch lifecycleErr.Type {
@@ -574,7 +574,7 @@ func (h *PodHandler) ManagePodLifecycle(c *gin.Context) {
 			}
 
 			logger.WithFields(logFields).Errorf("Pod生命周期操作失败: %s", lifecycleErr.Message)
-			
+
 			// 返回结构化错误响应
 			c.JSON(statusCode, gin.H{
 				"code":    1,

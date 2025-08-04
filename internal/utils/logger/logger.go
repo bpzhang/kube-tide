@@ -9,7 +9,7 @@ import (
 type Logger interface {
 	// 设置上下文
 	WithContext(ctx context.Context) Logger
-	
+
 	// 设置结构化字段
 	WithFields(fields map[string]interface{}) Logger
 
@@ -48,19 +48,19 @@ func (l *defaultLogger) WithContext(ctx context.Context) Logger {
 func (l *defaultLogger) WithFields(fields map[string]interface{}) Logger {
 	// 合并现有字段和新字段
 	mergedFields := make(map[string]interface{})
-	
+
 	// 复制现有字段
 	if l.fields != nil {
 		for k, v := range l.fields {
 			mergedFields[k] = v
 		}
 	}
-	
+
 	// 添加新字段
 	for k, v := range fields {
 		mergedFields[k] = v
 	}
-	
+
 	return &defaultLogger{ctx: l.ctx, fields: mergedFields}
 }
 
@@ -69,13 +69,13 @@ func (l *defaultLogger) mergeFieldsWithArgs(args ...any) []any {
 	if l.fields == nil || len(l.fields) == 0 {
 		return args
 	}
-	
+
 	// 将 fields 转换为 key-value 对
 	var fieldArgs []any
 	for k, v := range l.fields {
 		fieldArgs = append(fieldArgs, k, v)
 	}
-	
+
 	// 合并字段参数和传入参数
 	return append(fieldArgs, args...)
 }
