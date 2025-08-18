@@ -6,71 +6,71 @@
 
 [中文文档](README.zh-CN.md) | [English](README.md)
 
-## ✨ 主要特性
+## 主要特性
 
-### 🌐 集群管理
+### 集群管理
 
-- ✅ 多集群支持和管理
-- ✅ 集群连接测试
-- ✅ 集群资源概览
-- ✅ 集群健康状态监控
+- 多集群支持和管理
+- 集群连接测试
+- 集群资源概览
+- 集群健康状态监控
 
-### 🖥️ 节点管理
+### 节点管理
 
-- ✅ 节点状态监控和详情查看
-- ✅ 节点资源使用情况可视化
-- ✅ 节点排水(Drain)操作
-- ✅ 禁止/允许调度(Cordon/Uncordon)
-- ✅ 节点污点(Taints)管理
-- ✅ 节点标签(Labels)管理
-- ✅ 节点池(Node Pools)创建和管理
+- 节点状态监控和详情查看
+- 节点资源使用情况可视化
+- 节点排水(Drain)操作
+- 禁止/允许调度(Cordon/Uncordon)
+- 节点污点(Taints)管理
+- 节点标签(Labels)管理
+- 节点池(Node Pools)创建和管理
 
-### 🚀 工作负载管理
+### 工作负载管理
 
 #### Pod 管理
 
-- ✅ Pod 查看、详情和删除
-- ✅ 实时 Pod 日志查看
-- ✅ Pod 终端连接
-- ✅ Pod 资源监控（CPU、内存、磁盘使用情况）
-- ✅ Pod 指标历史数据可视化
-- ✅ Pod 事件查看
+- Pod 查看、详情和删除
+- 实时 Pod 日志查看
+- Pod 终端连接
+- Pod 资源监控（CPU、内存、磁盘使用情况）
+- Pod 指标历史数据可视化
+- Pod 事件查看
 
 #### Deployment 管理
 
-- ✅ Deployment 创建和管理
-- ✅ Deployment 扩缩容和重启
-- ✅ Deployment 详情查看
-- ✅ Deployment 更新策略配置
-- ✅ Deployment 健康检查配置
-- ✅ Deployment 资源限制配置
-- ✅ Deployment 节点亲和性配置
+- Deployment 创建和管理
+- Deployment 扩缩容和重启
+- Deployment 详情查看
+- Deployment 更新策略配置
+- Deployment 健康检查配置
+- Deployment 资源限制配置
+- Deployment 节点亲和性配置
 
 #### StatefulSet 管理
 
-- ✅ StatefulSet 基本管理功能
-- ✅ StatefulSet 扩缩容
-- ✅ StatefulSet 详情查看
+- StatefulSet 基本管理功能
+- StatefulSet 扩缩容
+- StatefulSet 详情查看
 
 #### Service 管理
 
-- ✅ Service 创建和管理
-- ✅ Service 详情查看
-- ✅ Service 端点监控
+- Service 创建和管理
+- Service 详情查看
+- Service 端点监控
 
-### 📊 监控和可观测性
+### 监控和可观测性
 
-- ✅ 实时资源监控
-- ✅ 指标数据可视化
-- ✅ 集群和节点资源概览
-- ✅ Pod 性能指标历史记录
+- 实时资源监控
+- 指标数据可视化
+- 集群和节点资源概览
+- Pod 性能指标历史记录
 
-### 🌍 国际化支持
+### 国际化支持
 
-- ✅ 中英文多语言支持
-- ✅ 动态语言切换
+- 中英文多语言支持
+- 动态语言切换
 
-## 🛠️ 技术栈
+## 技术栈
 
 ### 后端
 
@@ -90,7 +90,7 @@
 - **Axios** - HTTP 客户端
 - **ECharts** - 数据可视化
 
-## 🏗️ 系统架构
+## 系统架构
 
 平台采用前后端分离架构：
 
@@ -100,13 +100,13 @@
 
 ### 架构特点
 
-- 🔄 **多集群支持**
-- 🚀 **高性能缓存**
-- 🔐 **安全认证**
-- 📊 **实时监控**
-- 🌐 **国际化**
+- **多集群支持**
+- **高性能缓存**
+- **安全认证**
+- **实时监控**
+- **国际化**
 
-## 📁 目录结构
+## 目录结构
 
 ```plaintext
 kube-tide/
@@ -140,7 +140,7 @@ kube-tide/
 └── Makefile                # 构建脚本
 ```
 
-## 🚀 安装和使用
+## 安装和使用
 
 ### 环境要求
 
@@ -207,7 +207,7 @@ kube-tide/
 - `make verify` - 运行验证（Maven 风格）
 - `make clean` - 清理构建产物
 
-## 🔧 配置
+## 配置
 
 应用程序可以通过以下方式配置：
 
@@ -222,13 +222,13 @@ kube-tide/
 - 日志级别
 - 前端构建设置
 
-## 📚 文档
+## 文档
 
 - [架构文档](docs/architecture.md)
 - [代码架构](docs/code_arch.md)
 - [TODO 列表](docs/TODO.md)
 
-## 🗺️ 路线图
+## 路线图
 
 ### 即将推出的功能
 
@@ -241,7 +241,7 @@ kube-tide/
 
 查看完整的 [TODO 列表](docs/TODO.md) 了解详细规划。
 
-## 🤝 贡献
+## 贡献
 
 我们欢迎贡献！请随时提交 Pull Request 或 Issue 来改进项目。
 
@@ -252,11 +252,11 @@ kube-tide/
 - 必要时更新文档
 - 确保前端代码的 TypeScript 类型安全
 
-## 📄 许可证
+## 许可证
 
 本项目采用 [MIT 许可证](LICENSE)。
 
-## 🙏 致谢
+## 致谢
 
 - [Kubernetes](https://kubernetes.io/) - 出色的容器编排平台
 - [client-go](https://github.com/kubernetes/client-go) - 官方 Kubernetes Go 客户端库

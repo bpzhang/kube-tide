@@ -6,71 +6,71 @@ A modern Kubernetes multi-cluster management platform based on Go and React, pro
 
 [中文文档](README.zh-CN.md) | [English](README.md)
 
-## ✨ Key Features
+## Key Features
 
-### 🌐 Cluster Management
+### Cluster Management
 
-- ✅ Multi-cluster support and management
-- ✅ Cluster connection testing
-- ✅ Cluster resource overview
-- ✅ Cluster health monitoring
+- Multi-cluster support and management
+- Cluster connection testing
+- Cluster resource overview
+- Cluster health monitoring
 
-### 🖥️ Node Management
+### Node Management
 
-- ✅ Node status monitoring and details viewing
-- ✅ Node resource usage visualization
-- ✅ Node drain operations
-- ✅ Scheduling control (Cordon/Uncordon)
-- ✅ Node taints management
-- ✅ Node labels management
-- ✅ Node pools creation and management
+- Node status monitoring and details viewing
+- Node resource usage visualization
+- Node drain operations
+- Scheduling control (Cordon/Uncordon)
+- Node taints management
+- Node labels management
+- Node pools creation and management
 
-### 🚀 Workload Management
+### Workload Management
 
 #### Pod Management
 
-- ✅ Pod viewing, details and deletion
-- ✅ Real-time Pod logs viewing
-- ✅ Pod terminal connection
-- ✅ Pod resource monitoring (CPU, Memory, Disk usage)
-- ✅ Pod metrics historical data visualization
-- ✅ Pod events viewing
+- Pod viewing, details and deletion
+- Real-time Pod logs viewing
+- Pod terminal connection
+- Pod resource monitoring (CPU, Memory, Disk usage)
+- Pod metrics historical data visualization
+- Pod events viewing
 
 #### Deployment Management
 
-- ✅ Deployment creation and management
-- ✅ Deployment scaling and restart
-- ✅ Deployment details viewing
-- ✅ Deployment update strategy configuration
-- ✅ Deployment health check configuration
-- ✅ Deployment resource limits configuration
-- ✅ Deployment node affinity configuration
+- Deployment creation and management
+- Deployment scaling and restart
+- Deployment details viewing
+- Deployment update strategy configuration
+- Deployment health check configuration
+- Deployment resource limits configuration
+- Deployment node affinity configuration
 
 #### StatefulSet Management
 
-- ✅ StatefulSet basic management
-- ✅ StatefulSet scaling
-- ✅ StatefulSet details viewing
+- StatefulSet basic management
+- StatefulSet scaling
+- StatefulSet details viewing
 
 #### Service Management
 
-- ✅ Service creation and management
-- ✅ Service details viewing
-- ✅ Service endpoints monitoring
+- Service creation and management
+- Service details viewing
+- Service endpoints monitoring
 
-### 📊 Monitoring & Observability
+### Monitoring & Observability
 
-- ✅ Real-time resource monitoring
-- ✅ Metrics data visualization
-- ✅ Cluster and node resource overview
-- ✅ Pod performance metrics history
+- Real-time resource monitoring
+- Metrics data visualization
+- Cluster and node resource overview
+- Pod performance metrics history
 
-### 🌍 Internationalization
+### Internationalization
 
-- ✅ Chinese and English multi-language support
-- ✅ Dynamic language switching
+- Chinese and English multi-language support
+- Dynamic language switching
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend
 
@@ -90,7 +90,7 @@ A modern Kubernetes multi-cluster management platform based on Go and React, pro
 - **Axios** - HTTP client
 - **ECharts** - Data visualization
 
-## 🏗️ System Architecture
+## System Architecture
 
 The platform adopts a front-end and back-end separation architecture:
 
@@ -100,13 +100,13 @@ The platform adopts a front-end and back-end separation architecture:
 
 ### Architecture Features
 
-- 🔄 **Multi-cluster support**
-- 🚀 **High-performance caching**
-- 🔐 **Secure authentication**
-- 📊 **Real-time monitoring**
-- 🌐 **Internationalization**
+- **Multi-cluster support**
+- **High-performance caching**
+- **Secure authentication**
+- **Real-time monitoring**
+- **Internationalization**
 
-## 📁 Directory Structure
+## Directory Structure
 
 ```plaintext
 kube-tide/
@@ -140,7 +140,7 @@ kube-tide/
 └── Makefile                # Build scripts
 ```
 
-## 🚀 Installation and Usage
+## Installation and Usage
 
 ### Prerequisites
 
@@ -207,7 +207,7 @@ kube-tide/
 - `make verify` - Run verification (Maven-style)
 - `make clean` - Clean build artifacts
 
-## 🔧 Configuration
+## Configuration
 
 The application can be configured through:
 
@@ -221,13 +221,13 @@ Key configuration options:
 - Logging levels
 - Frontend build settings
 
-## 📚 Documentation
+## Documentation
 
 - [Architecture Documentation](docs/architecture.md)
 - [Code Architecture](docs/code_arch.md)
 - [TODO List](docs/TODO.md)
 
-## 🗺️ Roadmap
+## Roadmap
 
 ### Upcoming Features
 
@@ -240,7 +240,7 @@ Key configuration options:
 
 See the complete [TODO list](docs/TODO.md) for detailed planning.
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please feel free to submit Pull Requests or Issues to improve the project.
 
@@ -251,11 +251,11 @@ We welcome contributions! Please feel free to submit Pull Requests or Issues to 
 - Update documentation when necessary
 - Ensure TypeScript type safety for frontend code
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](LICENSE).
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Kubernetes](https://kubernetes.io/) - The amazing container orchestration platform
 - [client-go](https://github.com/kubernetes/client-go) - Official Kubernetes Go client library
