@@ -318,7 +318,13 @@
       "never": "Never (Never restart)",
       "confirm": "Are you sure you want to update the Pod's restart policy?",
       "description": "Restart policy determines the restart behavior of containers in the Pod",
-      "configure": "Configure Restart Policy"
+      "configure": "Configure Restart Policy",
+      "alertMessage": "Important Notice",
+      "alertDescription": "Only standalone Pods (not managed by controllers like Deployment, StatefulSet, etc.) can have their restart policy modified. For controller-managed Pods, configure the restart policy at the controller level.",
+      "deleteOriginal": "Delete original Pod and recreate",
+      "warning": "Important Notice",
+      "warningDesc": "Only standalone Pods (not managed by controllers like Deployment, StatefulSet, etc.) can have their restart policy modified. For controller-managed Pods, configure the restart policy at the controller level.",
+      "noChanges": "No changes detected in restart policy"
     }
   },
   "podLifecycle": {

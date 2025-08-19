@@ -6,6 +6,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -437,18 +438,29 @@ func (s *PodService) UpdatePodRestartPolicy(ctx context.Context, clusterName, na
 func (s *PodService) RecreatePodWithRestartPolicy(ctx context.Context, clusterName, namespace, podName, restartPolicy string, deleteOriginal bool) error {
 	client, err := s.clientManager.GetClient(clusterName)
 	if err != nil {
-		return err
+		return fmt.Errorf("获取集群客户端失败: %w", err)
 	}
 
 	// 验证重启策略的有效性
 	if !isValidRestartPolicy(restartPolicy) {
-		return fmt.Errorf("invalid restart policy: %s. Valid values are: Always, OnFailure, Never", restartPolicy)
+		return fmt.Errorf("无效的重启策略: %s. 有效值为: Always, OnFailure, Never", restartPolicy)
 	}
 
 	// 获取原Pod
 	originalPod, err := client.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to get Pod: %w", err)
+		return fmt.Errorf("获取Pod失败: %w", err)
+	}
+
+	// 检查Pod是否由控制器管理
+	if len(originalPod.OwnerReferences) > 0 {
+		return fmt.Errorf("无法修改由控制器管理的Pod的重启策略。Pod由 %s/%s 控制器管理",
+			originalPod.OwnerReferences[0].Kind, originalPod.OwnerReferences[0].Name)
+	}
+
+	// 检查当前重启策略是否已经相同
+	if string(originalPod.Spec.RestartPolicy) == restartPolicy {
+		return fmt.Errorf("重启策略已经设置为 %s，无需修改", restartPolicy)
 	}
 
 	// 创建新的Pod定义，使用相同的名称（如果要删除原Pod）
@@ -481,18 +493,37 @@ func (s *PodService) RecreatePodWithRestartPolicy(ctx context.Context, clusterNa
 	newPod.ObjectMeta.ResourceVersion = ""
 	newPod.ObjectMeta.UID = ""
 	newPod.ObjectMeta.CreationTimestamp = metav1.Time{}
-	// 创建新Pod
-	_, err = client.CoreV1().Pods(namespace).Create(ctx, newPod, metav1.CreateOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to create new Pod: %w", err)
+	newPod.Spec.NodeName = ""
+
+	// 删除状态相关的annotation
+	if newPod.ObjectMeta.Annotations != nil {
+		delete(newPod.ObjectMeta.Annotations, "kubectl.kubernetes.io/last-applied-configuration")
 	}
 
-	// 如果要删除原Pod，确保新Pod创建成功后再删除
+	// 如果要删除原Pod，先删除再创建
 	if deleteOriginal {
 		err = client.CoreV1().Pods(namespace).Delete(ctx, podName, metav1.DeleteOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to delete original Pod after new Pod creation: %w", err)
+			return fmt.Errorf("删除原始Pod失败: %w", err)
 		}
+
+		// 等待Pod被完全删除
+		for i := 0; i < 30; i++ {
+			_, err = client.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
+			if errors.IsNotFound(err) {
+				break
+			}
+			if i == 29 {
+				return fmt.Errorf("等待原始Pod删除超时")
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}
+
+	// 创建新Pod
+	_, err = client.CoreV1().Pods(namespace).Create(ctx, newPod, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("创建新Pod失败: %w", err)
 	}
 
 	return nil

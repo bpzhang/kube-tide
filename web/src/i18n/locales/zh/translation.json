@@ -318,7 +318,13 @@
       "never": "Never（从不重启）",
       "confirm": "确定要更新Pod的重启策略吗？",
       "description": "重启策略决定了Pod中容器的重启行为",
-      "configure": "配置重启策略"
+      "configure": "配置重启策略",
+      "alertMessage": "重要提示",
+      "alertDescription": "只有独立Pod（非由Deployment、StatefulSet等控制器管理的Pod）才能修改重启策略。由控制器管理的Pod应该在控制器级别进行配置。",
+      "deleteOriginal": "删除原Pod并重新创建",
+      "warning": "重要提示",
+      "warningDesc": "只有独立Pod（非由Deployment、StatefulSet等控制器管理的Pod）才能修改重启策略。由控制器管理的Pod应该在控制器级别进行配置。",
+      "noChanges": "重启策略无变化"
     }
   },
   "podLifecycle": {

@@ -59,9 +59,16 @@ const PodRestartPolicyConfig: React.FC<PodRestartPolicyConfigProps> = ({
       } else {
         message.error(t('pod.restartPolicy.fetchFailed'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch restart policy:', error);
-      message.error(t('pod.restartPolicy.fetchFailed'));
+      // 显示更详细的错误信息
+      let errorMsg = t('pod.restartPolicy.fetchFailed');
+      if (error?.response?.data?.message) {
+        errorMsg += ': ' + error.response.data.message;
+      } else if (error?.message) {
+        errorMsg += ': ' + error.message;
+      }
+      message.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -118,9 +125,16 @@ const PodRestartPolicyConfig: React.FC<PodRestartPolicyConfigProps> = ({
           } else {
             message.error(t('pod.restartPolicy.updateFailed'));
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Failed to update restart policy:', error);
-          message.error(t('pod.restartPolicy.updateFailed'));
+          // 显示更详细的错误信息
+          let errorMsg = t('pod.restartPolicy.updateFailed');
+          if (error?.response?.data?.message) {
+            errorMsg += ': ' + error.response.data.message;
+          } else if (error?.message) {
+            errorMsg += ': ' + error.message;
+          }
+          message.error(errorMsg);
           // 重置选择
           setSelectedPolicy(currentPolicy);
         } finally {
