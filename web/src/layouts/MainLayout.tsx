@@ -1,19 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Layout, Menu } from 'antd';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {
-  DashboardOutlined,
-  ClusterOutlined,
-  CloudServerOutlined,
-  AppstoreOutlined,
-  BlockOutlined,
-  ApartmentOutlined,
-  ProductOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-} from '@ant-design/icons';
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
+import { buildMenuItems, createMenuConfig, resolveMenuState } from './menuConfig';
 
 const { Header, Sider, Content } = Layout;
 
@@ -26,84 +17,14 @@ const MainLayout: React.FC = () => {
     setCollapsed(!collapsed);
   };
 
-  const menuItems = [
-    {
-      key: 'dashboard',
-      icon: <DashboardOutlined />,
-      label: <Link to="/dashboard">{t('navigation.dashboard')}</Link>,
-    },
-    {
-      key: 'clusters',
-      icon: <ClusterOutlined />,
-      label: <Link to="/clusters">{t('navigation.clusters')}</Link>,
-    },
-    {
-      key: 'nodes',
-      icon: <CloudServerOutlined />,
-      label: <Link to="/nodes">{t('navigation.nodes')}</Link>,
-    },
-    {
-      key: 'workloads',
-      icon: <AppstoreOutlined />,
-      label: t('navigation.workloads'),
-      children: [
-        {
-          key: 'deployments',
-          icon: <BlockOutlined />,
-          label: <Link to="/workloads/deployments">{t('navigation.deployments')}</Link>,
-        },
-        {
-          key: 'statefulsets',
-          icon: <BlockOutlined />,
-          label: <Link to="/workloads/statefulsets">{t('navigation.statefulsets')}</Link>,
-        },
-        {
-          key: 'pods',
-          icon: <ProductOutlined />,
-          label: <Link to="/workloads/pods">{t('navigation.pods')}</Link>,
-        },
-        {
-          key: 'services',
-          icon: <ApartmentOutlined />,
-          label: <Link to="/workloads/services">{t('navigation.services')}</Link>,
-        },
-      ],
-    },
-  ];
+  const menuConfig = useMemo(() => createMenuConfig(t), [t]);
 
-  const { selectedKeys, routeOpenKeys } = useMemo(() => {
-    const path = location.pathname;
+  const menuItems = useMemo(() => buildMenuItems(menuConfig), [menuConfig]);
 
-    if (path === '/' || path.startsWith('/dashboard')) {
-      return { selectedKeys: ['dashboard'], routeOpenKeys: [] };
-    }
-
-    if (path.startsWith('/clusters')) {
-      return { selectedKeys: ['clusters'], routeOpenKeys: [] };
-    }
-
-    if (path.startsWith('/nodes')) {
-      return { selectedKeys: ['nodes'], routeOpenKeys: [] };
-    }
-
-    if (path.startsWith('/workloads/deployments') || path.includes('/deployments')) {
-      return { selectedKeys: ['deployments'], routeOpenKeys: ['workloads'] };
-    }
-
-    if (path.startsWith('/workloads/statefulsets')) {
-      return { selectedKeys: ['statefulsets'], routeOpenKeys: ['workloads'] };
-    }
-
-    if (path.startsWith('/workloads/pods')) {
-      return { selectedKeys: ['pods'], routeOpenKeys: ['workloads'] };
-    }
-
-    if (path.startsWith('/workloads/services')) {
-      return { selectedKeys: ['services'], routeOpenKeys: ['workloads'] };
-    }
-
-    return { selectedKeys: [], routeOpenKeys: [] };
-  }, [location.pathname]);
+  const { selectedKeys, routeOpenKeys } = useMemo(
+    () => resolveMenuState(location.pathname, menuConfig),
+    [location.pathname, menuConfig]
+  );
 
   const [openKeys, setOpenKeys] = useState<string[]>(routeOpenKeys);
 
