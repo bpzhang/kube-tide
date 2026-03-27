@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Layout, Menu } from 'antd';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   DashboardOutlined,
@@ -20,6 +20,7 @@ const { Header, Sider, Content } = Layout;
 const MainLayout: React.FC = () => {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
@@ -70,6 +71,48 @@ const MainLayout: React.FC = () => {
     },
   ];
 
+  const { selectedKeys, routeOpenKeys } = useMemo(() => {
+    const path = location.pathname;
+
+    if (path === '/' || path.startsWith('/dashboard')) {
+      return { selectedKeys: ['dashboard'], routeOpenKeys: [] };
+    }
+
+    if (path.startsWith('/clusters')) {
+      return { selectedKeys: ['clusters'], routeOpenKeys: [] };
+    }
+
+    if (path.startsWith('/nodes')) {
+      return { selectedKeys: ['nodes'], routeOpenKeys: [] };
+    }
+
+    if (path.startsWith('/workloads/deployments') || path.includes('/deployments')) {
+      return { selectedKeys: ['deployments'], routeOpenKeys: ['workloads'] };
+    }
+
+    if (path.startsWith('/workloads/statefulsets')) {
+      return { selectedKeys: ['statefulsets'], routeOpenKeys: ['workloads'] };
+    }
+
+    if (path.startsWith('/workloads/pods')) {
+      return { selectedKeys: ['pods'], routeOpenKeys: ['workloads'] };
+    }
+
+    if (path.startsWith('/workloads/services')) {
+      return { selectedKeys: ['services'], routeOpenKeys: ['workloads'] };
+    }
+
+    return { selectedKeys: [], routeOpenKeys: [] };
+  }, [location.pathname]);
+
+  const [openKeys, setOpenKeys] = useState<string[]>(routeOpenKeys);
+
+  useEffect(() => {
+    if (routeOpenKeys.length > 0) {
+      setOpenKeys(routeOpenKeys);
+    }
+  }, [routeOpenKeys]);
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ padding: 0, background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -97,7 +140,9 @@ const MainLayout: React.FC = () => {
         >
           <Menu
             mode="inline"
-            defaultSelectedKeys={['dashboard']}
+            selectedKeys={selectedKeys}
+            openKeys={collapsed ? [] : openKeys}
+            onOpenChange={(keys) => setOpenKeys(keys as string[])}
             style={{ height: '100%', borderRight: 0 }}
             items={menuItems}
           />
