@@ -1,6 +1,8 @@
 package api
 
 import (
+	"strings"
+
 	"kube-tide/configs"
 	"kube-tide/internal/api/middleware"
 	"kube-tide/pkg/embed"
@@ -54,6 +56,17 @@ func InitRouter(app *App) *gin.Engine {
 			staticHandler.ServeHTTP(c.Writer, c.Request)
 		})
 		router.GET("/favicon.ico", func(c *gin.Context) {
+			staticHandler.ServeHTTP(c.Writer, c.Request)
+		})
+
+		// SPA fallback: return index.html for frontend routes on refresh.
+		router.NoRoute(func(c *gin.Context) {
+			if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+				c.String(404, "404 page not found")
+				return
+			}
+
+			c.Request.URL.Path = "/"
 			staticHandler.ServeHTTP(c.Writer, c.Request)
 		})
 	}

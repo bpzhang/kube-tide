@@ -262,3 +262,22 @@ kube-tide/
 - [client-go](https://github.com/kubernetes/client-go) - 官方 Kubernetes Go 客户端库
 - [Ant Design](https://ant.design/) - 优秀的 React UI 库
 - [Gin](https://gin-gonic.com/) - 高性能 Go Web 框架
+
+
+
+## 升级依赖脚本
+
+我们提供了一个脚本来帮助升级项目依赖：
+
+```bash
+# 升级 Go 依赖
+go get -u ./...
+go mod tidy    
+go mod vendor
+```
+```bash
+# 升级前端依赖
+cd web
+pnpm update
+```   
+go run scripts/upgrade_deps.go -auto -y
