@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   Table,
@@ -16,7 +17,6 @@ import {
   Typography,
   Row,
   Col,
-  Drawer,
 } from 'antd';
 import {
   ReloadOutlined,
@@ -32,13 +32,11 @@ import {
   listDeploymentsByNamespace,
   restartDeployment,
   scaleDeployment,
-  getDeploymentDetails,
   createDeployment,
   CreateDeploymentRequest
 } from '@/api/deployment';
 import { getClusterList } from '@/api/cluster';
 import { formatDate } from '@/utils/format';
-import DeploymentDetail from '@/components/k8s/deployment/DeploymentDetail';
 import CreateDeploymentModal from '@/components/k8s/deployment/CreateDeploymentModal';
 import DeploymentHistory from '@/components/k8s/deployment/DeploymentHistory';
 import NamespaceSelector from '@/components/k8s/common/NamespaceSelector';
@@ -61,6 +59,7 @@ interface DeploymentType {
 
 const DeploymentsPage: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [selectedCluster, setSelectedCluster] = useState<string>('');
   const [clusters, setClusters] = useState<string[]>([]);
   const [namespace, setNamespace] = useState<string>('default');
@@ -71,9 +70,6 @@ const DeploymentsPage: React.FC = () => {
   const [scaleModalVisible, setScaleModalVisible] = useState(false);
   const [currentDeployment, setCurrentDeployment] = useState<DeploymentType | null>(null);
   const [replicaCount, setReplicaCount] = useState<number>(1);
-  const [detailVisible, setDetailVisible] = useState(false);
-  const [currentDeploymentDetail, setCurrentDeploymentDetail] = useState<any>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
   const [historyDeploymentName, setHistoryDeploymentName] = useState<string>('');
@@ -111,27 +107,6 @@ const DeploymentsPage: React.FC = () => {
       setDeployments([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // 获取Deployment详情
-  const fetchDeploymentDetail = async (name: string) => {
-    if (!selectedCluster) return;
-
-    setDetailLoading(true);
-    try {
-      const response = await getDeploymentDetails(selectedCluster, namespace, name);
-      if (response.data.code === 0) {
-        setCurrentDeploymentDetail(response.data.data.deployment);
-      } else {
-        message.error(response.data.message || t('deployments.fetchDetailFailed'));
-        setCurrentDeploymentDetail(null);
-      }
-    } catch (err) {
-      message.error(t('deployments.fetchDetailFailed'));
-      setCurrentDeploymentDetail(null);
-    } finally {
-      setDetailLoading(false);
     }
   };
 
@@ -225,17 +200,15 @@ const DeploymentsPage: React.FC = () => {
   };
 
   // 显示Deployment详情
-  const handleShowDetail = (deploymentName: string) => {
-    setDetailVisible(true);
-    fetchDeploymentDetail(deploymentName);
-  };
+  const handleShowDetail = (deployment: DeploymentType) => {
+    if (!selectedCluster) {
+      message.warning(t('clusters.fetchFailed'));
+      return;
+    }
 
-  // 关闭详情抽屉
-  const handleDetailClose = () => {
-    setDetailVisible(false);
-    setTimeout(() => {
-      setCurrentDeploymentDetail(null);
-    }, 300);
+    navigate(
+      `/workloads/deployments/detail/${selectedCluster}/${deployment.namespace}/${deployment.name}`
+    );
   };
 
   // 显示创建Deployment模态框
@@ -287,8 +260,8 @@ const DeploymentsPage: React.FC = () => {
       title: t('deployments.name'),
       dataIndex: 'name',
       key: 'name',
-      render: (text: string) => (
-        <a onClick={() => handleShowDetail(text)}>{text}</a>
+      render: (text: string, record: DeploymentType) => (
+        <a onClick={() => handleShowDetail(record)}>{text}</a>
       ),
     },
     {
@@ -336,7 +309,7 @@ const DeploymentsPage: React.FC = () => {
               type="link"
               icon={<EyeOutlined />}
               size="small"
-              onClick={() => handleShowDetail(record.name)}
+              onClick={() => handleShowDetail(record)}
             />
           </Tooltip>
           <Tooltip title={t('deployments.scaleReplicas')}>
@@ -459,30 +432,6 @@ const DeploymentsPage: React.FC = () => {
           placeholder={t('deployments.targetReplicas')}
         />
       </Modal>
-
-      {/* 详情抽屉 */}
-      <Drawer
-        title={t('deployments.details') + ': ' + currentDeploymentDetail?.name}
-        placement="right"
-        width={800}
-        onClose={handleDetailClose}
-        open={detailVisible}
-      >
-        {detailLoading ? (
-          <div style={{ textAlign: 'center', padding: '20px' }}>{t('deployments.loading')}</div>
-        ) : currentDeploymentDetail ? (
-          <DeploymentDetail
-            deployment={currentDeploymentDetail}
-            clusterName={selectedCluster}
-            onUpdate={() => {
-              handleDetailClose();
-              fetchDeployments();
-            }}
-          />
-        ) : (
-          <div style={{ textAlign: 'center', padding: '20px' }}>{t('deployments.noData')}</div>
-        )}
-      </Drawer>
 
       {/* 创建Deployment模态框 */}
       <CreateDeploymentModal

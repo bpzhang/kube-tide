@@ -11,6 +11,7 @@ import PodLogsPage from './pages/workloads/PodLogsPage';
 import PodTerminalPage from './pages/workloads/PodTerminalPage';
 import Services from './pages/workloads/Services';
 import Deployments from './pages/workloads/Deployments';
+import DeploymentDetailPage from './pages/workloads/DeploymentDetailPage';
 import StatefulSets from './pages/workloads/StatefulSets';
 import StatefulSetDetailPage from './pages/workloads/StatefulSetDetailPage';
 import Dashboard from './pages/Dashboard';
@@ -39,6 +40,7 @@ const App: React.FC = () => {
             <Route path="services" element={<Services />} />
             <Route path="deployments" element={<Deployments />} />
             <Route path="deployments/:namespace" element={<Deployments />} />
+            <Route path="deployments/detail/:clusterName/:namespace/:deploymentName" element={<DeploymentDetailPage />} />
             <Route path="statefulsets" element={<StatefulSets />} />
             <Route path="statefulsets/detail/:clusterName/:namespace/:statefulsetName" element={<StatefulSetDetailPage />} />
           </Route>

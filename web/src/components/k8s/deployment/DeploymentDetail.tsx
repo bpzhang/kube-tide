@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Descriptions, Tag, Table, Card, Space, Typography, Button, message } from 'antd';
+import { Descriptions, Tag, Table, Card, Space, Typography, Button, message, Tabs, Empty } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import { formatDate } from '@/utils/format';
 import EditDeploymentModal from './EditDeploymentModal';
 import PodList from '../pod/PodList';
 import { updateDeployment, UpdateDeploymentRequest } from '@/api/deployment';
 import { getPodsBySelector } from '@/api/pod';
+import { getServicesByNamespace } from '@/api/service';
 import DeploymentEvents from './DeploymentEvents';
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +21,24 @@ interface Container {
     limits?: { cpu?: string; memory?: string };
     requests?: { cpu?: string; memory?: string };
   };
+}
+
+interface ServicePort {
+  name?: string;
+  port?: number;
+  targetPort?: number | string;
+  protocol?: string;
+  nodePort?: number;
+}
+
+interface RelatedService {
+  name: string;
+  namespace: string;
+  type: string;
+  clusterIP: string;
+  externalIPs: string[];
+  selector: Record<string, string>;
+  ports: ServicePort[];
 }
 
 interface DeploymentDetailProps {
@@ -58,6 +77,8 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [pods, setPods] = useState<any[]>([]);
   const [podsLoading, setPodsLoading] = useState(false);
+  const [servicesLoading, setServicesLoading] = useState(false);
+  const [relatedServices, setRelatedServices] = useState<RelatedService[]>([]);
 
   // get Pods by selector
   const fetchPods = async () => {
@@ -84,6 +105,70 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
       message.error(t('pods.fetchFailed'));
     } finally {
       setPodsLoading(false);
+    }
+  };
+
+  const isSelectorMatched = (selector: Record<string, string>, labels: Record<string, string>) => {
+    const selectorEntries = Object.entries(selector || {});
+    if (selectorEntries.length === 0) {
+      return false;
+    }
+
+    return selectorEntries.every(([key, value]) => labels?.[key] === value);
+  };
+
+  const normalizeService = (service: any): RelatedService => {
+    const metadata = service?.metadata || {};
+    const spec = service?.spec || service || {};
+
+    return {
+      name: metadata.name || service?.name || '-',
+      namespace: metadata.namespace || service?.namespace || deployment.namespace,
+      type: spec.type || service?.type || '-',
+      clusterIP: spec.clusterIP || service?.clusterIP || '-',
+      externalIPs: spec.externalIPs || service?.externalIPs || [],
+      selector: spec.selector || service?.selector || {},
+      ports: spec.ports || service?.ports || [],
+    };
+  };
+
+  const fetchRelatedServices = async () => {
+    if (!clusterName || !deployment.namespace) return;
+
+    setServicesLoading(true);
+    try {
+      const response = await getServicesByNamespace(clusterName, deployment.namespace);
+      if (response.data.code !== 0) {
+        message.error(response.data.message || t('services.fetchFailed'));
+        setRelatedServices([]);
+        return;
+      }
+
+      const serviceList = (response.data.data.services || []).map(normalizeService);
+      const podLabelsList = pods
+        .map((pod) => pod?.metadata?.labels || {})
+        .filter((labels) => Object.keys(labels).length > 0);
+
+      const matchedServices = serviceList.filter((service) => {
+        const selector = service.selector || {};
+        if (Object.keys(selector).length === 0) {
+          return false;
+        }
+
+        if (podLabelsList.length > 0) {
+          return podLabelsList.some((labels) => isSelectorMatched(selector, labels));
+        }
+
+        return isSelectorMatched(selector, deployment.selector || {});
+      });
+
+      setRelatedServices(matchedServices);
+    } catch (error) {
+      console.error(t('services.fetchFailed') + ':', error);
+      message.error(t('services.fetchFailed'));
+      setRelatedServices([]);
+    } finally {
+      setServicesLoading(false);
     }
   };
 
@@ -132,6 +217,10 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
     const timer = setInterval(fetchPods, 30000);
     return () => clearInterval(timer);
   }, [deployment.selector, deployment.namespace, clusterName]);
+
+  useEffect(() => {
+    fetchRelatedServices();
+  }, [clusterName, deployment.namespace, deployment.selector, pods]);
 
   // handle showing and hiding the edit modal
   const showEditModal = () => {
@@ -225,6 +314,187 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
     },
   ];
 
+  const serviceColumns = [
+    {
+      title: t('services.name'),
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: t('services.type'),
+      dataIndex: 'type',
+      key: 'type',
+      render: (type: string) => <Tag color="blue">{type || '-'}</Tag>,
+    },
+    {
+      title: t('services.clusterIp'),
+      dataIndex: 'clusterIP',
+      key: 'clusterIP',
+      render: (value: string) => value || '-',
+    },
+    {
+      title: t('services.externalIp'),
+      dataIndex: 'externalIPs',
+      key: 'externalIPs',
+      render: (externalIPs: string[]) => (externalIPs?.length ? externalIPs.join(', ') : '-'),
+    },
+    {
+      title: t('services.ports'),
+      dataIndex: 'ports',
+      key: 'ports',
+      render: (ports: ServicePort[]) => (
+        <Space direction="vertical" size={0}>
+          {(ports || []).map((port, index) => (
+            <span key={`${port.name || port.port}-${index}`}>
+              {port.port ?? '-'} → {port.targetPort ?? '-'}
+              {port.protocol ? ` (${port.protocol})` : ''}
+              {port.nodePort ? ` / NodePort: ${port.nodePort}` : ''}
+            </span>
+          ))}
+        </Space>
+      ),
+    },
+    {
+      title: t('services.selectors'),
+      dataIndex: 'selector',
+      key: 'selector',
+      render: (selector: Record<string, string>) => (
+        Object.keys(selector || {}).length > 0 ? (
+          <Space wrap>
+            {Object.entries(selector || {}).map(([key, value]) => (
+              <Tag key={`${key}-${value}`}>{`${key}: ${value}`}</Tag>
+            ))}
+          </Space>
+        ) : (
+          <Tag color="red">{t('services.noSelectors')}</Tag>
+        )
+      ),
+    },
+  ];
+
+  const tabItems = [
+    {
+      key: 'overview',
+      label: t('deployments.detail.tabs.overview'),
+      children: (
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Card title={t('deployments.detail.basicInfo.title')}>
+            <Descriptions column={2}>
+              <Descriptions.Item label={t('deployments.namespace')}>{deployment.namespace}</Descriptions.Item>
+              <Descriptions.Item label={t('deployments.createdAt')}>{formatDate(deployment.creationTime)}</Descriptions.Item>
+              <Descriptions.Item label={t('deployments.detail.basicInfo.replicas')}>
+                {deployment.readyReplicas || 0}/{deployment.replicas}
+              </Descriptions.Item>
+              <Descriptions.Item label={t('deployments.detail.basicInfo.strategy')}>{deployment.strategy}</Descriptions.Item>
+            </Descriptions>
+          </Card>
+
+          <Card title={t('deployments.labels')}>
+            {Object.keys(deployment.labels || {}).length > 0 ? (
+              <Space wrap>
+                {Object.entries(deployment.labels || {}).map(([key, value], index) => (
+                  <Tag key={`label-${key}-${index}`}>{`${key}: ${value}`}</Tag>
+                ))}
+              </Space>
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('common.noDataFound')} />
+            )}
+          </Card>
+
+          <Card title={t('deployments.detail.selector')}>
+            {Object.keys(deployment.selector || {}).length > 0 ? (
+              <Space wrap>
+                {Object.entries(deployment.selector || {}).map(([key, value], index) => (
+                  <Tag key={`selector-${key}-${index}`}>{`${key}: ${value}`}</Tag>
+                ))}
+              </Space>
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('common.noDataFound')} />
+            )}
+          </Card>
+        </Space>
+      ),
+    },
+    {
+      key: 'containers',
+      label: t('deployments.detail.tabs.containers'),
+      children: (
+        <Card title={t('deployments.detail.containers')}>
+          <Table
+            columns={containerColumns}
+            dataSource={deployment.containers}
+            rowKey="name"
+            loading={podsLoading}
+            pagination={false}
+            scroll={{ x: 'max-content' }}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: 'conditions',
+      label: t('deployments.detail.tabs.conditions'),
+      children: (
+        <Card title={t('deployments.detail.conditions')}>
+          <Table
+            columns={conditionColumns}
+            dataSource={deployment.conditions}
+            rowKey="type"
+            pagination={false}
+            scroll={{ x: 'max-content' }}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: 'pods',
+      label: t('deployments.detail.tabs.pods'),
+      children: (
+        <Card title={t('deployments.detail.pods')} loading={podsLoading}>
+          <PodList
+            clusterName={clusterName}
+            namespace={deployment.namespace}
+            pods={pods}
+            onRefresh={fetchPods}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: 'services',
+      label: t('deployments.detail.tabs.services'),
+      children: (
+        <Card title={t('deployments.detail.relatedServices')} loading={servicesLoading}>
+          {relatedServices.length > 0 ? (
+            <Table
+              columns={serviceColumns}
+              dataSource={relatedServices}
+              rowKey={(record) => `${record.namespace}/${record.name}`}
+              pagination={false}
+              scroll={{ x: 'max-content' }}
+            />
+          ) : (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={t('deployments.detail.noRelatedServices')}
+            />
+          )}
+        </Card>
+      ),
+    },
+    {
+      key: 'events',
+      label: t('deployments.detail.tabs.events'),
+      children: (
+        <DeploymentEvents
+          clusterName={clusterName}
+          namespace={deployment.namespace}
+          deploymentName={deployment.name}
+        />
+      ),
+    },
+  ];
+
   return (
     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -237,73 +507,14 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
           {t('common.edit')}
         </Button>
       </div>
-      
-      <Card title={t('deployments.detail.basicInfo.title')}>
-        <Descriptions column={2}>
-          <Descriptions.Item label={t('deployments.namespace')}>{deployment.namespace}</Descriptions.Item>
-          <Descriptions.Item label={t('deployments.createdAt')}>{formatDate(deployment.creationTime)}</Descriptions.Item>
-          <Descriptions.Item label={t('deployments.detail.basicInfo.replicas')}>
-            {deployment.readyReplicas || 0}/{deployment.replicas}
-          </Descriptions.Item>
-          <Descriptions.Item label={t('deployments.detail.basicInfo.strategy')}>{deployment.strategy}</Descriptions.Item>
-        </Descriptions>
-      </Card>
 
-      <Card title={t('deployments.labels')}>
-        <Space wrap>
-          {Object.entries(deployment.labels || {}).map(([key, value], index) => (
-            <Tag key={`label-${key}-${index}`}>{`${key}: ${value}`}</Tag>
-          ))}
-        </Space>
-      </Card>
-
-      <Card title={t('deployments.detail.selector')}>
-        <Space wrap>
-          {Object.entries(deployment.selector || {}).map(([key, value], index) => (
-            <Tag key={`selector-${key}-${index}`}>{`${key}: ${value}`}</Tag>
-          ))}
-        </Space>
-      </Card>
-
-      <Card title={t('deployments.detail.containers')}>
-        <Table
-          columns={containerColumns}
-          dataSource={deployment.containers}
-          rowKey="name"
-          loading={podsLoading}
-          pagination={false}
-        />
-      </Card>
-
-      <Card title={t('deployments.detail.conditions')}>
-        <Table
-          columns={conditionColumns}
-          dataSource={deployment.conditions}
-          rowKey="type"
-          pagination={false}
-        />
-      </Card>
-
-      <Card title={t('deployments.detail.pods')} loading={podsLoading}>
-        <PodList
-          clusterName={clusterName}
-          namespace={deployment.namespace}
-          pods={pods}
-          onRefresh={fetchPods}
-        />
-      </Card>
+      <Tabs defaultActiveKey="overview" items={tabItems} destroyOnHidden />
 
       <EditDeploymentModal
         visible={editModalVisible}
         onClose={hideEditModal}
         onSubmit={handleUpdateSubmit}
         deployment={deployment}
-      />
-
-      <DeploymentEvents
-        clusterName={clusterName}
-        namespace={deployment.namespace}
-        deploymentName={deployment.name}
       />
     </Space>
   );

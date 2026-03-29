@@ -492,6 +492,16 @@
         "replicas": "副本数",
         "strategy": "更新策略"
       },
+      "tabs": {
+        "overview": "概览",
+        "containers": "容器组",
+        "conditions": "状态",
+        "pods": "Pod 列表",
+        "services": "服务",
+        "events": "事件"
+      },
+      "relatedServices": "关联 Service",
+      "noRelatedServices": "暂无关联的 Service",
       "selector": "选择器",
       "containers": "容器",
       "conditions": "状况",
