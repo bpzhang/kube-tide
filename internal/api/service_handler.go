@@ -12,6 +12,23 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+type serviceEndpointAddress struct {
+	IP       string `json:"ip"`
+	NodeName string `json:"nodeName,omitempty"`
+	Target   string `json:"target,omitempty"`
+}
+
+type serviceEndpointPort struct {
+	Name     string `json:"name,omitempty"`
+	Port     int32  `json:"port"`
+	Protocol string `json:"protocol,omitempty"`
+}
+
+type serviceEndpointSubset struct {
+	Addresses []serviceEndpointAddress `json:"addresses"`
+	Ports     []serviceEndpointPort    `json:"ports"`
+}
+
 // ServiceHandler Service management handler
 type ServiceHandler struct {
 	manager *k8s.ServiceManager
@@ -81,6 +98,63 @@ func (h *ServiceHandler) GetServiceDetails(c *gin.Context) {
 
 	ResponseSuccess(c, gin.H{
 		"service": service,
+	})
+}
+
+// GetServiceEndpoints Get Service endpoints
+func (h *ServiceHandler) GetServiceEndpoints(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	serviceName := c.Param("service")
+	if clusterName == "" || namespace == "" || serviceName == "" {
+		ResponseError(c, http.StatusBadRequest, "Cluster name, namespace or service name cannot be empty")
+		return
+	}
+
+	endpoints, err := h.manager.GetServiceEndpoints(context.Background(), clusterName, namespace, serviceName)
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	subsets := make([]serviceEndpointSubset, 0, len(endpoints.Subsets))
+	for _, subset := range endpoints.Subsets {
+		addresses := make([]serviceEndpointAddress, 0, len(subset.Addresses))
+		for _, address := range subset.Addresses {
+			target := ""
+			if address.TargetRef != nil {
+				target = address.TargetRef.Name
+			}
+
+			nodeName := ""
+			if address.NodeName != nil {
+				nodeName = *address.NodeName
+			}
+
+			addresses = append(addresses, serviceEndpointAddress{
+				IP:       address.IP,
+				NodeName: nodeName,
+				Target:   target,
+			})
+		}
+
+		ports := make([]serviceEndpointPort, 0, len(subset.Ports))
+		for _, port := range subset.Ports {
+			ports = append(ports, serviceEndpointPort{
+				Name:     port.Name,
+				Port:     port.Port,
+				Protocol: string(port.Protocol),
+			})
+		}
+
+		subsets = append(subsets, serviceEndpointSubset{
+			Addresses: addresses,
+			Ports:     ports,
+		})
+	}
+
+	ResponseSuccess(c, gin.H{
+		"endpoints": subsets,
 	})
 }
 

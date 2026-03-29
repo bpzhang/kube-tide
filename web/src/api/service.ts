@@ -45,6 +45,25 @@ export interface ServiceDetailResponse {
   };
 }
 
+export interface ServiceEndpointsResponse {
+  code: number;
+  message: string;
+  data: {
+    endpoints: Array<{
+      addresses: Array<{
+        ip: string;
+        nodeName?: string;
+        target?: string;
+      }>;
+      ports: Array<{
+        name?: string;
+        port: number;
+        protocol?: string;
+      }>;
+    }>;
+  };
+}
+
 export interface ServicePort {
   name?: string;
   port: number;
@@ -87,6 +106,10 @@ export const getServicesByNamespace = (clusterName: string, namespace: string) =
 
 export const getServiceDetails = (clusterName: string, namespace: string, serviceName: string) => {
   return api.get<ServiceDetailResponse>(`/clusters/${clusterName}/namespaces/${namespace}/services/${serviceName}`);
+};
+
+export const getServiceEndpoints = (clusterName: string, namespace: string, serviceName: string) => {
+  return api.get<ServiceEndpointsResponse>(`/clusters/${clusterName}/namespaces/${namespace}/services/${serviceName}/endpoints`);
 };
 
 export const createService = (clusterName: string, namespace: string,service: CreateServiceRequest) => {

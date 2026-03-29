@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Descriptions, Tag, Table, Card, Space, Typography, Button, message, Tabs, Empty } from 'antd';
+import { Descriptions, Tag, Table, Card, Space, Typography, Button, message, Tabs, Empty, List } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import { formatDate } from '@/utils/format';
 import EditDeploymentModal from './EditDeploymentModal';
 import PodList from '../pod/PodList';
 import { updateDeployment, UpdateDeploymentRequest } from '@/api/deployment';
 import { getPodsBySelector } from '@/api/pod';
-import { getServicesByNamespace } from '@/api/service';
+import { getServicesByNamespace, getServiceEndpoints } from '@/api/service';
 import DeploymentEvents from './DeploymentEvents';
 import { useTranslation } from 'react-i18next';
 
@@ -39,6 +39,25 @@ interface RelatedService {
   externalIPs: string[];
   selector: Record<string, string>;
   ports: ServicePort[];
+}
+
+interface AccessEntry {
+  key: string;
+  label: string;
+  value: string;
+}
+
+interface ServiceEndpointSubset {
+  addresses: Array<{
+    ip: string;
+    nodeName?: string;
+    target?: string;
+  }>;
+  ports: Array<{
+    name?: string;
+    port: number;
+    protocol?: string;
+  }>;
 }
 
 interface DeploymentDetailProps {
@@ -79,6 +98,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
   const [podsLoading, setPodsLoading] = useState(false);
   const [servicesLoading, setServicesLoading] = useState(false);
   const [relatedServices, setRelatedServices] = useState<RelatedService[]>([]);
+  const [serviceEndpoints, setServiceEndpoints] = useState<Record<string, ServiceEndpointSubset[]>>({});
 
   // get Pods by selector
   const fetchPods = async () => {
@@ -163,10 +183,28 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
       });
 
       setRelatedServices(matchedServices);
+
+    const endpointResults = await Promise.all(
+    matchedServices.map(async (service) => {
+      try {
+        const endpointResponse = await getServiceEndpoints(clusterName, service.namespace, service.name);
+        return [
+          `${service.namespace}/${service.name}`,
+          endpointResponse.data.code === 0 ? endpointResponse.data.data.endpoints || [] : [],
+        ] as const;
+      } catch (error) {
+        console.error(`${t('services.fetchFailed')}:`, error);
+        return [`${service.namespace}/${service.name}`, []] as const;
+      }
+    })
+    );
+
+    setServiceEndpoints(Object.fromEntries(endpointResults));
     } catch (error) {
       console.error(t('services.fetchFailed') + ':', error);
       message.error(t('services.fetchFailed'));
       setRelatedServices([]);
+      setServiceEndpoints({});
     } finally {
       setServicesLoading(false);
     }
@@ -370,7 +408,96 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
         )
       ),
     },
+    {
+      title: t('services.endpoints'),
+      key: 'endpoints',
+      render: (_: unknown, record: RelatedService) => {
+        const endpoints = serviceEndpoints[`${record.namespace}/${record.name}`] || [];
+        const values = endpoints.flatMap((subset) =>
+          subset.addresses.flatMap((address) =>
+            (subset.ports.length ? subset.ports : [{ port: 0, protocol: '' }]).map((port) => ({
+              label: `${address.ip}${port.port ? `:${port.port}` : ''}`,
+              target: address.target,
+            }))
+          )
+        );
+
+        if (values.length === 0) {
+          return <Tag>{t('deployments.detail.noEndpoints')}</Tag>;
+        }
+
+        return (
+          <Space wrap>
+            {values.map((item, index) => (
+              <Tag key={`${item.label}-${index}`} color="geekblue">
+                {item.target ? `${item.target} · ` : ''}{item.label}
+              </Tag>
+            ))}
+          </Space>
+        );
+      },
+    },
   ];
+
+  const buildAccessEntries = (service: RelatedService): AccessEntry[] => {
+    const entries: AccessEntry[] = [];
+    const serviceKey = `${service.namespace}/${service.name}`;
+    const ports = service.ports || [];
+    const endpoints = serviceEndpoints[serviceKey] || [];
+
+    if (service.clusterIP && service.clusterIP !== 'None') {
+      ports.forEach((port, index) => {
+        entries.push({
+          key: `clusterip-${index}`,
+          label: t('deployments.detail.access.clusterIP'),
+          value: `${service.clusterIP}:${port.port ?? '-'}`,
+        });
+      });
+    }
+
+    (service.externalIPs || []).forEach((ip, ipIndex) => {
+      if (ports.length > 0) {
+        ports.forEach((port, portIndex) => {
+          entries.push({
+            key: `external-${ipIndex}-${portIndex}`,
+            label: t('deployments.detail.access.externalIP'),
+            value: `${ip}:${port.port ?? '-'}`,
+          });
+        });
+      } else {
+        entries.push({
+          key: `external-${ipIndex}`,
+          label: t('deployments.detail.access.externalIP'),
+          value: ip,
+        });
+      }
+    });
+
+    ports.forEach((port, index) => {
+      if (port.nodePort) {
+        entries.push({
+          key: `nodeport-${index}`,
+          label: t('deployments.detail.access.nodePort'),
+          value: `any-node-ip:${port.nodePort}`,
+        });
+      }
+    });
+
+    endpoints.forEach((subset, subsetIndex) => {
+      subset.addresses.forEach((address, addressIndex) => {
+        const subsetPorts = subset.ports.length > 0 ? subset.ports : [{ port: 0, protocol: '' }];
+        subsetPorts.forEach((port, portIndex) => {
+          entries.push({
+            key: `endpoint-${subsetIndex}-${addressIndex}-${portIndex}`,
+            label: t('deployments.detail.access.endpoint'),
+            value: `${address.target ? `${address.target} · ` : ''}${address.ip}${port.port ? `:${port.port}` : ''}`,
+          });
+        });
+      });
+    });
+
+    return entries;
+  };
 
   const tabItems = [
     {
@@ -456,6 +583,50 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
             namespace={deployment.namespace}
             pods={pods}
             onRefresh={fetchPods}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: 'access',
+      label: t('deployments.detail.tabs.access'),
+      children: relatedServices.length > 0 ? (
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {relatedServices.map((service) => {
+            const accessEntries = buildAccessEntries(service);
+            return (
+              <Card
+                key={`${service.namespace}/${service.name}`}
+                title={`${service.name} (${service.type})`}
+                size="small"
+              >
+                {accessEntries.length > 0 ? (
+                  <List
+                    dataSource={accessEntries}
+                    renderItem={(item) => (
+                      <List.Item key={item.key}>
+                        <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                          <Typography.Text type="secondary">{item.label}</Typography.Text>
+                          <Typography.Text code>{item.value}</Typography.Text>
+                        </Space>
+                      </List.Item>
+                    )}
+                  />
+                ) : (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={t('deployments.detail.noAccessEntries')}
+                  />
+                )}
+              </Card>
+            );
+          })}
+        </Space>
+      ) : (
+        <Card title={t('deployments.detail.access.title')}>
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={t('deployments.detail.noRelatedServices')}
           />
         </Card>
       ),

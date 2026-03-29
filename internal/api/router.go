@@ -155,6 +155,7 @@ func InitRouter(app *App) *gin.Engine {
 		v1.GET("/clusters/:cluster/namespaces/:namespace/services", app.ServiceHandler.ListServicesByNamespace)
 		v1.POST("/clusters/:cluster/namespaces/:namespace/services", app.ServiceHandler.CreateService)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/services/:service", app.ServiceHandler.GetServiceDetails)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/services/:service/endpoints", app.ServiceHandler.GetServiceEndpoints)
 		v1.DELETE("/clusters/:cluster/namespaces/:namespace/services/:service", app.ServiceHandler.DeleteService)
 
 		// Deployment management

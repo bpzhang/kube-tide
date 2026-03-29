@@ -40,7 +40,9 @@ A modern Kubernetes multi-cluster management platform based on Go and React, pro
 
 - Deployment creation and management
 - Deployment scaling and restart
-- Deployment details viewing
+- Deployment details viewing with standalone page tabs
+- Related Service and Service endpoints visibility inside Deployment details
+- Service exposure information is grouped in a dedicated access tab
 - Deployment update strategy configuration
 - Deployment health check configuration
 - Deployment resource limits configuration
@@ -82,7 +84,7 @@ A modern Kubernetes multi-cluster management platform based on Go and React, pro
 
 ### Frontend
 
-- **React 18** - Frontend framework
+- **React 19** - Frontend framework
 - **TypeScript** - Type safety
 - **Ant Design** - UI component library
 - **Vite** - Build tool
@@ -163,7 +165,7 @@ kube-tide/
    ```bash
    # Build production version (frontend and backend)
    make build-prod
-   
+
    # Run the application
    make run-prod
    ```
@@ -181,7 +183,7 @@ kube-tide/
    ```bash
    # Install Go dependencies
    go mod download
-   
+
    # Run backend in development mode
    make dev
    ```
@@ -216,6 +218,7 @@ The application can be configured through:
 - **Command line flags**
 
 Key configuration options:
+
 - Server port and host
 - Kubernetes cluster configurations
 - Logging levels
@@ -250,6 +253,12 @@ We welcome contributions! Please feel free to submit Pull Requests or Issues to 
 - Include appropriate tests for new features
 - Update documentation when necessary
 - Ensure TypeScript type safety for frontend code
+
+## Recent UI Updates
+
+- Deployment detail view now uses a standalone page instead of a narrow side drawer
+- Deployment detail content is grouped into tabs for overview, containers, status, pods, access, services, and events
+- Related Services and their endpoints are shown directly inside the Deployment detail page
 
 ## License
 

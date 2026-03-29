@@ -40,7 +40,9 @@
 
 - Deployment 创建和管理
 - Deployment 扩缩容和重启
-- Deployment 详情查看
+- Deployment 详情查看（独立详情页 + Tab 页签）
+- 在 Deployment 详情中查看关联 Service 与 Service Endpoints
+- Deployment 对外暴露信息按独立“访问方式”页签归类展示
 - Deployment 更新策略配置
 - Deployment 健康检查配置
 - Deployment 资源限制配置
@@ -82,7 +84,7 @@
 
 ### 前端
 
-- **React 18** - 前端框架
+- **React 19** - 前端框架
 - **TypeScript** - 类型安全
 - **Ant Design** - UI 组件库
 - **Vite** - 构建工具
@@ -163,7 +165,7 @@ kube-tide/
    ```bash
    # 构建生产版本（前端和后端）
    make build-prod
-   
+
    # 运行应用程序
    make run-prod
    ```
@@ -181,7 +183,7 @@ kube-tide/
    ```bash
    # 安装 Go 依赖
    go mod download
-   
+
    # 以开发模式运行后端
    make dev
    ```
@@ -252,6 +254,12 @@ kube-tide/
 - 必要时更新文档
 - 确保前端代码的 TypeScript 类型安全
 
+## 最近的界面更新
+
+- Deployment 详情由右侧抽屉调整为独立详情页
+- Deployment 详情内容按概览、容器组、状态、Pod、访问方式、服务、事件进行 Tab 分组
+- 可在 Deployment 详情中直接查看关联 Service 以及对应的 Endpoints
+
 ## 许可证
 
 本项目采用 [MIT 许可证](LICENSE)。
@@ -263,8 +271,6 @@ kube-tide/
 - [Ant Design](https://ant.design/) - 优秀的 React UI 库
 - [Gin](https://gin-gonic.com/) - 高性能 Go Web 框架
 
-
-
 ## 升级依赖脚本
 
 我们提供了一个脚本来帮助升级项目依赖：
@@ -272,12 +278,14 @@ kube-tide/
 ```bash
 # 升级 Go 依赖
 go get -u ./...
-go mod tidy    
+go mod tidy
 go mod vendor
 ```
+
 ```bash
 # 升级前端依赖
 cd web
 pnpm update
-```   
+```
+
 go run scripts/upgrade_deps.go -auto -y
