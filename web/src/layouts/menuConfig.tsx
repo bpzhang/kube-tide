@@ -75,6 +75,13 @@ export const createMenuConfig = (
         path: '/workloads/pods',
         match: (pathname) => pathname.startsWith('/workloads/pods'),
       },
+    ],
+  },
+  {
+    key: 'network',
+    icon: <ApartmentOutlined />,
+    label: t('navigation.network'),
+    children: [
       {
         key: 'services',
         icon: <ApartmentOutlined />,

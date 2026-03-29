@@ -54,6 +54,7 @@
     "clusters": "Clusters",
     "nodes": "Nodes",
     "workloads": "Workloads",
+    "network": "Network",
     "pods": "Pods",
     "deployments": "Deployments",
     "statefulsets": "StatefulSets",
