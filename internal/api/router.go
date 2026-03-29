@@ -17,6 +17,7 @@ type App struct {
 	NodeHandler        *NodeHandler
 	PodHandler         *PodHandler
 	ServiceHandler     *ServiceHandler
+	IngressHandler     *IngressHandler
 	DeploymentHandler  *DeploymentHandler
 	StatefulSetHandler *StatefulSetHandler // 添加StatefulSet处理器
 	NodePoolHandler    *NodePoolHandler
@@ -153,6 +154,7 @@ func InitRouter(app *App) *gin.Engine {
 		// Service management
 		v1.GET("/clusters/:cluster/services", app.ServiceHandler.ListServices)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/services", app.ServiceHandler.ListServicesByNamespace)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/ingresses", app.IngressHandler.ListIngressesByNamespace)
 		v1.POST("/clusters/:cluster/namespaces/:namespace/services", app.ServiceHandler.CreateService)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/services/:service", app.ServiceHandler.GetServiceDetails)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/services/:service/endpoints", app.ServiceHandler.GetServiceEndpoints)

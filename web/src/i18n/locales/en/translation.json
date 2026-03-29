@@ -485,6 +485,8 @@
     "scaleReplicas": "Scale Replicas",
     "restart": "Restart",
     "detail": {
+      "fetchServiceEndpointsFailed": "Failed to fetch service endpoints",
+      "fetchRoutesFailed": "Failed to fetch deployment routes",
       "extractingProbes": "Extracting probes from Pods, count: ",
       "processingPod": "Processing Pod: ",
       "foundContainer": "Found Deployment container: {name}",
@@ -515,11 +517,19 @@
         "nodePort": "NodePort",
         "endpoint": "Endpoint"
       },
+      "routeColumns": {
+        "route": "Route Resource",
+        "hostPath": "Host / Path",
+        "backend": "Backend Service",
+        "tls": "TLS",
+        "access": "Access URL"
+      },
       "relatedServices": "Related Services",
       "noRelatedServices": "No related services found",
       "noAccessEntries": "No access entries available",
-      "noRoutes": "No route resources are integrated yet (for example Ingress / Route)",
+      "noRoutes": "No related route resources found",
       "noEndpoints": "No endpoints",
+      "noTls": "Disabled",
       "selector": "Selector",
       "containers": "Containers",
       "conditions": "Conditions",

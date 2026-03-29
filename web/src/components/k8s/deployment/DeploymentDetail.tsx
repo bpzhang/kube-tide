@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Descriptions, Tag, Table, Card, Space, Typography, Button, message, Tabs, Empty, List } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import { formatDate } from '@/utils/format';
 import EditDeploymentModal from './EditDeploymentModal';
 import PodList from '../pod/PodList';
 import { updateDeployment, UpdateDeploymentRequest } from '@/api/deployment';
+import { getIngressesByNamespace } from '@/api/ingress';
 import { getPodsBySelector } from '@/api/pod';
 import { getServicesByNamespace, getServiceEndpoints } from '@/api/service';
 import DeploymentEvents from './DeploymentEvents';
@@ -45,6 +47,19 @@ interface AccessEntry {
   key: string;
   label: string;
   value: string;
+}
+
+interface RelatedRoute {
+  name: string;
+  namespace: string;
+  ingressClassName?: string;
+  host: string;
+  path: string;
+  pathType?: string;
+  serviceName: string;
+  servicePort?: string;
+  tlsHosts: string[];
+  tlsSecretName?: string;
 }
 
 interface ServiceEndpointSubset {
@@ -99,6 +114,10 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
   const [servicesLoading, setServicesLoading] = useState(false);
   const [relatedServices, setRelatedServices] = useState<RelatedService[]>([]);
   const [serviceEndpoints, setServiceEndpoints] = useState<Record<string, ServiceEndpointSubset[]>>({});
+  const [routesLoading, setRoutesLoading] = useState(false);
+  const [relatedRoutes, setRelatedRoutes] = useState<RelatedRoute[]>([]);
+  const [serviceEndpointsSupported, setServiceEndpointsSupported] = useState(true);
+  const [routesSupported, setRoutesSupported] = useState(true);
 
   // get Pods by selector
   const fetchPods = async () => {
@@ -184,22 +203,30 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
 
       setRelatedServices(matchedServices);
 
-      const endpointResults = await Promise.all(
-        matchedServices.map(async (service) => {
-          try {
-            const endpointResponse = await getServiceEndpoints(clusterName, service.namespace, service.name);
-            return [
-              `${service.namespace}/${service.name}`,
-              endpointResponse.data.code === 0 ? endpointResponse.data.data.endpoints || [] : [],
-            ] as const;
-          } catch (error) {
-            console.error(`${t('services.fetchFailed')}:`, error);
-            return [`${service.namespace}/${service.name}`, []] as const;
-          }
-        })
-      );
+      if (!serviceEndpointsSupported) {
+        setServiceEndpoints({});
+        return;
+      }
 
-      setServiceEndpoints(Object.fromEntries(endpointResults));
+      const endpointMap: Record<string, ServiceEndpointSubset[]> = {};
+      for (const service of matchedServices) {
+        try {
+          const endpointResponse = await getServiceEndpoints(clusterName, service.namespace, service.name);
+          endpointMap[`${service.namespace}/${service.name}`] =
+            endpointResponse.data.code === 0 ? endpointResponse.data.data.endpoints || [] : [];
+        } catch (error) {
+          if (axios.isAxiosError(error) && error.response?.status === 404) {
+            setServiceEndpointsSupported(false);
+            setServiceEndpoints({});
+            return;
+          }
+
+          console.error(`${t('deployments.detail.fetchServiceEndpointsFailed')}:`, error);
+          endpointMap[`${service.namespace}/${service.name}`] = [];
+        }
+      }
+
+      setServiceEndpoints(endpointMap);
     } catch (error) {
       console.error(t('services.fetchFailed') + ':', error);
       message.error(t('services.fetchFailed'));
@@ -207,6 +234,69 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
       setServiceEndpoints({});
     } finally {
       setServicesLoading(false);
+    }
+  };
+
+  const fetchRelatedRoutes = async (services: RelatedService[]) => {
+    if (!clusterName || !deployment.namespace) return;
+
+    if (!routesSupported) {
+      setRelatedRoutes([]);
+      return;
+    }
+
+    setRoutesLoading(true);
+    try {
+      const response = await getIngressesByNamespace(clusterName, deployment.namespace);
+      if (response.data.code !== 0) {
+        message.error(response.data.message || t('deployments.detail.fetchRoutesFailed'));
+        setRelatedRoutes([]);
+        return;
+      }
+
+      const serviceNames = new Set(services.map((service) => service.name));
+      const routes: RelatedRoute[] = [];
+
+      (response.data.data.ingresses || []).forEach((ingress) => {
+        const tlsHosts = (ingress.tls || []).flatMap((item) => item.hosts || []);
+        const tlsSecretName = ingress.tls?.find((item) => item.secretName)?.secretName;
+
+        (ingress.rules || []).forEach((rule) => {
+          (rule.paths || []).forEach((path) => {
+            const serviceName = path.backend?.serviceName || '';
+            if (!serviceNames.has(serviceName)) {
+              return;
+            }
+
+            routes.push({
+              name: ingress.name,
+              namespace: ingress.namespace,
+              ingressClassName: ingress.ingressClassName,
+              host: rule.host || '*',
+              path: path.path || '/',
+              pathType: path.pathType,
+              serviceName,
+              servicePort: path.backend?.servicePort,
+              tlsHosts,
+              tlsSecretName,
+            });
+          });
+        });
+      });
+
+      setRelatedRoutes(routes);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        setRoutesSupported(false);
+        setRelatedRoutes([]);
+        return;
+      }
+
+      console.error(t('deployments.detail.fetchRoutesFailed') + ':', error);
+      message.error(t('deployments.detail.fetchRoutesFailed'));
+      setRelatedRoutes([]);
+    } finally {
+      setRoutesLoading(false);
     }
   };
 
@@ -259,6 +349,10 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
   useEffect(() => {
     fetchRelatedServices();
   }, [clusterName, deployment.namespace, deployment.selector, pods]);
+
+  useEffect(() => {
+    fetchRelatedRoutes(relatedServices);
+  }, [clusterName, deployment.namespace, relatedServices]);
 
   // handle showing and hiding the edit modal
   const showEditModal = () => {
@@ -499,6 +593,64 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
     return entries;
   };
 
+  const routeColumns = [
+    {
+      title: t('deployments.detail.routeColumns.route'),
+      key: 'route',
+      render: (record: RelatedRoute) => (
+        <Space direction="vertical" size={0}>
+          <span>{record.name}</span>
+          {record.ingressClassName ? (
+            <Typography.Text type="secondary">{record.ingressClassName}</Typography.Text>
+          ) : null}
+        </Space>
+      ),
+    },
+    {
+      title: t('deployments.detail.routeColumns.hostPath'),
+      key: 'hostPath',
+      render: (record: RelatedRoute) => (
+        <Space direction="vertical" size={0}>
+          <Typography.Text>{record.host}</Typography.Text>
+          <Typography.Text code>{record.path}</Typography.Text>
+        </Space>
+      ),
+    },
+    {
+      title: t('deployments.detail.routeColumns.backend'),
+      key: 'backend',
+      render: (record: RelatedRoute) => (
+        <Typography.Text>{record.serviceName}{record.servicePort ? `:${record.servicePort}` : ''}</Typography.Text>
+      ),
+    },
+    {
+      title: t('deployments.detail.routeColumns.tls'),
+      key: 'tls',
+      render: (record: RelatedRoute) => (
+        record.tlsHosts.length > 0 ? (
+          <Space direction="vertical" size={0}>
+            <Space wrap>
+              {record.tlsHosts.map((host) => (
+                <Tag key={host} color="green">{host}</Tag>
+              ))}
+            </Space>
+            {record.tlsSecretName ? <Typography.Text type="secondary">{record.tlsSecretName}</Typography.Text> : null}
+          </Space>
+        ) : (
+          <Tag>{t('deployments.detail.noTls')}</Tag>
+        )
+      ),
+    },
+    {
+      title: t('deployments.detail.routeColumns.access'),
+      key: 'access',
+      render: (record: RelatedRoute) => {
+        const protocol = record.tlsHosts.includes(record.host) ? 'https' : 'http';
+        return <Typography.Text code>{`${protocol}://${record.host}${record.path}`}</Typography.Text>;
+      },
+    },
+  ];
+
   const tabItems = [
     {
       key: 'overview',
@@ -652,11 +804,21 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
               key: 'route',
               label: t('deployments.detail.access.tabs.route'),
               children: (
-                <Card title={t('deployments.detail.access.routeTitle')}>
-                  <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description={t('deployments.detail.noRoutes')}
-                  />
+                <Card title={t('deployments.detail.access.routeTitle')} loading={routesLoading}>
+                  {relatedRoutes.length > 0 ? (
+                    <Table
+                      columns={routeColumns}
+                      dataSource={relatedRoutes}
+                      rowKey={(record) => `${record.namespace}/${record.name}/${record.host}/${record.path}/${record.serviceName}`}
+                      pagination={false}
+                      scroll={{ x: 'max-content' }}
+                    />
+                  ) : (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description={t('deployments.detail.noRoutes')}
+                    />
+                  )}
                 </Card>
               ),
             },

@@ -49,6 +49,7 @@ func main() {
 	podService := k8s.NewPodService(clientManager)
 	deploymentService := k8s.NewDeploymentService(clientManager)
 	serviceManager := k8s.NewServiceManager(clientManager)
+	ingressManager := k8s.NewIngressManager(clientManager)
 	namespaceService := k8s.NewNamespaceService(clientManager)     // 初始化命名空间服务
 	statefulSetService := k8s.NewStatefulSetService(clientManager) // 初始化StatefulSet服务
 
@@ -91,6 +92,7 @@ func main() {
 	deploymentHandler := api.NewDeploymentHandler(deploymentService)
 	nodePoolHandler := api.NewNodePoolHandler(nodePoolService)
 	serviceHandler := api.NewServiceHandler(serviceManager)
+	ingressHandler := api.NewIngressHandler(ingressManager)
 	clusterHandler := api.NewClusterHandler(clientManager)
 	healthHandler := api.NewHealthCheckHandler()
 	podTerminalHandler := api.NewPodTerminalHandler(podService)
@@ -103,6 +105,7 @@ func main() {
 		NodeHandler:        nodeHandler,
 		PodHandler:         podHandler,
 		ServiceHandler:     serviceHandler,
+		IngressHandler:     ingressHandler,
 		DeploymentHandler:  deploymentHandler,
 		NodePoolHandler:    nodePoolHandler,
 		HealthHandler:      healthHandler,

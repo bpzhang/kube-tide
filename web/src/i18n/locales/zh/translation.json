@@ -482,6 +482,8 @@
     "scaleReplicas": "调整副本数",
     "restart": "重启",
     "detail": {
+      "fetchServiceEndpointsFailed": "获取 Service Endpoints 失败",
+      "fetchRoutesFailed": "获取 Deployment 路由失败",
       "extractingProbes": "从 Pod 中提取探针，数量：",
       "processingPod": "正在处理 Pod：",
       "foundContainer": "找到 Deployment 容器：{name}",
@@ -512,11 +514,19 @@
         "nodePort": "NodePort",
         "endpoint": "Endpoint"
       },
+      "routeColumns": {
+        "route": "路由资源",
+        "hostPath": "Host / Path",
+        "backend": "后端服务",
+        "tls": "TLS",
+        "access": "访问地址"
+      },
       "relatedServices": "关联 Service",
       "noRelatedServices": "暂无关联的 Service",
       "noAccessEntries": "暂无可展示的访问方式",
-      "noRoutes": "当前未接入路由资源（如 Ingress / Route）",
+      "noRoutes": "暂无关联的路由资源",
       "noEndpoints": "无 Endpoints",
+      "noTls": "未启用",
       "selector": "选择器",
       "containers": "容器",
       "conditions": "状况",

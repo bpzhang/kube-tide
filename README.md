@@ -43,6 +43,7 @@ A modern Kubernetes multi-cluster management platform based on Go and React, pro
 - Deployment details viewing with standalone page tabs
 - Related Service and Service endpoints visibility inside Deployment details
 - Service exposure information is grouped in a dedicated access tab with service and route sections
+- Ingress-based routes related to the Deployment are shown in the route section
 - Deployment update strategy configuration
 - Deployment health check configuration
 - Deployment resource limits configuration
@@ -260,6 +261,7 @@ We welcome contributions! Please feel free to submit Pull Requests or Issues to 
 - Deployment detail content is grouped into tabs for overview, containers, status, pods, access, and events
 - The access tab now contains service and route sub-tabs
 - Related Services and their endpoints are shown directly inside the Deployment detail page
+- Route sub-tab now displays Kubernetes Ingress entries that point to related Services
 
 ## License
 
