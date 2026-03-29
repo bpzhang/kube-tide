@@ -42,7 +42,7 @@
 - Deployment 扩缩容和重启
 - Deployment 详情查看（独立详情页 + Tab 页签）
 - 在 Deployment 详情中查看关联 Service 与 Service Endpoints
-- Deployment 对外暴露信息按独立“访问方式”页签归类展示
+- Deployment 对外暴露信息按独立“访问方式”页签归类展示，并细分为服务与路由
 - Deployment 更新策略配置
 - Deployment 健康检查配置
 - Deployment 资源限制配置
@@ -257,7 +257,8 @@ kube-tide/
 ## 最近的界面更新
 
 - Deployment 详情由右侧抽屉调整为独立详情页
-- Deployment 详情内容按概览、容器组、状态、Pod、访问方式、服务、事件进行 Tab 分组
+- Deployment 详情内容按概览、容器组、状态、Pod、访问方式、事件进行 Tab 分组
+- “访问方式”页签下包含“服务”和“路由”子页签
 - 可在 Deployment 详情中直接查看关联 Service 以及对应的 Endpoints
 
 ## 许可证

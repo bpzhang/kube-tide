@@ -184,22 +184,22 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
 
       setRelatedServices(matchedServices);
 
-    const endpointResults = await Promise.all(
-    matchedServices.map(async (service) => {
-      try {
-        const endpointResponse = await getServiceEndpoints(clusterName, service.namespace, service.name);
-        return [
-          `${service.namespace}/${service.name}`,
-          endpointResponse.data.code === 0 ? endpointResponse.data.data.endpoints || [] : [],
-        ] as const;
-      } catch (error) {
-        console.error(`${t('services.fetchFailed')}:`, error);
-        return [`${service.namespace}/${service.name}`, []] as const;
-      }
-    })
-    );
+      const endpointResults = await Promise.all(
+        matchedServices.map(async (service) => {
+          try {
+            const endpointResponse = await getServiceEndpoints(clusterName, service.namespace, service.name);
+            return [
+              `${service.namespace}/${service.name}`,
+              endpointResponse.data.code === 0 ? endpointResponse.data.data.endpoints || [] : [],
+            ] as const;
+          } catch (error) {
+            console.error(`${t('services.fetchFailed')}:`, error);
+            return [`${service.namespace}/${service.name}`, []] as const;
+          }
+        })
+      );
 
-    setServiceEndpoints(Object.fromEntries(endpointResults));
+      setServiceEndpoints(Object.fromEntries(endpointResults));
     } catch (error) {
       console.error(t('services.fetchFailed') + ':', error);
       message.error(t('services.fetchFailed'));
@@ -590,67 +590,78 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
     {
       key: 'access',
       label: t('deployments.detail.tabs.access'),
-      children: relatedServices.length > 0 ? (
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          {relatedServices.map((service) => {
-            const accessEntries = buildAccessEntries(service);
-            return (
-              <Card
-                key={`${service.namespace}/${service.name}`}
-                title={`${service.name} (${service.type})`}
-                size="small"
-              >
-                {accessEntries.length > 0 ? (
-                  <List
-                    dataSource={accessEntries}
-                    renderItem={(item) => (
-                      <List.Item key={item.key}>
-                        <Space direction="vertical" size={2} style={{ width: '100%' }}>
-                          <Typography.Text type="secondary">{item.label}</Typography.Text>
-                          <Typography.Text code>{item.value}</Typography.Text>
-                        </Space>
-                      </List.Item>
-                    )}
-                  />
-                ) : (
+      children: (
+        <Tabs
+          defaultActiveKey="service"
+          items={[
+            {
+              key: 'service',
+              label: t('deployments.detail.access.tabs.service'),
+              children: relatedServices.length > 0 ? (
+                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                  {relatedServices.map((service) => {
+                    const accessEntries = buildAccessEntries(service);
+                    return (
+                      <Card
+                        key={`${service.namespace}/${service.name}`}
+                        title={`${service.name} (${service.type})`}
+                        size="small"
+                      >
+                        {accessEntries.length > 0 ? (
+                          <List
+                            dataSource={accessEntries}
+                            renderItem={(item) => (
+                              <List.Item key={item.key}>
+                                <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                                  <Typography.Text type="secondary">{item.label}</Typography.Text>
+                                  <Typography.Text code>{item.value}</Typography.Text>
+                                </Space>
+                              </List.Item>
+                            )}
+                          />
+                        ) : (
+                          <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description={t('deployments.detail.noAccessEntries')}
+                          />
+                        )}
+                      </Card>
+                    );
+                  })}
+
+                  <Card title={t('deployments.detail.relatedServices')} loading={servicesLoading}>
+                    <Table
+                      columns={serviceColumns}
+                      dataSource={relatedServices}
+                      rowKey={(record) => `${record.namespace}/${record.name}`}
+                      pagination={false}
+                      scroll={{ x: 'max-content' }}
+                    />
+                  </Card>
+                </Space>
+              ) : (
+                <Card title={t('deployments.detail.access.title')}>
                   <Empty
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description={t('deployments.detail.noAccessEntries')}
+                    description={t('deployments.detail.noRelatedServices')}
                   />
-                )}
-              </Card>
-            );
-          })}
-        </Space>
-      ) : (
-        <Card title={t('deployments.detail.access.title')}>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={t('deployments.detail.noRelatedServices')}
-          />
-        </Card>
-      ),
-    },
-    {
-      key: 'services',
-      label: t('deployments.detail.tabs.services'),
-      children: (
-        <Card title={t('deployments.detail.relatedServices')} loading={servicesLoading}>
-          {relatedServices.length > 0 ? (
-            <Table
-              columns={serviceColumns}
-              dataSource={relatedServices}
-              rowKey={(record) => `${record.namespace}/${record.name}`}
-              pagination={false}
-              scroll={{ x: 'max-content' }}
-            />
-          ) : (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={t('deployments.detail.noRelatedServices')}
-            />
-          )}
-        </Card>
+                </Card>
+              ),
+            },
+            {
+              key: 'route',
+              label: t('deployments.detail.access.tabs.route'),
+              children: (
+                <Card title={t('deployments.detail.access.routeTitle')}>
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={t('deployments.detail.noRoutes')}
+                  />
+                </Card>
+              ),
+            },
+          ]}
+        />
       ),
     },
     {

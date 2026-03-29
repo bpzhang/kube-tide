@@ -498,11 +498,15 @@
         "conditions": "状态",
         "pods": "Pod 列表",
         "access": "访问方式",
-        "services": "服务",
         "events": "事件"
       },
       "access": {
         "title": "访问方式",
+        "tabs": {
+          "service": "服务",
+          "route": "路由"
+        },
+        "routeTitle": "路由",
         "clusterIP": "ClusterIP",
         "externalIP": "ExternalIP",
         "nodePort": "NodePort",
@@ -511,6 +515,7 @@
       "relatedServices": "关联 Service",
       "noRelatedServices": "暂无关联的 Service",
       "noAccessEntries": "暂无可展示的访问方式",
+      "noRoutes": "当前未接入路由资源（如 Ingress / Route）",
       "noEndpoints": "无 Endpoints",
       "selector": "选择器",
       "containers": "容器",

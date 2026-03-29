@@ -501,11 +501,15 @@
         "conditions": "Status",
         "pods": "Pods",
         "access": "Access",
-        "services": "Services",
         "events": "Events"
       },
       "access": {
         "title": "Access Methods",
+        "tabs": {
+          "service": "Service",
+          "route": "Route"
+        },
+        "routeTitle": "Route",
         "clusterIP": "ClusterIP",
         "externalIP": "ExternalIP",
         "nodePort": "NodePort",
@@ -514,6 +518,7 @@
       "relatedServices": "Related Services",
       "noRelatedServices": "No related services found",
       "noAccessEntries": "No access entries available",
+      "noRoutes": "No route resources are integrated yet (for example Ingress / Route)",
       "noEndpoints": "No endpoints",
       "selector": "Selector",
       "containers": "Containers",
