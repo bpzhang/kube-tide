@@ -13,13 +13,15 @@ import (
 
 // DeploymentHandler Deployment management handler
 type DeploymentHandler struct {
-	service *k8s.DeploymentService
+	service           *k8s.DeploymentService
+	podMetricsService *k8s.PodMetricsService
 }
 
 // NewDeploymentHandler Create Deployment management handler
-func NewDeploymentHandler(service *k8s.DeploymentService) *DeploymentHandler {
+func NewDeploymentHandler(service *k8s.DeploymentService, podMetricsService *k8s.PodMetricsService) *DeploymentHandler {
 	return &DeploymentHandler{
-		service: service,
+		service:           service,
+		podMetricsService: podMetricsService,
 	}
 }
 
@@ -442,5 +444,36 @@ func (h *DeploymentHandler) RollbackDeployment(c *gin.Context) {
 
 	ResponseSuccess(c, gin.H{
 		"message": "Deployment rollback successfully",
+	})
+}
+
+// GetDeploymentMetrics 获取 Deployment 应用级监控汇总
+func (h *DeploymentHandler) GetDeploymentMetrics(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	deploymentName := c.Param("deployment")
+
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "Cluster name cannot be empty")
+		return
+	}
+	if namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "Namespace cannot be empty")
+		return
+	}
+	if deploymentName == "" {
+		ResponseError(c, http.StatusBadRequest, "Deployment name cannot be empty")
+		return
+	}
+
+	metrics, err := h.podMetricsService.GetDeploymentMetrics(context.Background(), clusterName, namespace, deploymentName)
+	if err != nil {
+		logger.Error("获取 Deployment 监控指标失败: " + err.Error())
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ResponseSuccess(c, gin.H{
+		"metrics": metrics,
 	})
 }

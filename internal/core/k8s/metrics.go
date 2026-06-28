@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/metrics/pkg/client/clientset/versioned"
 	"k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
 )
@@ -48,7 +47,7 @@ type MetricDataPoint struct {
 }
 
 // GetClusterMetrics 获取集群监控指标
-func GetClusterMetrics(client *kubernetes.Clientset) (*ClusterMetrics, error) {
+func GetClusterMetrics(client *kubernetes.Clientset, config *rest.Config) (*ClusterMetrics, error) {
 	ctx := context.Background()
 	metrics := &ClusterMetrics{
 		Timestamp: time.Now().Format(time.RFC3339),
@@ -100,7 +99,7 @@ func GetClusterMetrics(client *kubernetes.Clientset) (*ClusterMetrics, error) {
 	}
 
 	// 计算资源使用率和分配率
-	metrics = calculateResourceUsage(client, nodes, metrics)
+	metrics = calculateResourceUsage(client, config, nodes, metrics)
 
 	// 生成历史数据（模拟数据）
 	// metrics.HistoricalData = generateHistoricalData()
@@ -109,7 +108,7 @@ func GetClusterMetrics(client *kubernetes.Clientset) (*ClusterMetrics, error) {
 }
 
 // calculateResourceUsage 计算资源使用率和分配率
-func calculateResourceUsage(client *kubernetes.Clientset, nodes *corev1.NodeList, metrics *ClusterMetrics) *ClusterMetrics {
+func calculateResourceUsage(client *kubernetes.Clientset, config *rest.Config, nodes *corev1.NodeList, metrics *ClusterMetrics) *ClusterMetrics {
 	// 在实际项目中，应该使用metrics-server获取真实的CPU和内存使用情况
 	// 这里为了演示，我们模拟一些合理的数据
 
@@ -161,8 +160,7 @@ func calculateResourceUsage(client *kubernetes.Clientset, nodes *corev1.NodeList
 	}
 
 	// 尝试获取真实的资源使用率（如果有metrics-server的话）
-	// 这里先使用模拟数据
-	metricsClient, err := getMetricsClient(client)
+	metricsClient, err := getMetricsClient(config)
 	if err == nil {
 		// 如果有metrics-server，获取真实的使用率数据
 		metrics = getRealMetricsData(metricsClient, metrics, totalCPUCapacity, totalMemoryCapacity)
@@ -175,18 +173,10 @@ func calculateResourceUsage(client *kubernetes.Clientset, nodes *corev1.NodeList
 	return metrics
 }
 
-// getMetricsClient 获取metrics-server客户端
-func getMetricsClient(client *kubernetes.Clientset) (v1beta1.MetricsV1beta1Interface, error) {
-	// 检查metrics-server是否已安装
-	_, err := client.CoreV1().Services("kube-system").Get(context.Background(), "metrics-server", metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("metrics-server未安装或无法访问: %v", err)
-	}
-
-	// 获取当前使用的config
-	config, err := getCurrentClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("获取集群配置失败: %v", err)
+// getMetricsClient 获取 metrics-server 客户端
+func getMetricsClient(config *rest.Config) (v1beta1.MetricsV1beta1Interface, error) {
+	if config == nil {
+		return nil, fmt.Errorf("集群配置为空")
 	}
 
 	metricsClient, err := versioned.NewForConfig(config)
@@ -195,22 +185,6 @@ func getMetricsClient(client *kubernetes.Clientset) (v1beta1.MetricsV1beta1Inter
 	}
 
 	return metricsClient.MetricsV1beta1(), nil
-}
-
-// getCurrentClusterConfig 获取当前集群的配置
-func getCurrentClusterConfig() (*rest.Config, error) {
-	// 优先使用环境变量中的配置
-	config, err := rest.InClusterConfig()
-	if err == nil {
-		return config, nil
-	}
-
-	// 如果在集群外运行，则尝试使用当前context的kubeconfig
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	configOverrides := &clientcmd.ConfigOverrides{}
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-
-	return kubeConfig.ClientConfig()
 }
 
 // getRealMetricsData 获取真实的指标数据

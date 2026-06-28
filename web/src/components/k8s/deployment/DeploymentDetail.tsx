@@ -10,6 +10,7 @@ import { getIngressesByNamespace } from '@/api/ingress';
 import { getPodsBySelector } from '@/api/pod';
 import { getServicesByNamespace, getServiceEndpoints } from '@/api/service';
 import DeploymentEvents from './DeploymentEvents';
+import DeploymentMonitoring from './DeploymentMonitoring';
 import { useTranslation } from 'react-i18next';
 
 const { Title } = Typography;
@@ -827,6 +828,18 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
       ),
     },
     {
+      key: 'monitoring',
+      label: t('deployments.detail.tabs.monitoring'),
+      forceRender: true,
+      children: (
+        <DeploymentMonitoring
+          clusterName={clusterName}
+          namespace={deployment.namespace}
+          deploymentName={deployment.name}
+        />
+      ),
+    },
+    {
       key: 'events',
       label: t('deployments.detail.tabs.events'),
       children: (
@@ -852,7 +865,7 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
         </Button>
       </div>
 
-      <Tabs defaultActiveKey="overview" items={tabItems} destroyOnHidden />
+      <Tabs defaultActiveKey="overview" items={tabItems} />
 
       <EditDeploymentModal
         visible={editModalVisible}

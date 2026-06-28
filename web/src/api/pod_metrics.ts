@@ -14,8 +14,10 @@ export interface PodMetrics {
   cpuUsage: number;
   // current memory usage (percentage)
   memoryUsage: number;
-  // current disk usage (percentage)
-  diskUsage: number;
+  // current disk used (bytes)
+  diskUsedBytes: number;
+  // current disk used (human readable)
+  diskUsed: string;
   // CPU request value (unit: m)
   cpuRequests: string;
   // CPU limit value (unit: m)
@@ -49,7 +51,8 @@ export interface ContainerMetrics {
   name: string;
   cpuUsage: number;
   memoryUsage: number;
-  diskUsage: number;
+  diskUsedBytes: number;
+  diskUsed: string;
   cpuRequests: string;
   cpuLimits: string;
   memoryRequests: string;

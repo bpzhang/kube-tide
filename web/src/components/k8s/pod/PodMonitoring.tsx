@@ -13,6 +13,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { getPodMetrics } from '@/api/pod_metrics';
 import type { PodMetrics, ContainerMetrics } from '@/api/pod_metrics';
+import { formatFileSize } from '@/utils/format';
 import dayjs from 'dayjs';
 
 interface PodMonitoringProps {
@@ -192,42 +193,11 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
           </Col>
           
           <Col xs={24} sm={8}>
-            <Card title={t('podDetail.monitoring.diskUsage')}>
-              {metrics.diskUsage !== undefined ? (
-                <>
-                  <Statistic
-                    value={metrics.diskUsage.toFixed(2)}
-                    suffix="%"
-                    valueStyle={{ color: metrics.diskUsage > 80 ? '#cf1322' : '#3f8600' }}
-                  />
-                  <Progress
-                    percent={Math.min(100, parseFloat(metrics.diskUsage.toFixed(2)))}
-                    status={metrics.diskUsage > 80 ? 'exception' : 'normal'}
-                    showInfo={false}
-                    strokeColor={{
-                      '0%': '#108ee9',
-                      '100%': metrics.diskUsage > 80 ? '#ff4d4f' : '#87d068',
-                    }}
-                  />
-                </>
-              ) : (
-                <>
-                  <Statistic
-                    value={0}
-                    suffix="%"
-                    valueStyle={{ color: '#3f8600' }}
-                  />
-                  <Progress
-                    percent={0}
-                    status="normal"
-                    showInfo={false}
-                    strokeColor={{
-                      '0%': '#108ee9',
-                      '100%': '#87d068',
-                    }}
-                  />
-                </>
-              )}
+            <Card title={t('podDetail.monitoring.diskUsed')}>
+              <Statistic
+                value={metrics.diskUsed || formatFileSize(metrics.diskUsedBytes || 0)}
+                valueStyle={{ color: '#3f8600' }}
+              />
               <Descriptions column={1} size="small" style={{ marginTop: 16 }}>
                 <Descriptions.Item label={t('podDetail.monitoring.requests')}>{metrics.diskRequests || 'N/A'}</Descriptions.Item>
                 <Descriptions.Item label={t('podDetail.monitoring.limits')}>{metrics.diskLimits || 'N/A'}</Descriptions.Item>
@@ -303,13 +273,13 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
-                  <YAxis unit="%" />
-                  <Tooltip />
+                  <YAxis tickFormatter={(value) => formatFileSize(value)} />
+                  <Tooltip formatter={(value: number) => formatFileSize(value)} />
                   <Legend />
                   <Line
                     type="monotone"
                     dataKey="value"
-                    name={t('podDetail.monitoring.diskUsage')}
+                    name={t('podDetail.monitoring.diskUsed')}
                     stroke="#f5a442"
                     activeDot={{ r: 8 }}
                   />
@@ -376,16 +346,10 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
               </Col>
               
               <Col xs={24} sm={8}>
-                <Card title={t('podDetail.monitoring.diskUsage')} size="small">
+                <Card title={t('podDetail.monitoring.diskUsed')} size="small">
                   <Statistic
-                    value={container.diskUsage.toFixed(2)}
-                    suffix="%"
-                    valueStyle={{ color: container.diskUsage > 80 ? '#cf1322' : '#3f8600' }}
-                  />
-                  <Progress
-                    percent={Math.min(100, parseFloat(container.diskUsage.toFixed(2)))}
-                    status={container.diskUsage > 80 ? 'exception' : 'normal'}
-                    showInfo={false}
+                    value={container.diskUsed || formatFileSize(container.diskUsedBytes || 0)}
+                    valueStyle={{ color: '#3f8600' }}
                   />
                   <Descriptions column={1} size="small" style={{ marginTop: 8 }}>
                     <Descriptions.Item label={t('podDetail.monitoring.requests')}>{container.diskRequests}</Descriptions.Item>
@@ -464,13 +428,13 @@ const PodMonitoring: React.FC<PodMonitoringProps> = ({ clusterName, namespace, p
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
-                        <YAxis unit="%" />
-                        <Tooltip />
+                        <YAxis tickFormatter={(value) => formatFileSize(value)} />
+                        <Tooltip formatter={(value: number) => formatFileSize(value)} />
                         <Legend />
                         <Line
                           type="monotone"
                           dataKey="value"
-                          name={t('podDetail.monitoring.diskUsage')}
+                          name={t('podDetail.monitoring.diskUsed')}
                           stroke="#f5a442"
                           activeDot={{ r: 8 }}
                         />

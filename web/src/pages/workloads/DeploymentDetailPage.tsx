@@ -88,7 +88,7 @@ const DeploymentDetailPage: React.FC = () => {
 
       <DeploymentDetail
         deployment={deployment}
-        clusterName={clusterName}
+        clusterName={clusterName!}
         onUpdate={fetchDeploymentDetail}
       />
     </div>

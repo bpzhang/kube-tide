@@ -27,70 +27,60 @@ func NewPodMetricsService(clientManager *ClientManager) *PodMetricsService {
 
 // GetPodMetrics 获取Pod的CPU和内存监控指标
 func (s *PodMetricsService) GetPodMetrics(ctx context.Context, clusterName, namespace, podName string) (*PodMetrics, error) {
+	client, err := s.clientManager.GetClient(clusterName)
+	if err != nil {
+		return nil, err
+	}
+	config, err := s.clientManager.GetConfig(clusterName)
+	if err != nil {
+		return nil, err
+	}
+
 	// 首先尝试从缓存获取指标数据
 	if metrics, found := s.metricsCache.GetPodMetrics(namespace, podName); found {
-		// 每次获取都更新当前实时指标
-		client, err := s.clientManager.GetClient(clusterName)
+		currentMetrics, err := GetPodMetrics(client, config, namespace, podName)
 		if err == nil {
-			// 尝试获取最新指标
-			currentMetrics, err := GetPodMetrics(client, namespace, podName)
-			if err == nil {
-				// 使用最新的实时指标更新缓存中的历史数据
-				now := time.Now().Format(time.RFC3339)
+			now := time.Now().Format(time.RFC3339)
 
-				// 添加当前数据点到历史数据中
-				metrics.HistoricalData.CPUUsage = append(metrics.HistoricalData.CPUUsage, MetricDataPoint{
-					Timestamp: now,
-					Value:     currentMetrics.CPUUsage,
-				})
+			metrics.HistoricalData.CPUUsage = append(metrics.HistoricalData.CPUUsage, MetricDataPoint{
+				Timestamp: now,
+				Value:     currentMetrics.CPUUsage,
+			})
+			metrics.HistoricalData.MemoryUsage = append(metrics.HistoricalData.MemoryUsage, MetricDataPoint{
+				Timestamp: now,
+				Value:     currentMetrics.MemoryUsage,
+			})
+			metrics.HistoricalData.DiskUsage = append(metrics.HistoricalData.DiskUsage, MetricDataPoint{
+				Timestamp: now,
+				Value:     float64(currentMetrics.DiskUsedBytes),
+			})
 
-				metrics.HistoricalData.MemoryUsage = append(metrics.HistoricalData.MemoryUsage, MetricDataPoint{
-					Timestamp: now,
-					Value:     currentMetrics.MemoryUsage,
-				})
+			metrics.CPUUsage = currentMetrics.CPUUsage
+			metrics.MemoryUsage = currentMetrics.MemoryUsage
+			metrics.DiskUsedBytes = currentMetrics.DiskUsedBytes
+			metrics.DiskUsed = currentMetrics.DiskUsed
+			metrics.Containers = currentMetrics.Containers
 
-				metrics.HistoricalData.DiskUsage = append(metrics.HistoricalData.DiskUsage, MetricDataPoint{
-					Timestamp: now,
-					Value:     currentMetrics.DiskUsage,
-				})
+			s.metricsCache.SetPodMetrics(namespace, podName, metrics)
 
-				// 更新实时数据
-				metrics.CPUUsage = currentMetrics.CPUUsage
-				metrics.MemoryUsage = currentMetrics.MemoryUsage
-				metrics.DiskUsage = currentMetrics.DiskUsage
-
-				// 更新容器数据
-				metrics.Containers = currentMetrics.Containers
-
-				// 更新缓存
-				s.metricsCache.SetPodMetrics(namespace, podName, metrics)
-
-				logger.Debug("更新Pod指标并添加历史数据点",
-					"namespace", namespace,
-					"pod", podName,
-					"timestamp", now,
-					"cpuUsage", currentMetrics.CPUUsage,
-					"memoryUsage", currentMetrics.MemoryUsage,
-					"diskUsage", currentMetrics.DiskUsage,
-					"historyPoints", len(metrics.HistoricalData.CPUUsage))
-			}
+			logger.Debug("更新Pod指标并添加历史数据点",
+				"namespace", namespace,
+				"pod", podName,
+				"timestamp", now,
+				"cpuUsage", currentMetrics.CPUUsage,
+				"memoryUsage", currentMetrics.MemoryUsage,
+				"diskUsed", currentMetrics.DiskUsed,
+				"historyPoints", len(metrics.HistoricalData.CPUUsage))
 		}
 
 		return metrics, nil
 	}
 
-	// 如果缓存中没有，则从Kubernetes API获取
-	client, err := s.clientManager.GetClient(clusterName)
+	metrics, err := GetPodMetrics(client, config, namespace, podName)
 	if err != nil {
 		return nil, err
 	}
 
-	metrics, err := GetPodMetrics(client, namespace, podName)
-	if err != nil {
-		return nil, err
-	}
-
-	// 将新获取的指标数据存入缓存
 	s.metricsCache.SetPodMetrics(namespace, podName, metrics)
 
 	logger.Debug("首次获取Pod指标数据",
@@ -98,7 +88,7 @@ func (s *PodMetricsService) GetPodMetrics(ctx context.Context, clusterName, name
 		"pod", podName,
 		"cpuUsage", metrics.CPUUsage,
 		"memoryUsage", metrics.MemoryUsage,
-		"diskUsage", metrics.DiskUsage)
+		"diskUsed", metrics.DiskUsed)
 
 	return metrics, nil
 }
@@ -130,6 +120,11 @@ func (s *PodMetricsService) collectAllPodsMetrics(ctx context.Context, clusterNa
 		logger.Error("获取K8s客户端失败", "cluster", clusterName, "error", err)
 		return
 	}
+	config, err := s.clientManager.GetConfig(clusterName)
+	if err != nil {
+		logger.Error("获取集群配置失败", "cluster", clusterName, "error", err)
+		return
+	}
 
 	// 记录开始收集指标的时间
 	startTime := time.Now()
@@ -157,7 +152,7 @@ func (s *PodMetricsService) collectAllPodsMetrics(ctx context.Context, clusterNa
 		totalPods += len(pods.Items)
 
 		for _, pod := range pods.Items {
-			metrics, err := GetPodMetrics(client, ns.Name, pod.Name)
+			metrics, err := GetPodMetrics(client, config, ns.Name, pod.Name)
 			if err != nil {
 				logger.Debug("获取Pod指标失败", "namespace", ns.Name, "pod", pod.Name, "error", err)
 				continue
@@ -183,7 +178,7 @@ func (s *PodMetricsService) collectAllPodsMetrics(ctx context.Context, clusterNa
 
 				metrics.HistoricalData.DiskUsage = append(metrics.HistoricalData.DiskUsage, MetricDataPoint{
 					Timestamp: now,
-					Value:     metrics.DiskUsage,
+					Value:     float64(metrics.DiskUsedBytes),
 				})
 			}
 

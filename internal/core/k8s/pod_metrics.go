@@ -3,11 +3,11 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
@@ -17,8 +17,10 @@ type PodMetrics struct {
 	CPUUsage float64 `json:"cpuUsage"`
 	// 当前内存使用率（百分比）
 	MemoryUsage float64 `json:"memoryUsage"`
-	// 当前硬盘使用率（百分比）
-	DiskUsage float64 `json:"diskUsage"`
+	// 当前磁盘占用（字节）
+	DiskUsedBytes int64 `json:"diskUsedBytes"`
+	// 当前磁盘占用（可读格式）
+	DiskUsed string `json:"diskUsed"`
 	// CPU请求值（单位：m）
 	CPURequests string `json:"cpuRequests"`
 	// CPU限制值（单位：m）
@@ -46,7 +48,8 @@ type ContainerMetrics struct {
 	Name           string  `json:"name"`
 	CPUUsage       float64 `json:"cpuUsage"`
 	MemoryUsage    float64 `json:"memoryUsage"`
-	DiskUsage      float64 `json:"diskUsage"`
+	DiskUsedBytes  int64   `json:"diskUsedBytes"`
+	DiskUsed       string  `json:"diskUsed"`
 	CPURequests    string  `json:"cpuRequests"`
 	CPULimits      string  `json:"cpuLimits"`
 	MemoryRequests string  `json:"memoryRequests"`
@@ -62,7 +65,7 @@ type ContainerMetrics struct {
 }
 
 // GetPodMetrics 获取Pod监控指标
-func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*PodMetrics, error) {
+func GetPodMetrics(client *kubernetes.Clientset, config *rest.Config, namespace, podName string) (*PodMetrics, error) {
 	ctx := context.Background()
 	metrics := &PodMetrics{
 		HistoricalData: struct {
@@ -83,13 +86,7 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 		return nil, fmt.Errorf("获取Pod详情失败: %v", err)
 	}
 
-	// 创建metrics客户端
-	// 使用当前集群的配置
-	config, err := getCurrentClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("获取集群配置失败: %v", err)
-	}
-
+	// 创建 metrics 客户端（使用已注册集群的 kubeconfig）
 	metricsClient, err := versioned.NewForConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("创建metrics客户端失败: %v", err)
@@ -144,27 +141,8 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 		totalMemoryLimits += memoryLimits
 	}
 
-	// 获取PVC的磁盘请求量
-	pvcs := make(map[string]int64)
-	for _, volume := range pod.Spec.Volumes {
-		if volume.PersistentVolumeClaim != nil {
-			pvcName := volume.PersistentVolumeClaim.ClaimName
-			pvc, err := client.CoreV1().PersistentVolumeClaims(namespace).Get(ctx, pvcName, metav1.GetOptions{})
-			if err == nil {
-				if storage, ok := pvc.Spec.Resources.Requests["storage"]; ok {
-					storageValue := storage.Value()
-					pvcs[pvcName] = storageValue
-					totalDiskRequests += storageValue
-				}
-			}
-		}
-	}
-
-	// 如果有磁盘限制策略（如StorageClass的限制），这里可以获取并计算totalDiskLimits
-	// 简化处理：如果没有明确的限制，假设限制等于请求的1.2倍
-	if totalDiskLimits == 0 && totalDiskRequests > 0 {
-		totalDiskLimits = int64(float64(totalDiskRequests) * 1.2)
-	}
+	// 汇总 ephemeral-storage 配额与 PVC 容量
+	totalDiskRequests, totalDiskLimits = sumEphemeralStorageResources(pod, client, namespace)
 
 	metrics.CPURequests = formatCPU(totalCPURequests)
 	metrics.CPULimits = formatCPU(totalCPULimits)
@@ -172,6 +150,8 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 	metrics.MemoryLimits = formatMemory(totalMemoryLimits)
 	metrics.DiskRequests = FormatStorage(totalDiskRequests)
 	metrics.DiskLimits = FormatStorage(totalDiskLimits)
+
+	diskStats := GetPodDiskStats(client, config, pod, podMetrics)
 
 	// 计算容器指标
 	totalCPUUsage := int64(0)
@@ -219,85 +199,13 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 				memoryUsagePercentage = float64(containerMetrics.MemoryUsage) / float64(memoryRequests) * 100
 			} else if capacity, ok := nodeCapacity["memory"]; ok {
 				memoryUsagePercentage = float64(containerMetrics.MemoryUsage) / float64(capacity["capacity"]) * 100
-			} // 容器的磁盘使用率
-			// 现在使用真实数据而非模拟数据
-			diskUsagePercentage := float64(0)
-			diskRequests := int64(0)
-			diskLimits := int64(0)
+			} // 容器的磁盘占用
+			diskRequests, diskLimits := containerStorageQuota(pod, containerMetrics.Name, client, namespace)
 
-			// 计算容器使用的存储资源
-			// 根据容器资源比例分配磁盘使用
-			if totalMemoryRequests > 0 && memoryRequests > 0 && totalDiskRequests > 0 {
-				ratio := float64(memoryRequests) / float64(totalMemoryRequests)
-				diskRequests = int64(ratio * float64(totalDiskRequests))
-				if totalDiskLimits > 0 {
-					diskLimits = int64(ratio * float64(totalDiskLimits))
-				}
-			}
-
-			// 获取单个容器的磁盘使用率
-			containerDiskUsage := int64(0)
-
-			// 先检查我们是否已经获取了Pod的磁盘使用情况
-			podDiskUsage, err := GetPodDiskUsage(client, config, namespace, podName)
-			if err == nil && len(podDiskUsage) > 0 {
-				// 查找与此容器相关的卷挂载
-				var containerVolumes []string
-				for _, container := range pod.Spec.Containers {
-					if container.Name == containerMetrics.Name {
-						for _, volumeMount := range container.VolumeMounts {
-							containerVolumes = append(containerVolumes, volumeMount.MountPath)
-						}
-						break
-					}
-				}
-
-				// 累加此容器使用的磁盘空间
-				for path, usage := range podDiskUsage {
-					for _, volumePath := range containerVolumes {
-						if strings.HasPrefix(path, volumePath) {
-							containerDiskUsage += usage
-							break
-						}
-					}
-				}
-
-				// 如果未找到与容器关联的卷，按内存使用比例分配总磁盘使用量
-				if containerDiskUsage == 0 {
-					totalUsedBytes := int64(0)
-					for _, usage := range podDiskUsage {
-						totalUsedBytes += usage
-					}
-
-					// 按内存使用比例分配
-					if totalMemoryUsage > 0 && containerMetrics.MemoryUsage > 0 {
-						ratio := float64(containerMetrics.MemoryUsage) / float64(totalMemoryUsage)
-						containerDiskUsage = int64(ratio * float64(totalUsedBytes))
-					}
-				}
-
-				// 计算使用率
-				if diskLimits > 0 {
-					diskUsagePercentage = float64(containerDiskUsage) / float64(diskLimits) * 100
-				} else if diskRequests > 0 {
-					diskUsagePercentage = float64(containerDiskUsage) / float64(diskRequests) * 100
-				} else if _, ok := nodeCapacity["disk"]; ok {
-					diskUsagePercentage = float64(containerDiskUsage) / float64(nodeCapacity["disk"]["capacity"]) * 100
-				}
-			} else {
-				// 如果无法获取真实磁盘使用情况，回退到基于内存使用率的估算
-				if diskLimits > 0 {
-					diskUsagePercentage = memoryUsagePercentage * 0.8
-				} else if diskRequests > 0 {
-					diskUsagePercentage = memoryUsagePercentage * 0.9
-				} else if _, ok := nodeCapacity["disk"]; ok {
-					diskUsagePercentage = memoryUsagePercentage * 0.5
-				}
-			}
-
-			// 确保使用率不超过100%
-			if diskUsagePercentage > 100 {
-				diskUsagePercentage = 100
+			containerDiskUsage := diskStats.containerBytes(containerMetrics.Name)
+			if containerDiskUsage == 0 && diskStats != nil && diskStats.PodUsedBytes > 0 && totalMemoryUsage > 0 && containerMetrics.MemoryUsage > 0 {
+				ratio := float64(containerMetrics.MemoryUsage) / float64(totalMemoryUsage)
+				containerDiskUsage = int64(ratio * float64(diskStats.PodUsedBytes))
 			} // 初始化容器的历史数据结构
 			containerHistorical := struct {
 				CPUUsage    []MetricDataPoint `json:"cpuUsage"`
@@ -323,7 +231,7 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 
 			containerHistorical.DiskUsage = append(containerHistorical.DiskUsage, MetricDataPoint{
 				Timestamp: currentTime,
-				Value:     diskUsagePercentage,
+				Value:     float64(containerDiskUsage),
 			})
 
 			// 从缓存中获取容器的历史数据
@@ -394,29 +302,9 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 						// 获取容器的磁盘历史数据
 						if diskData, ok := containerCache.Historical["disk"]; ok && len(diskData) > 0 {
 							for _, point := range diskData {
-								// 计算磁盘使用率百分比
-								diskPercentage := float64(0)
-								if diskLimits > 0 {
-									diskPercentage = point.Value / float64(diskLimits) * 100
-								} else if diskRequests > 0 {
-									diskPercentage = point.Value / float64(diskRequests) * 100
-								} else if _, ok := nodeCapacity["disk"]; ok {
-									diskPercentage = point.Value / float64(nodeCapacity["disk"]["capacity"]) * 100
-								} else {
-									// 如果没有限制或请求，使用当前实际值
-									diskPercentage = diskUsagePercentage
-								}
-
-								// 确保值在有效范围内
-								if diskPercentage < 0 {
-									diskPercentage = 0
-								} else if diskPercentage > 100 {
-									diskPercentage = 100
-								}
-
 								containerHistorical.DiskUsage = append(containerHistorical.DiskUsage, MetricDataPoint{
 									Timestamp: point.Timestamp.Format(time.RFC3339),
-									Value:     diskPercentage,
+									Value:     point.Value,
 								})
 							}
 						}
@@ -428,7 +316,8 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 				Name:           containerMetrics.Name,
 				CPUUsage:       cpuUsagePercentage,
 				MemoryUsage:    memoryUsagePercentage,
-				DiskUsage:      diskUsagePercentage,
+				DiskUsedBytes:  containerDiskUsage,
+				DiskUsed:       FormatStorage(containerDiskUsage),
 				CPURequests:    formatCPU(cpuRequests),
 				CPULimits:      formatCPU(cpuLimits),
 				MemoryRequests: formatMemory(memoryRequests),
@@ -481,33 +370,13 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 				memoryUsagePercentage = float64(memoryUsage) / float64(capacity["capacity"]) * 100
 			}
 
-			// 容器的磁盘使用率（简化处理：平均分配总体磁盘使用率）
-			diskUsagePercentage := float64(0)
-			diskRequests := int64(0)
-			diskLimits := int64(0)
-
-			// 简化处理：根据容器资源比例分配磁盘使用
-			if totalMemoryRequests > 0 && memoryRequests > 0 && totalDiskRequests > 0 {
-				ratio := float64(memoryRequests) / float64(totalMemoryRequests)
-				diskRequests = int64(ratio * float64(totalDiskRequests))
-				if totalDiskLimits > 0 {
-					diskLimits = int64(ratio * float64(totalDiskLimits))
-				}
+			containerDiskUsage := diskStats.containerBytes(containerMetrics.Name)
+			if containerDiskUsage == 0 && diskStats != nil && diskStats.PodUsedBytes > 0 && totalMemoryUsage > 0 && memoryUsage > 0 {
+				ratio := float64(memoryUsage) / float64(totalMemoryUsage)
+				containerDiskUsage = int64(ratio * float64(diskStats.PodUsedBytes))
 			}
 
-			// 回退到基于内存使用率的磁盘使用估算
-			if diskLimits > 0 {
-				diskUsagePercentage = memoryUsagePercentage * 0.8
-			} else if diskRequests > 0 {
-				diskUsagePercentage = memoryUsagePercentage * 0.9
-			} else if _, ok := nodeCapacity["disk"]; ok {
-				diskUsagePercentage = memoryUsagePercentage * 0.5
-			}
-
-			// 确保使用率不超过100%
-			if diskUsagePercentage > 100 {
-				diskUsagePercentage = 100
-			}
+			diskRequests, diskLimits := containerStorageQuota(pod, containerMetrics.Name, client, namespace)
 
 			// 初始化容器的历史数据结构
 			containerHistorical := struct {
@@ -534,7 +403,7 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 
 			containerHistorical.DiskUsage = append(containerHistorical.DiskUsage, MetricDataPoint{
 				Timestamp: currentTime,
-				Value:     diskUsagePercentage,
+				Value:     float64(containerDiskUsage),
 			})
 
 			// 从缓存中获取容器的历史数据
@@ -605,29 +474,9 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 						// 获取容器的磁盘历史数据
 						if diskData, ok := containerCache.Historical["disk"]; ok && len(diskData) > 0 {
 							for _, point := range diskData {
-								// 计算磁盘使用率百分比
-								diskPercentage := float64(0)
-								if diskLimits > 0 {
-									diskPercentage = point.Value / float64(diskLimits) * 100
-								} else if diskRequests > 0 {
-									diskPercentage = point.Value / float64(diskRequests) * 100
-								} else if _, ok := nodeCapacity["disk"]; ok {
-									diskPercentage = point.Value / float64(nodeCapacity["disk"]["capacity"]) * 100
-								} else {
-									// 如果没有限制或请求，使用当前实际值
-									diskPercentage = diskUsagePercentage
-								}
-
-								// 确保值在有效范围内
-								if diskPercentage < 0 {
-									diskPercentage = 0
-								} else if diskPercentage > 100 {
-									diskPercentage = 100
-								}
-
 								containerHistorical.DiskUsage = append(containerHistorical.DiskUsage, MetricDataPoint{
 									Timestamp: point.Timestamp.Format(time.RFC3339),
-									Value:     diskPercentage,
+									Value:     point.Value,
 								})
 							}
 						}
@@ -641,7 +490,8 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 				Name:           containerMetrics.Name,
 				CPUUsage:       cpuUsagePercentage,
 				MemoryUsage:    memoryUsagePercentage,
-				DiskUsage:      diskUsagePercentage,
+				DiskUsedBytes:  containerDiskUsage,
+				DiskUsed:       FormatStorage(containerDiskUsage),
 				CPURequests:    formatCPU(cpuRequests),
 				CPULimits:      formatCPU(cpuLimits),
 				MemoryRequests: formatMemory(memoryRequests),
@@ -671,38 +521,10 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 		metrics.MemoryUsage = float64(totalMemoryUsage) / float64(capacity["capacity"]) * 100
 	}
 
-	// 计算Pod总体硬盘使用率 - 通过直接在Pod中执行命令获取真实的磁盘使用情况
-	// 获取当前的集群配置
-	diskUsage, err := GetPodDiskUsage(client, config, namespace, podName)
-	if err == nil && len(diskUsage) > 0 {
-		// 计算所有卷的总使用量
-		totalUsedBytes := int64(0)
-		for _, usedBytes := range diskUsage {
-			totalUsedBytes += usedBytes
-		}
-
-		// 计算使用率
-		if totalDiskLimits > 0 {
-			metrics.DiskUsage = float64(totalUsedBytes) / float64(totalDiskLimits) * 100
-		} else if totalDiskRequests > 0 {
-			metrics.DiskUsage = float64(totalUsedBytes) / float64(totalDiskRequests) * 100
-		} else if _, ok := nodeCapacity["disk"]; ok {
-			metrics.DiskUsage = float64(totalUsedBytes) / float64(nodeCapacity["disk"]["capacity"]) * 100
-		}
-	} else {
-		// 如果无法获取真实的磁盘使用情况，回退到估算
-		if totalDiskLimits > 0 {
-			metrics.DiskUsage = metrics.MemoryUsage * 0.8
-		} else if totalDiskRequests > 0 {
-			metrics.DiskUsage = metrics.MemoryUsage * 0.9
-		} else if _, ok := nodeCapacity["disk"]; ok {
-			metrics.DiskUsage = metrics.MemoryUsage * 0.5
-		}
-	}
-
-	// 确保硬盘使用率不超过100%
-	if metrics.DiskUsage > 100 {
-		metrics.DiskUsage = 100
+	// Pod 总体磁盘占用（kubelet / metrics-server / exec）
+	if diskStats != nil && diskStats.PodUsedBytes > 0 {
+		metrics.DiskUsedBytes = diskStats.PodUsedBytes
+		metrics.DiskUsed = FormatStorage(diskStats.PodUsedBytes)
 	}
 
 	// 使用真实数据来替代模拟数据
@@ -799,11 +621,11 @@ func GetPodMetrics(client *kubernetes.Clientset, namespace, podName string) (*Po
 		})
 	}
 
-	// 如果磁盘历史数据为空，添加当前值
+	// 如果磁盘历史数据为空，添加当前值（字节）
 	if len(metrics.HistoricalData.DiskUsage) == 0 {
 		metrics.HistoricalData.DiskUsage = append(metrics.HistoricalData.DiskUsage, MetricDataPoint{
 			Timestamp: now.Format(time.RFC3339),
-			Value:     metrics.DiskUsage,
+			Value:     float64(metrics.DiskUsedBytes),
 		})
 	}
 

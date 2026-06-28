@@ -216,6 +216,28 @@ logging:
   - 运维手册记录各集群 kubeconfig 的安全存储位置，或
   - 等待后续持久化功能（见 TODO）
 
+#### 磁盘/指标监控所需 RBAC
+
+Kube Tide 通过已注册集群的 kubeconfig 访问 API，**不会**误用本机 `~/.kube/config`。
+
+在目标集群一次性授权（推荐）：
+
+```bash
+kubectl apply -f deployments/k8s/kube-tide-rbac.yaml
+kubectl -n kube-system create token kube-tide --duration=87600h
+# 用 token 组装 kubeconfig 后在平台「集群管理」中添加
+```
+
+关键权限：
+
+| 能力 | RBAC |
+|------|------|
+| CPU/内存/ephemeral-storage | `metrics.k8s.io` pods/nodes get/list |
+| 磁盘占用（Kubelet stats） | `nodes/proxy` get |
+| Pod 终端/日志 exec 兜底 | `pods/exec` create |
+
+添加集群或点击「测试连接」时，平台会自动检查上述权限；若 kubeconfig 具备 RBAC 管理权限且身份为 ServiceAccount，会尝试自动创建/更新 `kube-tide` ClusterRole 并绑定。
+
 ## 5. 反向代理与 TLS
 
 ### 5.1 Nginx 示例

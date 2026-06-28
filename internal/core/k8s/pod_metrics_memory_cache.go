@@ -142,7 +142,7 @@ func (c *MemoryMetricsCache) SetPodMetrics(namespace, podName string, metrics *P
 
 	metrics.HistoricalData.DiskUsage = append(metrics.HistoricalData.DiskUsage, MetricDataPoint{
 		Timestamp: now,
-		Value:     metrics.DiskUsage,
+		Value:     float64(metrics.DiskUsedBytes),
 	})
 
 	// 更新缓存

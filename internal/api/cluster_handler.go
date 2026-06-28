@@ -100,9 +100,17 @@ func (h *ClusterHandler) AddCluster(c *gin.Context) {
 		return
 	}
 
-	ResponseSuccess(c, gin.H{
-		"message": "cluster.addSuccess",
-	})
+	client, clientErr := h.clientManager.GetClient(cluster.Name)
+	var permissions *k8s.ClusterPermissionReport
+	if clientErr == nil {
+		permissions = k8s.PrepareClusterAccess(c.Request.Context(), client)
+	}
+
+	resp := gin.H{"message": "cluster.addSuccess"}
+	if permissions != nil {
+		resp["permissions"] = permissions
+	}
+	ResponseSuccess(c, resp)
 }
 
 // RemoveCluster Remove a cluster
@@ -134,9 +142,9 @@ func (h *ClusterHandler) TestConnection(c *gin.Context) {
 	}
 
 	// 使用通用日志函数
-	_, err := logger.LogFunc(i18n.T(c, "cluster.test.connection"), func() (interface{}, error) {
+	report, err := logger.LogFunc(i18n.T(c, "cluster.test.connection"), func() (interface{}, error) {
 		logger.Info(i18n.T(c, "cluster.test.connecting"), "clusterName", clusterName)
-		return nil, h.clientManager.TestConnection(clusterName)
+		return h.clientManager.TestConnection(clusterName)
 	})
 
 	if err != nil {
@@ -144,8 +152,10 @@ func (h *ClusterHandler) TestConnection(c *gin.Context) {
 		return
 	}
 
+	permissionReport := report.(*k8s.ClusterPermissionReport)
 	ResponseSuccess(c, gin.H{
-		"status": "connected",
+		"status":      "connected",
+		"permissions": permissionReport,
 	})
 }
 
@@ -239,7 +249,11 @@ func (h *ClusterHandler) GetClusterMetrics(c *gin.Context) {
 		}
 
 		// 获取集群监控指标
-		return k8s.GetClusterMetrics(client)
+		config, err := h.clientManager.GetConfig(clusterName)
+		if err != nil {
+			return nil, err
+		}
+		return k8s.GetClusterMetrics(client, config)
 	})
 
 	if err != nil {

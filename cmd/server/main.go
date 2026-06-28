@@ -90,7 +90,7 @@ func main() {
 	// create API handlers
 	nodeHandler := api.NewNodeHandler(nodeService)
 	podHandler := api.NewPodHandler(podService)
-	deploymentHandler := api.NewDeploymentHandler(deploymentService)
+	deploymentHandler := api.NewDeploymentHandler(deploymentService, podMetricsService)
 	nodePoolHandler := api.NewNodePoolHandler(nodePoolService)
 	serviceHandler := api.NewServiceHandler(serviceManager)
 	ingressHandler := api.NewIngressHandler(ingressManager)

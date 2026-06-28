@@ -1,10 +1,13 @@
 package k8s
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"kube-tide/internal/utils/logger"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -106,6 +109,10 @@ func (cm *ClientManager) AddCluster(clusterName, kubeconfigPath string) error {
 	cm.configs[clusterName] = config
 	cm.addTypes[clusterName] = "path"
 
+	if report := PrepareClusterAccess(context.Background(), clientset); report != nil && !report.AllGranted {
+		logger.Warn("cluster permissions incomplete", "cluster", clusterName, "message", report.Message)
+	}
+
 	return nil
 }
 
@@ -148,6 +155,10 @@ func (cm *ClientManager) AddClusterWithContent(clusterName, content string) erro
 	cm.clients[clusterName] = clientset
 	cm.configs[clusterName] = config
 	cm.addTypes[clusterName] = "content"
+
+	if report := PrepareClusterAccess(context.Background(), clientset); report != nil && !report.AllGranted {
+		logger.Warn("cluster permissions incomplete", "cluster", clusterName, "message", report.Message)
+	}
 
 	return nil
 }
@@ -203,19 +214,18 @@ func (cm *ClientManager) ListClusters() []string {
 	return clusters
 }
 
-// TestConnection Test cluster connection
-func (cm *ClientManager) TestConnection(clusterName string) error {
+// TestConnection Test cluster connection and monitoring permissions
+func (cm *ClientManager) TestConnection(clusterName string) (*ClusterPermissionReport, error) {
 	client, err := cm.GetClient(clusterName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = client.ServerVersion()
-	if err != nil {
-		return fmt.Errorf("connection test failed: %w", err)
+	if _, err = client.ServerVersion(); err != nil {
+		return nil, fmt.Errorf("connection test failed: %w", err)
 	}
 
-	return nil
+	return PrepareClusterAccess(context.Background(), client), nil
 }
 
 // GetAddType 获取集群的添加方式

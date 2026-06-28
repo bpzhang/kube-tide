@@ -523,3 +523,122 @@ export const rollbackDeployment = (clusterName: string, namespace: string, deplo
   const data = revision !== undefined ? { revision } : {};
   return api.post(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/rollback`, data);
 };
+
+export interface MetricDataPoint {
+  timestamp: string;
+  value: number;
+}
+
+export interface WorkloadAlert {
+  level: string;
+  source: string;
+  metric: string;
+  value: number;
+  message: string;
+}
+
+export interface ContainerGroupMetrics {
+  name: string;
+  podCount: number;
+  avgCpuUsage: number;
+  maxCpuUsage: number;
+  minCpuUsage: number;
+  avgMemoryUsage: number;
+  maxMemoryUsage: number;
+  minMemoryUsage: number;
+  avgDiskUsed: string;
+  maxDiskUsed: string;
+  minDiskUsed: string;
+  avgDiskUsedBytes: number;
+  maxDiskUsedBytes: number;
+  minDiskUsedBytes: number;
+  cpuRequests: string;
+  cpuLimits: string;
+  memoryRequests: string;
+  memoryLimits: string;
+  diskRequests: string;
+  diskLimits: string;
+  healthStatus: string;
+}
+
+export interface WorkloadPodMetrics {
+  name: string;
+  phase: string;
+  ready: boolean;
+  cpuUsage: number;
+  memoryUsage: number;
+  diskUsed: string;
+  diskUsedBytes: number;
+  healthStatus: string;
+  restarts: number;
+}
+
+export interface WorkloadMetrics {
+  workloadType: string;
+  name: string;
+  namespace: string;
+  summary: {
+    replicas: number;
+    readyReplicas: number;
+    availableReplicas: number;
+    podCount: number;
+    runningPods: number;
+    metricsPodCount: number;
+    avgCpuUsage: number;
+    maxCpuUsage: number;
+    avgMemoryUsage: number;
+    maxMemoryUsage: number;
+    avgDiskUsed: string;
+    maxDiskUsed: string;
+    totalDiskUsed: string;
+    avgDiskUsedBytes: number;
+    maxDiskUsedBytes: number;
+    totalDiskUsedBytes: number;
+    cpuRequests: string;
+    cpuLimits: string;
+    memoryRequests: string;
+    memoryLimits: string;
+    diskRequests: string;
+    diskLimits: string;
+    healthStatus: string;
+    alerts: WorkloadAlert[];
+  };
+  monitoringStrategy: {
+    policy: string;
+    description: string;
+    thresholds: {
+      cpuWarning: number;
+      cpuCritical: number;
+      memoryWarning: number;
+      memoryCritical: number;
+    };
+    podCoverage: string;
+    recommendation: string;
+  };
+  pods: WorkloadPodMetrics[];
+  containerGroups: ContainerGroupMetrics[];
+  historicalData: {
+    cpuUsage: MetricDataPoint[];
+    memoryUsage: MetricDataPoint[];
+    diskUsage: MetricDataPoint[];
+  };
+}
+
+export interface DeploymentMetricsResponse {
+  code: number;
+  message: string;
+  data: {
+    metrics: WorkloadMetrics;
+  };
+}
+
+export const getDeploymentMetrics = (
+  clusterName: string,
+  namespace: string,
+  deploymentName: string,
+) => {
+  return api.get<DeploymentMetricsResponse>(
+    `/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/metrics`,
+    { timeout: 60000 },
+  );
+};

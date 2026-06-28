@@ -39,8 +39,8 @@ const App: React.FC = () => {
             <Route path="pods/:clusterName/:namespace/:podName" element={<PodDetailPage />} />
             <Route path="services" element={<Services />} />
             <Route path="deployments" element={<Deployments />} />
-            <Route path="deployments/:namespace" element={<Deployments />} />
             <Route path="deployments/detail/:clusterName/:namespace/:deploymentName" element={<DeploymentDetailPage />} />
+            <Route path="deployments/ns/:namespace" element={<Deployments />} />
             <Route path="statefulsets" element={<StatefulSets />} />
             <Route path="statefulsets/detail/:clusterName/:namespace/:statefulsetName" element={<StatefulSetDetailPage />} />
           </Route>

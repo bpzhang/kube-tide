@@ -16,9 +16,13 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-// GetPodDiskUsage 获取Pod的实际磁盘使用情况
+// GetPodDiskUsage 获取Pod的实际磁盘使用情况（exec 方式，作为兜底）
 // 返回一个映射，键为卷的挂载路径，值为使用的字节数
 func GetPodDiskUsage(client *kubernetes.Clientset, config *rest.Config, namespace, podName string) (map[string]int64, error) {
+	return getPodDiskUsageByExec(client, config, namespace, podName)
+}
+
+func getPodDiskUsageByExec(client *kubernetes.Clientset, config *rest.Config, namespace, podName string) (map[string]int64, error) {
 	// 存储卷使用情况的映射，键为路径，值为使用的字节数
 	diskUsage := make(map[string]int64)
 
