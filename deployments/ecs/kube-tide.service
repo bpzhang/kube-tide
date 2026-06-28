@@ -1,0 +1,23 @@
+[Unit]
+Description=Kube Tide Kubernetes Ops Platform
+Documentation=https://github.com/bpzhang/kube-tide/blob/main/docs/operations.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kube-tide
+Group=kube-tide
+WorkingDirectory=/opt/kube-tide
+Environment=K8S_PLATFORM_ENV=production
+ExecStart=/opt/kube-tide/kube-tide-prod
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65535
+
+# Graceful shutdown (SIGTERM handled in application)
+TimeoutStopSec=15
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

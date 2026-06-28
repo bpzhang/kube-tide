@@ -52,6 +52,7 @@ func main() {
 	ingressManager := k8s.NewIngressManager(clientManager)
 	namespaceService := k8s.NewNamespaceService(clientManager)     // 初始化命名空间服务
 	statefulSetService := k8s.NewStatefulSetService(clientManager) // 初始化StatefulSet服务
+	autoScalerService := k8s.NewAutoScalerService(clientManager)
 
 	// 初始化Pod指标服务，用于收集和缓存监控数据
 	podMetricsService := k8s.NewPodMetricsService(clientManager)
@@ -98,6 +99,7 @@ func main() {
 	podTerminalHandler := api.NewPodTerminalHandler(podService)
 	namespaceHandler := api.NewNamespaceHandler(namespaceService)       // 初始化命名空间处理器
 	statefulSetHandler := api.NewStatefulSetHandler(statefulSetService) // 初始化StatefulSet处理器
+	autoScalerHandler := api.NewAutoScalerHandler(autoScalerService)
 
 	// Create an app instance and initialize the route
 	app := &api.App{
@@ -108,6 +110,7 @@ func main() {
 		IngressHandler:     ingressHandler,
 		DeploymentHandler:  deploymentHandler,
 		NodePoolHandler:    nodePoolHandler,
+		AutoScalerHandler:  autoScalerHandler,
 		HealthHandler:      healthHandler,
 		PodTerminalHandler: podTerminalHandler,
 		NamespaceHandler:   namespaceHandler,   // 添加到App实例

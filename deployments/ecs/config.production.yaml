@@ -1,0 +1,20 @@
+# Production config for ECS / VM deployment.
+# Copy to /opt/kube-tide/configs/config.yaml on the server.
+server:
+  port: 8080
+  host: 127.0.0.1   # bind localhost only; expose via Nginx on the same ECS
+
+logging:
+  level: info
+  file:
+    enabled: true
+    path: "./logs/kube-tide.log"
+    error_path: "./logs/kube-tide-error.log"
+  rotate:
+    enabled: true
+    max_size: 100
+    max_age: 30
+    max_backups: 10
+    compression: "after_days:7"
+    local_time: true
+    rotation_time: daily

@@ -17,15 +17,15 @@
 - 前端改动，需要同步调整后端相应的API
 
 ## 架构指南
-- 遵循README.md的内容
-- 代码结构目录参考[目录](../docs/code_arch.md)中的详细目录结构
+- 遵循 README.md 与 [docs/architecture.md](../docs/architecture.md) 的内容
+- 代码结构目录参考 [code_arch.md](../docs/code_arch.md)（当前实际结构）
+- 运维部署参考 [operations.md](../docs/operations.md)
 - 使用模块化设计，避免单一职责原则的违反
 - 避免过度嵌套的代码结构
 
 ## Kubernetes相关
-- 使用client-go库与Kubernetes交互
-- 遵循Kubernetes Operator模式
-- 资源定义应遵循Kubernetes API约定
+- 使用 client-go 库与 Kubernetes 交互
+- 资源操作遵循 Kubernetes API 约定（本项目为 Web 控制台，非 Operator/CRD 控制器）
 - 考虑多集群支持
 
 ## 测试要求

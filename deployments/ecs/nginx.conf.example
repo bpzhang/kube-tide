@@ -1,0 +1,45 @@
+# Example Nginx site for ECS. Install on the same VM as kube-tide.
+# Replace kube-tide.example.com and TLS cert paths.
+#
+#   sudo cp deployments/ecs/nginx.conf.example /etc/nginx/conf.d/kube-tide.conf
+#   sudo nginx -t && sudo systemctl reload nginx
+
+upstream kube_tide {
+    server 127.0.0.1:8080;
+    keepalive 32;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name kube-tide.example.com;
+
+    ssl_certificate     /etc/nginx/ssl/kube-tide.crt;
+    ssl_certificate_key /etc/nginx/ssl/kube-tide.key;
+
+    # Recommended: add auth at this layer (Basic Auth, OAuth2 Proxy, VPN-only IP allowlist)
+
+    location / {
+        proxy_pass http://kube_tide;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Pod exec WebSocket
+    location ~ ^/api/clusters/.+/namespaces/.+/pods/.+/exec$ {
+        proxy_pass http://kube_tide;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+}
+
+server {
+    listen 80;
+    server_name kube-tide.example.com;
+    return 301 https://$host$request_uri;
+}

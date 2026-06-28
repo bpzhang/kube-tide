@@ -10,6 +10,8 @@ WEB_DIR=./web
 DIST_DIR=./dist
 WEB_DIST_DIR=$(PKG_DIR)/embed/web
 PNPM=pnpm
+DOCKER_IMAGE?=kube-tide:latest
+DOCKERFILE=deployments/docker/Dockerfile
 
 # 默认目标（测试环境构建）
 .PHONY: all
@@ -69,6 +71,16 @@ clean:
 	find . -name '*.test' -delete
 	find . -name '*.out' -delete
 
+# Docker 镜像构建（上下文为仓库根目录）
+.PHONY: docker-build
+docker-build:
+	docker build -f $(DOCKERFILE) -t $(DOCKER_IMAGE) .
+
+# 本地运行 Docker 容器（可选；ECS 推荐 systemd + 二进制，见 docs/operations.md）
+.PHONY: docker-run
+docker-run:
+	docker run --rm -p 127.0.0.1:8080:8080 --name kube-tide $(DOCKER_IMAGE)
+
 # 帮助信息
 .PHONY: help
 help:
@@ -78,3 +90,5 @@ help:
 	@echo "  make build-prod 生产环境构建"
 	@echo "  make run-prod   生产环境运行（自动构建）"
 	@echo "  make clean      清理构建产物"
+	@echo "  make docker-build [DOCKER_IMAGE=repo/kube-tide:tag]  构建 Docker 镜像（ECS 可选）"
+	@echo "  make docker-run   本地运行容器（127.0.0.1:8080）"

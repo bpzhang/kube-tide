@@ -8,7 +8,7 @@
 - [X] 集群连接测试
 - [X] 集群资源概览
 - [ ] 实现多集群配置同步功能
-- [ ] 添加集群健康检查和告警机制
+- [ ] 添加集群健康检查和告警机制（当前仅有 `/api/health` 进程存活检查，不探测 K8s 连通性，见 [operations.md](./operations.md)）
 - [ ] 实现集群备份和恢复功能
 - [ ] 增加集群资源配额管理
 
@@ -74,7 +74,8 @@
 ### 网络管理
 
 - [X] 实现Service管理
-- [ ] 实现Ingress资源管理
+- [X] 实现 Ingress 资源管理（按命名空间列表查询；Deployment 详情「路由」Tab 展示关联 Ingress）
+- [ ] Ingress 独立管理页面（创建/编辑/删除）
 - [ ] 添加Service Mesh集成
 - [ ] 实现网络策略（NetworkPolicy）管理
 - [ ] 实现LoadBalancer类型服务的自动化配置
@@ -193,13 +194,13 @@
 
 ### 后端优化
 
-- [X] 微服务架构设计
+- [X] 单体应用架构（Go HTTP 服务 + embed 前端，非微服务拆分）
 - [X] WebSocket实时通信
 - [X] 多集群客户端管理
 - [X] 内存缓存优化
 - [ ] 分布式缓存集成
 - [ ] 消息队列集成
-- [ ] 数据库持久化
+- [ ] 数据库持久化（集群注册信息当前仅存内存，重启丢失）
 
 ### 前端优化
 
@@ -213,22 +214,22 @@
 
 ### 部署优化
 
-- [ ] Docker容器化部署
-- [ ] Kubernetes原生部署
-- [ ] Helm Chart部署
+- [X] ECS / VM 部署文档与示例（[deployments/ecs/](../deployments/ecs/) + [operations.md](./operations.md) §2）
+- [ ] Docker 容器化部署（[deployments/docker/Dockerfile](../deployments/docker/Dockerfile)，ECS 上可选）
+- [ ] Helm Chart 部署（不适用当前 ECS 单机场景，低优先级）
 - [ ] 多环境配置管理
-- [ ] 自动化CI/CD流水线
+- [ ] 自动化 CI/CD 流水线
 
 ## 文档完善
 
 ### 技术文档
 
-- [X] 代码架构文档
-- [X] 系统架构设计
-- [ ] 补充API文档
-- [ ] 完善部署文档
-- [ ] 添加开发指南
-- [ ] 编写故障排除手册
+- [X] 代码架构文档（[code_arch.md](./code_arch.md)，已与实际目录同步）
+- [X] 系统架构设计（[architecture.md](./architecture.md)）
+- [X] 运维部署手册（[operations.md](./operations.md)）
+- [ ] 补充 API 文档（OpenAPI / Swagger）
+- [ ] 添加开发指南（独立文档，architecture.md 已含基础开发说明）
+- [ ] 编写故障排除手册（operations.md §12 已含常见故障，待扩展）
 
 ### 用户文档
 
@@ -260,8 +261,7 @@
 
 - 所有开发必须遵循Go语言官方代码规范
 - 使用client-go库与Kubernetes交互
-- 遵循Kubernetes Operator模式
-- 资源定义必须遵循Kubernetes API约定
+- 通过 client-go 调用 Kubernetes API；资源操作遵循 K8s API 约定（非 Operator / CRD 控制器项目）
 - 确保多集群支持的可扩展性
 - 所有新功能必须包含单元测试
 - 保持文档的同步更新

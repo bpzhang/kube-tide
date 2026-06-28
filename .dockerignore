@@ -1,0 +1,17 @@
+.git
+.github
+.idea
+.vscode
+dist/
+logs/
+tmp/
+temp/
+web/node_modules/
+web/dist/
+pkg/embed/web/dist/
+vendor/
+**/*.test
+**/*.out
+.env
+*.env
+.DS_Store

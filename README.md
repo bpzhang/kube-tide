@@ -1,7 +1,5 @@
 # Kube Tide
 
-![Kube Tide Logo](docs/images/logo.png)
-
 A modern Kubernetes multi-cluster management platform based on Go and React, providing an intuitive web interface to simplify Kubernetes resource management and operations.
 
 [中文文档](README.zh-CN.md) | [English](README.md)
@@ -13,7 +11,6 @@ A modern Kubernetes multi-cluster management platform based on Go and React, pro
 - Multi-cluster support and management
 - Cluster connection testing
 - Cluster resource overview
-- Cluster health monitoring
 
 ### Node Management
 
@@ -21,9 +18,9 @@ A modern Kubernetes multi-cluster management platform based on Go and React, pro
 - Node resource usage visualization
 - Node drain operations
 - Scheduling control (Cordon/Uncordon)
-- Node taints management
-- Node labels management
+- Node taints and labels management
 - Node pools creation and management
+- Cluster autoscaler configuration
 
 ### Workload Management
 
@@ -35,38 +32,32 @@ A modern Kubernetes multi-cluster management platform based on Go and React, pro
 - Pod resource monitoring (CPU, Memory, Disk usage)
 - Pod metrics historical data visualization
 - Pod events viewing
+- Pod lifecycle and restart policy management
 
 #### Deployment Management
 
 - Deployment creation and management
-- Deployment scaling and restart
-- Deployment details viewing with standalone page tabs
-- Related Service and Service endpoints visibility inside Deployment details
-- Service exposure information is grouped in a dedicated access tab with service and route sections
-- Ingress-based routes related to the Deployment are shown in the route section
-- Deployment update strategy configuration
-- Deployment health check configuration
-- Deployment resource limits configuration
-- Deployment node affinity configuration
+- Deployment scaling, restart, rollout history and rollback
+- Deployment details with tabbed layout (overview, containers, status, pods, access, events)
+- Related Services, Endpoints and Ingress routes in the access tab
+- Update strategy, health checks, resource limits and node affinity configuration
 
 #### StatefulSet Management
 
-- StatefulSet basic management
-- StatefulSet scaling
-- StatefulSet details viewing
+- StatefulSet basic management, scaling and details
 
-#### Service Management
+#### Service & Ingress
 
 - Service creation and management
-- Service details viewing
-- Service endpoints monitoring
+- Service details and endpoints monitoring
+- Ingress listing by namespace (shown in Deployment access tab)
 
 ### Monitoring & Observability
 
 - Real-time resource monitoring
-- Metrics data visualization
+- Metrics data visualization (Recharts)
 - Cluster and node resource overview
-- Pod performance metrics history
+- Pod performance metrics history (in-memory cache)
 
 ### Internationalization
 
@@ -77,199 +68,169 @@ A modern Kubernetes multi-cluster management platform based on Go and React, pro
 
 ### Backend
 
-- **Go** - Main programming language
-- **Gin** - Web framework
-- **client-go** - Kubernetes client library
-- **WebSocket** - Real-time communication
-- **Logrus** - Logging
+- **Go 1.26+** — Main language
+- **Gin** — Web framework
+- **client-go v0.36** — Kubernetes client
+- **coder/websocket** — Pod terminal
+- **zap + lumberjack** — Logging with rotation
+- **viper** — Configuration
 
 ### Frontend
 
-- **React 19** - Frontend framework
-- **TypeScript** - Type safety
-- **Ant Design** - UI component library
-- **Vite** - Build tool
-- **React Router** - Routing
-- **Axios** - HTTP client
-- **ECharts** - Data visualization
+- **React 19** — UI framework
+- **TypeScript** — Type safety
+- **Vite 8** — Build tool
+- **Ant Design 6** — UI components
+- **React Router 7** — Routing
+- **Axios** — HTTP client
+- **Recharts** — Charts
+- **xterm.js** — Terminal
 
 ## System Architecture
 
-The platform adopts a front-end and back-end separation architecture:
+Monolithic Go HTTP server with embedded frontend (production build). The backend talks to multiple Kubernetes clusters via client-go; the React SPA uses REST and WebSocket.
 
-- **Frontend**: React SPA application, communicating with backend through RESTful APIs and WebSocket
-- **Backend**: Go microservice, interacting with multiple Kubernetes clusters via client-go
-- **Real-time Communication**: WebSocket support for real-time log viewing and terminal connections
+See [Architecture Documentation](docs/architecture.md) for details.
 
-### Architecture Features
+**Important for production (ECS / VM):**
 
-- **Multi-cluster support**
-- **High-performance caching**
-- **Secure authentication**
-- **Real-time monitoring**
-- **Internationalization**
+- Deploy on a **standalone ECS or VM**, not inside Kubernetes
+- No built-in platform authentication — protect with reverse proxy / network isolation
+- Cluster registrations are in-memory only — re-register after restart
+- Single instance only
+
+See [Operations Guide](docs/operations.md) §2 for ECS deployment.
 
 ## Directory Structure
 
 ```plaintext
 kube-tide/
-├── cmd/                    # Application entry points
-│   ├── kube-tide/          # CLI entry
-│   └── server/             # Server entry
-├── configs/                # Configuration files
-├── docs/                   # Documentation
-│   ├── architecture.md     # Architecture documentation
-│   ├── code_arch.md        # Code architecture
-│   └── images/             # Documentation images
-├── internal/               # Internal packages
-│   ├── api/                # API handlers and routes
-│   │   └── middleware/     # HTTP middlewares
-│   ├── core/               # Core business logic
-│   │   └── k8s/            # Kubernetes resource management
-│   └── utils/              # Utility functions
-│       ├── i18n/           # Internationalization
-│       └── logger/         # Logging utilities
-├── pkg/                    # Exportable packages
-│   └── embed/              # Embedded resources
-├── web/                    # Frontend code
-│   ├── public/             # Static resources
-│   └── src/                # Source code
-│       ├── api/            # API client
-│       ├── components/     # React components
-│       ├── i18n/           # Internationalization
-│       ├── layouts/        # Page layouts
-│       ├── pages/          # Page components
-│       └── utils/          # Utility functions
-└── Makefile                # Build scripts
+├── cmd/server/           # Application entry
+├── configs/              # Configuration
+├── docs/                 # Documentation
+├── internal/
+│   ├── api/              # HTTP handlers & routes
+│   ├── core/k8s/         # Kubernetes business logic
+│   └── utils/            # Logger, i18n
+├── pkg/embed/            # Embedded frontend (production)
+├── web/                  # React frontend
+├── scripts/              # Utility scripts
+├── Makefile
+└── README.md
 ```
+
+Full tree: [Code Architecture](docs/code_arch.md)
 
 ## Installation and Usage
 
 ### Prerequisites
 
-- Go 1.19 or higher
-- Node.js 16 or higher
-- pnpm package manager
-- Accessible Kubernetes cluster
+- Go 1.26+
+- Node.js 18+ (LTS recommended)
+- pnpm
+- Accessible Kubernetes cluster(s)
 
-### Quick Start
+### Quick Start (Production)
 
-1. **Clone the repository**
+```bash
+git clone https://github.com/bpzhang/kube-tide.git
+cd kube-tide
 
-   ```bash
-   git clone https://github.com/bpzhang/kube-tide.git
-   cd kube-tide
-   ```
+make build-prod
+make run-prod
+```
 
-2. **Build and run**
+Open: `http://localhost:8080`
 
-   ```bash
-   # Build production version (frontend and backend)
-   make build-prod
+### Development
 
-   # Run the application
-   make run-prod
-   ```
+**Option A — Makefile (frontend hot reload + backend)**
 
-3. **Access the web interface**
+```bash
+make run
+# Frontend: http://127.0.0.1:5173
+# Backend:  http://127.0.0.1:8080
+```
 
-   ```
-   http://localhost:8080
-   ```
+**Option B — Separate terminals**
 
-### Development Setup
+```bash
+# Terminal 1
+cd web && pnpm install && pnpm dev
 
-1. **Backend Development**
+# Terminal 2
+go mod download
+go run ./cmd/server/main.go
+```
 
-   ```bash
-   # Install Go dependencies
-   go mod download
+### Make Commands
 
-   # Run backend in development mode
-   make dev
-   ```
-
-2. **Frontend Development**
-
-   ```bash
-   cd web
-   pnpm install
-   pnpm dev
-   ```
-
-### Available Make Commands
-
-- `make build` - Build the project (frontend and backend)
-- `make build-prod` - Build production version
-- `make build-web` - Build frontend only
-- `make build-backend` - Build backend only
-- `make run` - Run the application
-- `make run-prod` - Run production version
-- `make dev` - Run in development mode
-- `make test` - Run tests
-- `make verify` - Run verification (Maven-style)
-- `make clean` - Clean build artifacts
+| Command | Description |
+|---------|-------------|
+| `make build` | Build dev binary + embed frontend |
+| `make build-prod` | Build production binary |
+| `make run` | Dev mode (Vite + backend) |
+| `make run-prod` | Build and run production |
+| `make clean` | Remove build artifacts |
+| `make docker-build` | Build Docker image (optional on ECS) |
+| `make docker-run` | Run container locally |
+| `make help` | Show available targets |
 
 ## Configuration
 
-The application can be configured through:
+- **File:** `configs/config.yaml` — server port, logging
+- **Environment:** `K8S_PLATFORM_ENV=production` — force production mode
+- **Clusters:** added at runtime via UI or API (not in config file)
 
-- **Environment variables**
-- **Configuration file** (`configs/config.yaml`)
-- **Command line flags**
-
-Key configuration options:
-
-- Server port and host
-- Kubernetes cluster configurations
-- Logging levels
-- Frontend build settings
+See [Operations Guide](docs/operations.md) for production settings.
 
 ## Documentation
 
-- [Architecture Documentation](docs/architecture.md)
-- [Code Architecture](docs/code_arch.md)
-- [TODO List](docs/TODO.md)
+- [Architecture](docs/architecture.md)
+- [Code Structure](docs/code_arch.md)
+- [Operations & Deployment](docs/operations.md)
+- [Roadmap / TODO](docs/TODO.md)
 
 ## Roadmap
 
-### Upcoming Features
-
 - ConfigMap and Secret management
-- Storage management (PV, PVC, StorageClass)
-- Monitoring system integration (Prometheus)
-- RBAC permission management
-- CI/CD integration
-- Helm Chart support
+- Storage (PV, PVC, StorageClass)
+- Prometheus integration
+- Platform RBAC / authentication
 
-See the complete [TODO list](docs/TODO.md) for detailed planning.
+Deployment: **ECS / VM** with systemd — see [Operations Guide](docs/operations.md). Optional Docker: `deployments/docker/`.
+
+See [TODO](docs/TODO.md) for the full list.
 
 ## Contributing
 
-We welcome contributions! Please feel free to submit Pull Requests or Issues to improve the project.
+Pull Requests and Issues are welcome.
 
-### Development Guidelines
+- Follow Go official conventions
+- Keep frontend TypeScript types accurate
+- Update docs when changing behavior
 
-- Follow Go official code standards
-- Include appropriate tests for new features
-- Update documentation when necessary
-- Ensure TypeScript type safety for frontend code
+## Dependency Upgrades
 
-## Recent UI Updates
+```bash
+# Backend
+./scripts/upgrade-deps.sh
 
-- Deployment detail view now uses a standalone page instead of a narrow side drawer
-- Deployment detail content is grouped into tabs for overview, containers, status, pods, access, and events
-- The access tab now contains service and route sub-tabs
-- Related Services and their endpoints are shown directly inside the Deployment detail page
-- Route sub-tab now displays Kubernetes Ingress entries that point to related Services
+# Or manually
+go get -u ./...
+go mod tidy
+
+# Frontend
+cd web && pnpm update
+```
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+[MIT License](LICENSE)
 
 ## Acknowledgments
 
-- [Kubernetes](https://kubernetes.io/) - The amazing container orchestration platform
-- [client-go](https://github.com/kubernetes/client-go) - Official Kubernetes Go client library
-- [Ant Design](https://ant.design/) - Excellent React UI library
-- [Gin](https://gin-gonic.com/) - High-performance Go web framework
+- [Kubernetes](https://kubernetes.io/)
+- [client-go](https://github.com/kubernetes/client-go)
+- [Ant Design](https://ant.design/)
+- [Gin](https://gin-gonic.com/)
