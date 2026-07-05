@@ -814,7 +814,10 @@
       "viewDetails": "查看详情",
       "revisionDetails": "版本 #{revision} 详情",
       "basicInfo": "基本信息",
-      "fetchFailed": "获取版本历史失败"
+      "fetchFailed": "获取版本历史失败",
+      "current": "当前",
+      "noReplicas": "无副本",
+      "total": "共 {total} 个版本"
     },
     "rollback": {
       "title": "回滚",

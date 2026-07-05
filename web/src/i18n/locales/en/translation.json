@@ -817,7 +817,10 @@
       "viewDetails": "View Details",
       "revisionDetails": "Revision #{revision} Details",
       "basicInfo": "Basic Information",
-      "fetchFailed": "Failed to fetch version history"
+      "fetchFailed": "Failed to fetch version history",
+      "current": "Current",
+      "noReplicas": "No replicas",
+      "total": "{total} revisions"
     },
     "rollback": {
       "title": "Rollback",

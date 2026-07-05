@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Table, Button, Modal, message, Card, Tag, Space, Tooltip, Typography, Descriptions, Drawer } from 'antd';
 import { HistoryOutlined, RollbackOutlined, EyeOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,12 @@ interface DeploymentHistoryProps {
   onRollbackSuccess?: () => void;
 }
 
+const getContainerImages = (record: RevisionInfo): string[] => {
+  return (record.podTemplateSpec?.spec?.containers || [])
+    .map((container: { image?: string }) => container.image)
+    .filter(Boolean);
+};
+
 const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
   visible,
   onClose,
@@ -31,14 +37,20 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
   const [detailsVisible, setDetailsVisible] = useState(false);
   const [selectedRevision, setSelectedRevision] = useState<RevisionInfo | null>(null);
 
-  // 获取版本历史
+  const currentRevision = revisions[0]?.revision;
+
   const fetchHistory = async () => {
     if (!visible) return;
-    
+
     setLoading(true);
     try {
       const response = await getDeploymentRolloutHistory(clusterName, namespace, deploymentName);
-      setRevisions(response.data.revisions || []);
+      if (response.data.code === 0) {
+        setRevisions(response.data.data?.revisions || []);
+      } else {
+        message.error(response.data.message || t('deployments.history.fetchFailed'));
+        setRevisions([]);
+      }
     } catch (error) {
       console.error('Failed to fetch deployment history:', error);
       message.error(t('deployments.history.fetchFailed'));
@@ -51,7 +63,6 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
     fetchHistory();
   }, [visible, clusterName, namespace, deploymentName]);
 
-  // 回滚到指定版本
   const handleRollback = async (revision: number) => {
     Modal.confirm({
       title: t('deployments.rollback.confirmTitle'),
@@ -75,95 +86,164 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
     });
   };
 
-  // 查看版本详情
-  const handleViewDetails = async (record: RevisionInfo) => {
+  const handleViewDetails = (record: RevisionInfo) => {
     setSelectedRevision(record);
     setDetailsVisible(true);
   };
 
-  // 格式化创建时间
   const formatTime = (time: string) => {
-    return new Date(time).toLocaleString();
+    return new Date(time).toLocaleString(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
-  // 获取状态标签
   const getStatusTag = (record: RevisionInfo) => {
     const { readyReplicas, availableReplicas, replicas } = record;
-    if (readyReplicas === replicas && availableReplicas === replicas) {
-      return <Tag color="green">{t('common.ready')}</Tag>;
-    } else if (readyReplicas > 0) {
-      return <Tag color="orange">{t('common.updating')}</Tag>;
-    } else {
-      return <Tag color="red">{t('common.notReady')}</Tag>;
+    const target = replicas || 0;
+
+    if (target === 0) {
+      return <Tag color="default">{t('deployments.history.noReplicas')}</Tag>;
     }
+    if (readyReplicas === target && availableReplicas === target) {
+      return <Tag color="success">{t('common.ready')}</Tag>;
+    }
+    if (readyReplicas > 0) {
+      return <Tag color="warning">{t('common.updating')}</Tag>;
+    }
+    return <Tag color="error">{t('common.notReady')}</Tag>;
   };
 
-  const columns: ColumnsType<RevisionInfo> = [
-    {
-      title: t('deployments.history.revision'),
-      dataIndex: 'revision',
-      key: 'revision',
-      width: 100,
-      render: (revision: number) => (
-        <Text strong>#{revision}</Text>
-      ),
-    },
-    {
-      title: t('deployments.history.changeReason'),
-      dataIndex: 'changeReason',
-      key: 'changeReason',
-      ellipsis: true,
-      render: (reason: string) => reason || t('common.noData'),
-    },
-    {
-      title: t('deployments.history.replicaSet'),
-      dataIndex: 'replicaSetName',
-      key: 'replicaSetName',
-      ellipsis: true,
-    },
-    {
-      title: t('deployments.history.replicas'),
-      key: 'replicas',
-      width: 120,
-      render: (_, record) => (
-        <Space direction="vertical" size={0}>
-          <Text>{record.readyReplicas}/{record.replicas || 0}</Text>
-          {getStatusTag(record)}
-        </Space>
-      ),
-    },
-    {
-      title: t('deployments.history.creationTime'),
-      dataIndex: 'creationTime',
-      key: 'creationTime',
-      width: 180,
-      render: (time: string) => formatTime(time),
-    },
-    {
-      title: t('common.operations'),
-      key: 'actions',
-      width: 150,
-      render: (_, record) => (
-        <Space>
-          <Tooltip title={t('deployments.history.viewDetails')}>
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              onClick={() => handleViewDetails(record)}
-            />
+  const hasChangeReason = useMemo(
+    () => revisions.some((item) => Boolean(item.changeReason)),
+    [revisions]
+  );
+
+  const columns: ColumnsType<RevisionInfo> = useMemo(() => {
+    const baseColumns: ColumnsType<RevisionInfo> = [
+      {
+        title: t('deployments.history.revision'),
+        dataIndex: 'revision',
+        key: 'revision',
+        width: 96,
+        fixed: 'left',
+        render: (revision: number) => (
+          <Space size={4}>
+            <Text strong>#{revision}</Text>
+            {revision === currentRevision && (
+              <Tag color="blue" style={{ margin: 0 }}>
+                {t('deployments.history.current')}
+              </Tag>
+            )}
+          </Space>
+        ),
+      },
+      {
+        title: t('deployments.image'),
+        key: 'image',
+        ellipsis: { showTitle: false },
+        render: (_, record) => {
+          const images = getContainerImages(record);
+          if (images.length === 0) {
+            return <Text type="secondary">—</Text>;
+          }
+          return (
+            <Tooltip title={images.join('\n')}>
+              <Text ellipsis style={{ maxWidth: 220 }}>
+                {images.join(', ')}
+              </Text>
+            </Tooltip>
+          );
+        },
+      },
+    ];
+
+    if (hasChangeReason) {
+      baseColumns.push({
+        title: t('deployments.history.changeReason'),
+        dataIndex: 'changeReason',
+        key: 'changeReason',
+        width: 160,
+        ellipsis: { showTitle: false },
+        render: (reason: string) => (
+          <Tooltip title={reason}>
+            <Text ellipsis style={{ maxWidth: 140 }}>{reason}</Text>
           </Tooltip>
-          <Tooltip title={t('deployments.rollback.title')}>
-            <Button
-              type="text"
-              icon={<RollbackOutlined />}
-              loading={rollbackLoading}
-              onClick={() => handleRollback(record.revision)}
-            />
+        ),
+      });
+    }
+
+    baseColumns.push(
+      {
+        title: t('deployments.history.replicaSet'),
+        dataIndex: 'replicaSetName',
+        key: 'replicaSetName',
+        width: 180,
+        ellipsis: { showTitle: false },
+        render: (name: string) => (
+          <Tooltip title={name}>
+            <Text code ellipsis style={{ maxWidth: 160, fontSize: 12 }}>
+              {name}
+            </Text>
           </Tooltip>
-        </Space>
-      ),
-    },
-  ];
+        ),
+      },
+      {
+        title: t('deployments.history.replicas'),
+        key: 'replicas',
+        width: 112,
+        render: (_, record) => (
+          <Space size={6}>
+            <Text>{record.readyReplicas}/{record.replicas || 0}</Text>
+            {getStatusTag(record)}
+          </Space>
+        ),
+      },
+      {
+        title: t('deployments.history.creationTime'),
+        dataIndex: 'creationTime',
+        key: 'creationTime',
+        width: 148,
+        render: (time: string) => (
+          <Text style={{ fontSize: 12 }}>{formatTime(time)}</Text>
+        ),
+      },
+      {
+        title: t('common.operations'),
+        key: 'actions',
+        width: 88,
+        fixed: 'right',
+        align: 'center',
+        render: (_, record) => (
+          <Space size={0}>
+            <Tooltip title={t('deployments.history.viewDetails')}>
+              <Button
+                type="text"
+                size="small"
+                icon={<EyeOutlined />}
+                onClick={() => handleViewDetails(record)}
+              />
+            </Tooltip>
+            <Tooltip title={t('deployments.rollback.title')}>
+              <Button
+                type="text"
+                size="small"
+                icon={<RollbackOutlined />}
+                loading={rollbackLoading}
+                disabled={record.revision === currentRevision}
+                onClick={() => handleRollback(record.revision)}
+              />
+            </Tooltip>
+          </Space>
+        ),
+      }
+    );
+
+    return baseColumns;
+  }, [currentRevision, hasChangeReason, rollbackLoading, t]);
 
   return (
     <>
@@ -176,7 +256,8 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
         }
         open={visible}
         onCancel={onClose}
-        width={1000}
+        width={960}
+        styles={{ body: { paddingTop: 12 } }}
         footer={[
           <Button key="close" onClick={onClose}>
             {t('common.close')}
@@ -188,12 +269,17 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
           dataSource={revisions}
           loading={loading}
           rowKey="revision"
-          pagination={{ pageSize: 10 }}
           size="small"
+          tableLayout="fixed"
+          scroll={{ x: 860 }}
+          pagination={{
+            pageSize: 8,
+            showSizeChanger: false,
+            showTotal: (total) => t('deployments.history.total', { total }),
+          }}
         />
       </Modal>
 
-      {/* 版本详情抽屉 */}
       <Drawer
         title={
           <Space>
@@ -203,48 +289,50 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
         }
         open={detailsVisible}
         onClose={() => setDetailsVisible(false)}
-        width={600}
+        width={640}
       >
         {selectedRevision && (
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             <Card size="small" title={t('deployments.history.basicInfo')}>
-              <Descriptions size="small" column={1}>
+              <Descriptions size="small" column={1} bordered>
                 <Descriptions.Item label={t('deployments.history.revision')}>
                   #{selectedRevision.revision}
                 </Descriptions.Item>
                 <Descriptions.Item label={t('deployments.history.replicaSet')}>
-                  {selectedRevision.replicaSetName}
+                  <Text code copyable>{selectedRevision.replicaSetName}</Text>
                 </Descriptions.Item>
                 <Descriptions.Item label={t('deployments.history.changeReason')}>
-                  {selectedRevision.changeReason || t('common.noData')}
+                  {selectedRevision.changeReason || '—'}
                 </Descriptions.Item>
                 <Descriptions.Item label={t('deployments.history.creationTime')}>
                   {formatTime(selectedRevision.creationTime)}
                 </Descriptions.Item>
                 <Descriptions.Item label={t('deployments.history.replicas')}>
-                  {selectedRevision.readyReplicas}/{selectedRevision.replicas || 0}
+                  <Space size={8}>
+                    <Text>{selectedRevision.readyReplicas}/{selectedRevision.replicas || 0}</Text>
+                    {getStatusTag(selectedRevision)}
+                  </Space>
                 </Descriptions.Item>
               </Descriptions>
             </Card>
 
-            {/* 容器信息 */}
             <Card size="small" title={t('deployments.containers')}>
               {selectedRevision.podTemplateSpec.spec?.containers?.map((container: any, index: number) => (
                 <Card key={index} size="small" type="inner" title={container.name}>
                   <Descriptions size="small" column={1}>
                     <Descriptions.Item label={t('deployments.container.image')}>
-                      {container.image}
+                      <Text copyable>{container.image}</Text>
                     </Descriptions.Item>
                     {container.command && (
                       <Descriptions.Item label={t('deployments.container.command')}>
-                        <Paragraph code copyable={{ text: container.command.join(' ') }}>
+                        <Paragraph code copyable={{ text: container.command.join(' ') }} style={{ marginBottom: 0 }}>
                           {container.command.join(' ')}
                         </Paragraph>
                       </Descriptions.Item>
                     )}
                     {container.args && (
                       <Descriptions.Item label={t('deployments.container.args')}>
-                        <Paragraph code copyable={{ text: container.args.join(' ') }}>
+                        <Paragraph code copyable={{ text: container.args.join(' ') }} style={{ marginBottom: 0 }}>
                           {container.args.join(' ')}
                         </Paragraph>
                       </Descriptions.Item>
@@ -254,10 +342,9 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
               ))}
             </Card>
 
-            {/* 标签信息 */}
             {selectedRevision.labels && Object.keys(selectedRevision.labels).length > 0 && (
               <Card size="small" title={t('deployments.labels')}>
-                <Space wrap>
+                <Space wrap size={[4, 4]}>
                   {Object.entries(selectedRevision.labels).map(([key, value]) => (
                     <Tag key={key}>{key}={value}</Tag>
                   ))}

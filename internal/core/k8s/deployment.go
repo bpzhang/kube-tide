@@ -1569,10 +1569,7 @@ func (ds *DeploymentService) GetDeploymentRolloutHistory(clusterName, namespace,
 		fmt.Sscanf(revisionStr, "%d", &revision)
 
 		// 获取变更原因
-		changeReason := rs.Annotations["deployment.kubernetes.io/revision-history-limit"]
-		if changeReason == "" {
-			changeReason = rs.Annotations["kubernetes.io/change-cause"]
-		}
+		changeReason := rs.Annotations["kubernetes.io/change-cause"]
 
 		revisionInfo := RevisionInfo{
 			Revision:          revision,

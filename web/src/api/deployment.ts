@@ -496,7 +496,9 @@ export interface RevisionInfo {
  * @returns version history
  */
 export const getDeploymentRolloutHistory = (clusterName: string, namespace: string, deploymentName: string) => {
-  return api.get<{ revisions: RevisionInfo[] }>(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/history`);
+  return api.get<{ code: number; message: string; data: { revisions: RevisionInfo[] } }>(
+    `/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/history`
+  );
 };
 
 /**
