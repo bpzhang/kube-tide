@@ -631,6 +631,7 @@
         "containers": "Containers",
         "volumes": "Volumes",
         "labelsAndAnnotations": "Labels & Annotations",
+        "scheduling": "Scheduling",
         "nodeAffinity": "Node Affinity",
         "advanced": "Advanced"
       },
@@ -805,6 +806,66 @@
         "valuesPlaceholder": "Enter label values and press Enter, multiple values allowed",
         "keyExists": "Key Exists",
         "keyDoesNotExist": "Key Does Not Exist"
+      },
+      "affinity": {
+        "description": "Pod Affinity",
+        "detail": "Schedule Pods onto the same topology domain (node, zone, etc.) as matching Pods. Useful for co-location.",
+        "requiredRules": "Required Pod Affinity Rules",
+        "preferredRules": "Preferred Pod Affinity Rules",
+        "requiredRule": "Required Rule",
+        "preferredRule": "Preferred Rule",
+        "addRequiredRule": "Add Required Rule",
+        "addPreferredRule": "Add Preferred Rule",
+        "topologyKey": "Topology Key",
+        "topologyKeyHint": "Common: kubernetes.io/hostname (node) or topology.kubernetes.io/zone (zone)",
+        "pleaseEnterTopologyKey": "Please select or enter topology key",
+        "topologyPresets": {
+          "hostname": "Node",
+          "zone": "Zone",
+          "region": "Region"
+        },
+        "namespaces": "Namespaces",
+        "namespacesHint": "Leave empty for current namespace; specify multiple for cross-namespace matching",
+        "namespacesPlaceholder": "Enter namespaces and press Enter",
+        "matchLabels": "Match Labels",
+        "matchExpressions": "Match Expressions",
+        "addMatchLabel": "Add Label Match",
+        "addMatchExpression": "Add Expression Rule"
+      },
+      "antiAffinity": {
+        "description": "Pod Anti-Affinity",
+        "detail": "Avoid scheduling Pods onto topology domains that already have matching Pods. Common for HA spread across nodes/zones.",
+        "requiredRules": "Required Pod Anti-Affinity Rules",
+        "preferredRules": "Preferred Pod Anti-Affinity Rules",
+        "requiredRule": "Required Rule",
+        "preferredRule": "Preferred Rule",
+        "addRequiredRule": "Add Required Rule",
+        "addPreferredRule": "Add Preferred Rule",
+        "topologyKey": "Topology Key",
+        "topologyKeyHint": "Typically kubernetes.io/hostname to spread replicas across nodes",
+        "pleaseEnterTopologyKey": "Please select or enter topology key",
+        "topologyPresets": {
+          "hostname": "Node",
+          "zone": "Zone",
+          "region": "Region"
+        },
+        "namespaces": "Namespaces",
+        "namespacesHint": "Leave empty for current namespace",
+        "namespacesPlaceholder": "Enter namespaces and press Enter",
+        "matchLabels": "Match Labels",
+        "matchExpressions": "Match Expressions",
+        "addMatchLabel": "Add Label Match",
+        "addMatchExpression": "Add Expression Rule"
+      },
+      "tolerations": {
+        "title": "Tolerations",
+        "description": "Tolerations",
+        "detail": "Allow Pods to be scheduled onto nodes with matching taints. Typically paired with node pool taints for dedicated worker nodes.",
+        "keyPlaceholder": "Taint key",
+        "valuePlaceholder": "Taint value",
+        "effectPlaceholder": "Effect (optional)",
+        "secondsPlaceholder": "Toleration seconds",
+        "add": "Add Toleration"
       }
     },
     "history": {

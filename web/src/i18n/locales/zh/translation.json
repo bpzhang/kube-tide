@@ -628,6 +628,7 @@
         "containers": "容器配置",
         "volumes": "存储卷",
         "labelsAndAnnotations": "标签和注解",
+        "scheduling": "调度策略",
         "nodeAffinity": "节点亲和性",
         "advanced": "高级选项"
       },
@@ -802,6 +803,66 @@
         "valuesPlaceholder": "输入标签值并按回车，可输入多个值",
         "keyExists": "存在标签键",
         "keyDoesNotExist": "不存在标签键"
+      },
+      "affinity": {
+        "description": "Pod 亲和性",
+        "detail": "将 Pod 调度到与匹配 Pod 位于同一拓扑域（如节点、可用区），适用于需要就近访问的场景。",
+        "requiredRules": "必须满足的 Pod 亲和性规则",
+        "preferredRules": "优先满足的 Pod 亲和性规则",
+        "requiredRule": "必选规则",
+        "preferredRule": "优先规则",
+        "addRequiredRule": "添加必选规则",
+        "addPreferredRule": "添加优先规则",
+        "topologyKey": "拓扑键",
+        "topologyKeyHint": "常用 kubernetes.io/hostname（节点级）或 topology.kubernetes.io/zone（可用区级）",
+        "pleaseEnterTopologyKey": "请选择或输入拓扑键",
+        "topologyPresets": {
+          "hostname": "节点",
+          "zone": "可用区",
+          "region": "区域"
+        },
+        "namespaces": "命名空间",
+        "namespacesHint": "留空表示当前命名空间；可指定多个命名空间进行跨命名空间匹配",
+        "namespacesPlaceholder": "输入命名空间并按回车",
+        "matchLabels": "标签完全匹配",
+        "matchExpressions": "标签表达式匹配",
+        "addMatchLabel": "添加标签匹配",
+        "addMatchExpression": "添加表达式规则"
+      },
+      "antiAffinity": {
+        "description": "Pod 反亲和性",
+        "detail": "避免将 Pod 调度到已有匹配 Pod 的拓扑域，常用于高可用场景下将副本分散到不同节点或可用区。",
+        "requiredRules": "必须满足的 Pod 反亲和性规则",
+        "preferredRules": "优先满足的 Pod 反亲和性规则",
+        "requiredRule": "必选规则",
+        "preferredRule": "优先规则",
+        "addRequiredRule": "添加必选规则",
+        "addPreferredRule": "添加优先规则",
+        "topologyKey": "拓扑键",
+        "topologyKeyHint": "反亲和性通常使用 kubernetes.io/hostname 将副本分散到不同节点",
+        "pleaseEnterTopologyKey": "请选择或输入拓扑键",
+        "topologyPresets": {
+          "hostname": "节点",
+          "zone": "可用区",
+          "region": "区域"
+        },
+        "namespaces": "命名空间",
+        "namespacesHint": "留空表示当前命名空间",
+        "namespacesPlaceholder": "输入命名空间并按回车",
+        "matchLabels": "标签完全匹配",
+        "matchExpressions": "标签表达式匹配",
+        "addMatchLabel": "添加标签匹配",
+        "addMatchExpression": "添加表达式规则"
+      },
+      "tolerations": {
+        "title": "容忍度",
+        "description": "容忍度（Tolerations）",
+        "detail": "允许 Pod 调度到带有匹配污点的节点上，通常与节点池污点配合使用，实现专用工作节点隔离。",
+        "keyPlaceholder": "污点键",
+        "valuePlaceholder": "污点值",
+        "effectPlaceholder": "效果（可选）",
+        "secondsPlaceholder": "容忍秒数",
+        "add": "添加容忍度"
       }
     },
     "history": {

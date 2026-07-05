@@ -8,6 +8,8 @@ import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { DeploymentFormProps } from './DeploymentTypes';
 import PortNameSelect from '../common/PortNameSelect';
 import NodeAffinityManager from './NodeAffinityManager';
+import PodAffinityManager from './PodAffinityManager';
+import TolerationsManager from './TolerationsManager';
 import { useTranslation } from 'react-i18next';
 
 const { Option } = Select;
@@ -1419,12 +1421,21 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
     );
   }, [t]);
   
-  // 渲染节点亲和性Tab
-  const renderNodeAffinityTab = useCallback(() => {
+  // 渲染调度策略 Tab（节点亲和性、Pod 亲和/反亲和、容忍度）
+  const renderSchedulingTab = useCallback(() => {
     return (
-      <Form.Item name="nodeAffinity">
-        <NodeAffinityManager />
-      </Form.Item>
+      <>
+        <Form.Item name="nodeAffinity">
+          <NodeAffinityManager />
+        </Form.Item>
+        <Form.Item name="podAffinity">
+          <PodAffinityManager fieldPrefix="podAffinity" mode="affinity" />
+        </Form.Item>
+        <Form.Item name="podAntiAffinity">
+          <PodAffinityManager fieldPrefix="podAntiAffinity" mode="antiAffinity" />
+        </Form.Item>
+        <TolerationsManager />
+      </>
     );
   }, []);
   
@@ -1451,9 +1462,9 @@ const DeploymentForm: React.FC<DeploymentFormProps> = ({
       children: renderLabelsAndAnnotationsTab()
     },
     {
-      key: 'nodeAffinity',
-      label: t('deployments.form.tabs.nodeAffinity'),
-      children: renderNodeAffinityTab()
+      key: 'scheduling',
+      label: t('deployments.form.tabs.scheduling'),
+      children: renderSchedulingTab()
     },
     {
       key: 'advanced',

@@ -149,11 +149,182 @@ export interface PreferredNodeAffinity {
 
 // 节点亲和性配置
 export interface NodeAffinityConfig {
-  // 必须满足的节点亲和性规则
   requiredTerms: NodeSelectorTerm[];
-  // 优先满足的节点亲和性规则
   preferredTerms: PreferredNodeAffinity[];
 }
+
+// Pod 亲和性标签选择器
+export interface PodLabelSelectorConfig {
+  matchLabels?: Array<{ key: string; value: string }>;
+  matchExpressions?: NodeAffinityExpression[];
+}
+
+// Pod 亲和性条件
+export interface PodAffinityTermConfig {
+  topologyKey: string;
+  namespaces?: string[];
+  labelSelector?: PodLabelSelectorConfig;
+}
+
+// Pod 亲和性配置
+export interface PodAffinityConfig {
+  requiredTerms: PodAffinityTermConfig[];
+  preferredTerms: Array<{ weight: number; term: PodAffinityTermConfig }>;
+}
+
+// 容忍度配置
+export interface TolerationConfig {
+  key?: string;
+  operator?: 'Equal' | 'Exists';
+  value?: string;
+  effect?: 'NoSchedule' | 'PreferNoSchedule' | 'NoExecute';
+  tolerationSeconds?: number;
+}
+
+const mapMatchExpressions = (expressions?: NodeAffinityExpression[]) =>
+  expressions?.filter(expr => expr.key && expr.operator)
+    .map(expr => ({
+      key: expr.key,
+      operator: expr.operator,
+      values: (expr.operator === 'Exists' || expr.operator === 'DoesNotExist')
+        ? undefined
+        : (expr.values || []),
+    }));
+
+const buildNodeSelectorTerms = (terms?: NodeSelectorTerm[]) =>
+  terms?.map(term => {
+    const result: Record<string, unknown> = {};
+    const matchExpressions = mapMatchExpressions(term.matchExpressions);
+    const matchFields = mapMatchExpressions(term.matchFields);
+    if (matchExpressions?.length) result.matchExpressions = matchExpressions;
+    if (matchFields?.length) result.matchFields = matchFields;
+    return result;
+  }).filter(term =>
+    (term.matchExpressions as unknown[])?.length > 0 ||
+    (term.matchFields as unknown[])?.length > 0
+  );
+
+const buildLabelSelector = (selector?: PodLabelSelectorConfig) => {
+  if (!selector) return undefined;
+  const result: Record<string, unknown> = {};
+  if (selector.matchLabels?.length) {
+    const matchLabels: Record<string, string> = {};
+    selector.matchLabels.forEach(item => {
+      if (item.key && item.value) matchLabels[item.key] = item.value;
+    });
+    if (Object.keys(matchLabels).length > 0) result.matchLabels = matchLabels;
+  }
+  const matchExpressions = mapMatchExpressions(selector.matchExpressions);
+  if (matchExpressions?.length) result.matchExpressions = matchExpressions;
+  return Object.keys(result).length > 0 ? result : undefined;
+};
+
+const buildPodAffinityTerm = (term?: PodAffinityTermConfig): Record<string, unknown> | undefined => {
+  if (!term?.topologyKey) return undefined;
+  const labelSelector = buildLabelSelector(term.labelSelector);
+  return {
+    topologyKey: term.topologyKey,
+    ...(term.namespaces?.length ? { namespaces: term.namespaces } : {}),
+    ...(labelSelector ? { labelSelector } : {}),
+  };
+};
+
+const buildPodAffinityPayload = (config?: PodAffinityConfig): Record<string, unknown> | undefined => {
+  if (!config) return undefined;
+  const required = config.requiredTerms
+    ?.map(buildPodAffinityTerm)
+    .filter((term): term is Record<string, unknown> => term !== undefined);
+  const preferred = config.preferredTerms
+    ?.filter(item => item.weight > 0 && item.term?.topologyKey)
+    .map(item => {
+      const podAffinityTerm = buildPodAffinityTerm(item.term);
+      return podAffinityTerm ? { weight: item.weight, podAffinityTerm } : undefined;
+    })
+    .filter((item): item is { weight: number; podAffinityTerm: Record<string, unknown> } => item !== undefined);
+  if (!required?.length && !preferred?.length) return undefined;
+  return {
+    ...(required?.length ? { requiredDuringSchedulingIgnoredDuringExecution: required } : {}),
+    ...(preferred?.length ? { preferredDuringSchedulingIgnoredDuringExecution: preferred } : {}),
+  };
+};
+
+const buildNodeAffinityPayload = (config?: NodeAffinityConfig): Record<string, unknown> | undefined => {
+  if (!config) return undefined;
+  const nodeSelectorTerms = buildNodeSelectorTerms(config.requiredTerms);
+  const preferred = config.preferredTerms
+    ?.filter(item => item.weight > 0 && item.preference)
+    .map(item => {
+      const preference: Record<string, unknown> = {};
+      const matchExpressions = mapMatchExpressions(item.preference.matchExpressions);
+      const matchFields = mapMatchExpressions(item.preference.matchFields);
+      if (matchExpressions?.length) preference.matchExpressions = matchExpressions;
+      if (matchFields?.length) preference.matchFields = matchFields;
+      return { weight: item.weight, preference };
+    })
+    .filter(item =>
+      (item.preference.matchExpressions as unknown[])?.length > 0 ||
+      (item.preference.matchFields as unknown[])?.length > 0
+    );
+  if (!nodeSelectorTerms?.length && !preferred?.length) return undefined;
+  return {
+    ...(nodeSelectorTerms?.length ? {
+      requiredDuringSchedulingIgnoredDuringExecution: { nodeSelectorTerms },
+    } : {}),
+    ...(preferred?.length ? { preferredDuringSchedulingIgnoredDuringExecution: preferred } : {}),
+  };
+};
+
+const buildAffinityPayload = (values: DeploymentFormData) => {
+  const nodeAffinity = buildNodeAffinityPayload(values.nodeAffinity);
+  const podAffinity = buildPodAffinityPayload(values.podAffinity);
+  const podAntiAffinity = buildPodAffinityPayload(values.podAntiAffinity);
+  if (!nodeAffinity && !podAffinity && !podAntiAffinity) return undefined;
+  return {
+    ...(nodeAffinity ? { nodeAffinity } : {}),
+    ...(podAffinity ? { podAffinity } : {}),
+    ...(podAntiAffinity ? { podAntiAffinity } : {}),
+  } as import('@/api/deployment').AffinityConfig;
+};
+
+const parseNodeSelectorTerms = (terms?: any[]): NodeSelectorTerm[] =>
+  (terms || []).map(term => ({
+    matchExpressions: term.matchExpressions?.map((expr: any) => ({
+      key: expr.key,
+      operator: expr.operator,
+      values: expr.values || [],
+    })) || [],
+    matchFields: term.matchFields?.map((field: any) => ({
+      key: field.key,
+      operator: field.operator,
+      values: field.values || [],
+    })) || [],
+  }));
+
+const parsePodAffinityTerm = (term: any): PodAffinityTermConfig => ({
+  topologyKey: term.topologyKey || 'kubernetes.io/hostname',
+  namespaces: term.namespaces || [],
+  labelSelector: {
+    matchLabels: term.labelSelector?.matchLabels
+      ? Object.entries(term.labelSelector.matchLabels).map(([key, value]) => ({ key, value: String(value) }))
+      : [],
+    matchExpressions: term.labelSelector?.matchExpressions?.map((expr: any) => ({
+      key: expr.key,
+      operator: expr.operator,
+      values: expr.values || [],
+    })) || [],
+  },
+});
+
+const parsePodAffinityConfig = (data?: any): PodAffinityConfig | undefined => {
+  if (!data) return undefined;
+  const requiredTerms = (data.requiredDuringSchedulingIgnoredDuringExecution || []).map(parsePodAffinityTerm);
+  const preferredTerms = (data.preferredDuringSchedulingIgnoredDuringExecution || []).map((item: any) => ({
+    weight: item.weight,
+    term: parsePodAffinityTerm(item.podAffinityTerm || {}),
+  }));
+  if (!requiredTerms.length && !preferredTerms.length) return undefined;
+  return { requiredTerms, preferredTerms };
+};
 
 // 表单数据类型定义
 export interface DeploymentFormData {
@@ -171,6 +342,9 @@ export interface DeploymentFormData {
   annotations?: Array<{ key: string; value: string }>;
   nodeSelector?: Array<{ key: string; value: string }>;
   nodeAffinity?: NodeAffinityConfig;
+  podAffinity?: PodAffinityConfig;
+  podAntiAffinity?: PodAffinityConfig;
+  tolerations?: TolerationConfig[];
   serviceAccountName?: string;
   hostNetwork?: boolean;
   dnsPolicy?: string;
@@ -421,96 +595,23 @@ export const processFormToCreateRequest = (values: DeploymentFormData): CreateDe
     });
   }
 
-  // 处理节点亲和性
-  if (values.nodeAffinity) {
-    deploymentData.affinity = {
-      nodeAffinity: {}
-    };
+  // 处理容忍度
+  if (values.tolerations && values.tolerations.length > 0) {
+    deploymentData.tolerations = values.tolerations
+      .filter(item => item.key || item.operator === 'Exists')
+      .map(item => ({
+        key: item.key,
+        operator: item.operator || 'Equal',
+        value: item.value,
+        effect: item.effect,
+        tolerationSeconds: item.tolerationSeconds,
+      }));
+  }
 
-    // 处理必须满足的节点选择规则
-    if (values.nodeAffinity.requiredTerms && values.nodeAffinity.requiredTerms.length > 0) {
-      deploymentData.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution = {
-        nodeSelectorTerms: values.nodeAffinity.requiredTerms.map(term => {
-          const result: any = {};
-          
-          if (term.matchExpressions && term.matchExpressions.length > 0) {
-            result.matchExpressions = term.matchExpressions.filter(expr => expr.key && expr.operator)
-              .map(expr => ({
-                key: expr.key,
-                operator: expr.operator,
-                values: (expr.operator === 'Exists' || expr.operator === 'DoesNotExist') 
-                  ? undefined 
-                  : (expr.values || [])
-              }));
-          }
-          
-          if (term.matchFields && term.matchFields.length > 0) {
-            result.matchFields = term.matchFields.filter(field => field.key && field.operator)
-              .map(field => ({
-                key: field.key,
-                operator: field.operator,
-                values: (field.operator === 'Exists' || field.operator === 'DoesNotExist') 
-                  ? undefined 
-                  : (field.values || [])
-              }));
-          }
-          
-          return result;
-        }).filter(term => 
-          (term.matchExpressions && term.matchExpressions.length > 0) || 
-          (term.matchFields && term.matchFields.length > 0)
-        )
-      };
-    }
-
-    // 处理优先满足的节点选择规则
-    if (values.nodeAffinity.preferredTerms && values.nodeAffinity.preferredTerms.length > 0) {
-      deploymentData.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution = 
-        values.nodeAffinity.preferredTerms
-          .filter(preferred => preferred.weight > 0 && preferred.preference)
-          .map(preferred => {
-            const term: any = {
-              weight: preferred.weight,
-              preference: {}
-            };
-
-            if (preferred.preference.matchExpressions && preferred.preference.matchExpressions.length > 0) {
-              term.preference.matchExpressions = preferred.preference.matchExpressions
-                .filter(expr => expr.key && expr.operator)
-                .map(expr => ({
-                  key: expr.key,
-                  operator: expr.operator,
-                  values: (expr.operator === 'Exists' || expr.operator === 'DoesNotExist') 
-                    ? undefined 
-                    : (expr.values || [])
-                }));
-            }
-
-            if (preferred.preference.matchFields && preferred.preference.matchFields.length > 0) {
-              term.preference.matchFields = preferred.preference.matchFields
-                .filter(field => field.key && field.operator)
-                .map(field => ({
-                  key: field.key,
-                  operator: field.operator,
-                  values: (field.operator === 'Exists' || field.operator === 'DoesNotExist') 
-                    ? undefined 
-                    : (field.values || [])
-                }));
-            }
-
-            return term;
-          })
-          .filter(preferred => 
-            (preferred.preference.matchExpressions && preferred.preference.matchExpressions.length > 0) || 
-            (preferred.preference.matchFields && preferred.preference.matchFields.length > 0)
-          );
-    }
-
-    // 如果没有亲和性规则，则移除affinity字段
-    if (!deploymentData.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution &&
-        !deploymentData.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution) {
-      delete deploymentData.affinity;
-    }
+  // 处理亲和性与反亲和性
+  const affinity = buildAffinityPayload(values);
+  if (affinity) {
+    deploymentData.affinity = affinity;
   }
   
   return deploymentData;
@@ -677,96 +778,33 @@ export const processFormToUpdateRequest = (values: DeploymentFormData): UpdateDe
     });
   }
 
-  // 处理节点亲和性
-  if (values.nodeAffinity) {
-    updateData.affinity = {
-      nodeAffinity: {}
-    };
+  // 处理容忍度
+  if (values.tolerations && values.tolerations.length > 0) {
+    updateData.tolerations = values.tolerations
+      .filter(item => item.key || item.operator === 'Exists')
+      .map(item => ({
+        key: item.key,
+        operator: item.operator || 'Equal',
+        value: item.value,
+        effect: item.effect,
+        tolerationSeconds: item.tolerationSeconds,
+      }));
+  }
 
-    // 处理必须满足的节点选择规则
-    if (values.nodeAffinity.requiredTerms && values.nodeAffinity.requiredTerms.length > 0) {
-      updateData.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution = {
-        nodeSelectorTerms: values.nodeAffinity.requiredTerms.map(term => {
-          const result: any = {};
-          
-          if (term.matchExpressions && term.matchExpressions.length > 0) {
-            result.matchExpressions = term.matchExpressions.filter(expr => expr.key && expr.operator)
-              .map(expr => ({
-                key: expr.key,
-                operator: expr.operator,
-                values: (expr.operator === 'Exists' || expr.operator === 'DoesNotExist') 
-                  ? undefined 
-                  : (expr.values || [])
-              }));
-          }
-          
-          if (term.matchFields && term.matchFields.length > 0) {
-            result.matchFields = term.matchFields.filter(field => field.key && field.operator)
-              .map(field => ({
-                key: field.key,
-                operator: field.operator,
-                values: (field.operator === 'Exists' || field.operator === 'DoesNotExist') 
-                  ? undefined 
-                  : (field.values || [])
-              }));
-          }
-          
-          return result;
-        }).filter(term => 
-          (term.matchExpressions && term.matchExpressions.length > 0) || 
-          (term.matchFields && term.matchFields.length > 0)
-        )
-      };
-    }
+  // 处理亲和性与反亲和性
+  const affinity = buildAffinityPayload(values);
+  if (affinity) {
+    updateData.affinity = affinity;
+  }
 
-    // 处理优先满足的节点选择规则
-    if (values.nodeAffinity.preferredTerms && values.nodeAffinity.preferredTerms.length > 0) {
-      updateData.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution = 
-        values.nodeAffinity.preferredTerms
-          .filter(preferred => preferred.weight > 0 && preferred.preference)
-          .map(preferred => {
-            const term: any = {
-              weight: preferred.weight,
-              preference: {}
-            };
-
-            if (preferred.preference.matchExpressions && preferred.preference.matchExpressions.length > 0) {
-              term.preference.matchExpressions = preferred.preference.matchExpressions
-                .filter(expr => expr.key && expr.operator)
-                .map(expr => ({
-                  key: expr.key,
-                  operator: expr.operator,
-                  values: (expr.operator === 'Exists' || expr.operator === 'DoesNotExist') 
-                    ? undefined 
-                    : (expr.values || [])
-                }));
-            }
-
-            if (preferred.preference.matchFields && preferred.preference.matchFields.length > 0) {
-              term.preference.matchFields = preferred.preference.matchFields
-                .filter(field => field.key && field.operator)
-                .map(field => ({
-                  key: field.key,
-                  operator: field.operator,
-                  values: (field.operator === 'Exists' || field.operator === 'DoesNotExist') 
-                    ? undefined 
-                    : (field.values || [])
-                }));
-            }
-
-            return term;
-          })
-          .filter(preferred => 
-            (preferred.preference.matchExpressions && preferred.preference.matchExpressions.length > 0) || 
-            (preferred.preference.matchFields && preferred.preference.matchFields.length > 0)
-          );
-    }
-
-    // 如果没有亲和性规则，则移除affinity字段
-    if (!updateData.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution &&
-        !updateData.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution) {
-      delete updateData.affinity;
-    }
+  if (values.serviceAccountName !== undefined) {
+    updateData.serviceAccountName = values.serviceAccountName;
+  }
+  if (values.hostNetwork !== undefined) {
+    updateData.hostNetwork = values.hostNetwork;
+  }
+  if (values.dnsPolicy) {
+    updateData.dnsPolicy = values.dnsPolicy;
   }
   
   return updateData;
@@ -781,78 +819,33 @@ export const processDeploymentToFormData = (deployment: any): DeploymentFormData
   
   // 处理节点亲和性
   let nodeAffinity: NodeAffinityConfig | undefined = undefined;
+  let podAffinity: PodAffinityConfig | undefined = undefined;
+  let podAntiAffinity: PodAffinityConfig | undefined = undefined;
   
   if (deployment.affinity?.nodeAffinity) {
     const affinity = deployment.affinity.nodeAffinity;
-    
     nodeAffinity = {
-      requiredTerms: [],
-      preferredTerms: []
+      requiredTerms: parseNodeSelectorTerms(affinity.requiredDuringSchedulingIgnoredDuringExecution?.nodeSelectorTerms),
+      preferredTerms: (affinity.preferredDuringSchedulingIgnoredDuringExecution || []).map((term: any) => ({
+        weight: term.weight,
+        preference: {
+          matchExpressions: term.preference?.matchExpressions?.map((expr: any) => ({
+            key: expr.key,
+            operator: expr.operator,
+            values: expr.values || [],
+          })) || [],
+          matchFields: term.preference?.matchFields?.map((field: any) => ({
+            key: field.key,
+            operator: field.operator,
+            values: field.values || [],
+          })) || [],
+        },
+      })),
     };
-
-    // 处理必须满足的节点选择规则
-    if (affinity.requiredDuringSchedulingIgnoredDuringExecution?.nodeSelectorTerms) {
-      nodeAffinity.requiredTerms = affinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.map((term: any) => {
-        const result: NodeSelectorTerm = {
-          matchExpressions: [],
-          matchFields: []
-        };
-        
-        // 处理表达式匹配
-        if (term.matchExpressions) {
-          result.matchExpressions = term.matchExpressions.map((expr: any) => ({
-            key: expr.key,
-            operator: expr.operator,
-            values: expr.values || []
-          }));
-        }
-        
-        // 处理字段匹配
-        if (term.matchFields) {
-          result.matchFields = term.matchFields.map((field: any) => ({
-            key: field.key,
-            operator: field.operator,
-            values: field.values || []
-          }));
-        }
-        
-        return result;
-      });
-    }
-    
-    // 处理优先满足的节点选择规则
-    if (affinity.preferredDuringSchedulingIgnoredDuringExecution) {
-      nodeAffinity.preferredTerms = affinity.preferredDuringSchedulingIgnoredDuringExecution.map((term: any) => {
-        const preference: NodeSelectorTerm = {
-          matchExpressions: [],
-          matchFields: []
-        };
-        
-        // 处理表达式匹配
-        if (term.preference.matchExpressions) {
-          preference.matchExpressions = term.preference.matchExpressions.map((expr: any) => ({
-            key: expr.key,
-            operator: expr.operator,
-            values: expr.values || []
-          }));
-        }
-        
-        // 处理字段匹配
-        if (term.preference.matchFields) {
-          preference.matchFields = term.preference.matchFields.map((field: any) => ({
-            key: field.key,
-            operator: field.operator,
-            values: field.values || []
-          }));
-        }
-        
-        return {
-          weight: term.weight,
-          preference
-        };
-      });
-    }
   }
+
+  podAffinity = parsePodAffinityConfig(deployment.affinity?.podAffinity);
+  podAntiAffinity = parsePodAffinityConfig(deployment.affinity?.podAntiAffinity);
   
   // 处理容器资源限制的数据格式
   const processedContainers = deployment.containers.map((container: any) => {
@@ -966,6 +959,9 @@ export const processDeploymentToFormData = (deployment: any): DeploymentFormData
     annotations: annotationsArray,
     nodeSelector: nodeSelectorArray,
     nodeAffinity: nodeAffinity,
+    podAffinity,
+    podAntiAffinity,
+    tolerations: deployment.tolerations || [],
     serviceAccountName: deployment.serviceAccountName,
     hostNetwork: deployment.hostNetwork,
     dnsPolicy: deployment.dnsPolicy

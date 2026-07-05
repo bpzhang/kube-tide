@@ -50,6 +50,12 @@ type DeploymentDetails struct {
 	ProgressDeadlineSeconds *int32                `json:"progressDeadlineSeconds,omitempty"`
 	MinReadySeconds         int32                 `json:"minReadySeconds"`
 	Paused                  bool                  `json:"paused"`
+	NodeSelector            map[string]string     `json:"nodeSelector,omitempty"`
+	Tolerations             []Toleration          `json:"tolerations,omitempty"`
+	Affinity                *Affinity             `json:"affinity,omitempty"`
+	ServiceAccountName      string                `json:"serviceAccountName,omitempty"`
+	HostNetwork             bool                  `json:"hostNetwork,omitempty"`
+	DNSPolicy               string                `json:"dnsPolicy,omitempty"`
 }
 
 // DeploymentCondition 包含Deployment的状态条件
@@ -166,6 +172,14 @@ func (ds *DeploymentService) GetDeploymentDetails(clusterName, namespace, name s
 			Message:            condition.Message,
 		})
 	}
+
+	podSpec := deployment.Spec.Template.Spec
+	details.NodeSelector = podSpec.NodeSelector
+	details.Tolerations = convertK8sTolerations(podSpec.Tolerations)
+	details.Affinity = convertK8sAffinity(podSpec.Affinity)
+	details.ServiceAccountName = podSpec.ServiceAccountName
+	details.HostNetwork = podSpec.HostNetwork
+	details.DNSPolicy = string(podSpec.DNSPolicy)
 
 	return details, nil
 }
@@ -459,8 +473,14 @@ type UpdateDeploymentRequest struct {
 	LivenessProbe  map[string]*Probe        `json:"livenessProbe,omitempty"`  // 容器名称到存活探针的映射
 	ReadinessProbe map[string]*Probe        `json:"readinessProbe,omitempty"` // 容器名称到就绪探针的映射
 	StartupProbe   map[string]*Probe        `json:"startupProbe,omitempty"`   // 容器名称到启动探针的映射
-	Volumes        []Volume                 `json:"volumes,omitempty"`
-	VolumeMounts   map[string][]VolumeMount `json:"volumeMounts,omitempty"` // 容器名称到卷挂载点的映射
+	Volumes            []Volume            `json:"volumes,omitempty"`
+	VolumeMounts       map[string][]VolumeMount `json:"volumeMounts,omitempty"` // 容器名称到卷挂载点的映射
+	NodeSelector       map[string]string   `json:"nodeSelector,omitempty"`
+	Tolerations        []Toleration        `json:"tolerations,omitempty"`
+	Affinity           *Affinity           `json:"affinity,omitempty"`
+	ServiceAccountName string              `json:"serviceAccountName,omitempty"`
+	HostNetwork        *bool               `json:"hostNetwork,omitempty"`
+	DNSPolicy          string              `json:"dnsPolicy,omitempty"`
 }
 
 // DeploymentStrategy 定义Deployment的更新策略
@@ -684,9 +704,9 @@ type PodAntiAffinity struct {
 
 // PodAffinityTerm 定义Pod亲和性条件
 type PodAffinityTerm struct {
-	LabelSelector map[string]string `json:"labelSelector,omitempty"`
-	Namespaces    []string          `json:"namespaces,omitempty"`
-	TopologyKey   string            `json:"topologyKey"`
+	LabelSelector *LabelSelector `json:"labelSelector,omitempty"`
+	Namespaces    []string       `json:"namespaces,omitempty"`
+	TopologyKey   string         `json:"topologyKey"`
 }
 
 // WeightedPodAffinityTerm 定义带权重的Pod亲和性条件
@@ -963,6 +983,25 @@ func (ds *DeploymentService) UpdateDeployment(clusterName, namespace, name strin
 	}
 	if update.Paused != nil {
 		deployment.Spec.Paused = *update.Paused
+	}
+
+	if update.NodeSelector != nil {
+		deployment.Spec.Template.Spec.NodeSelector = update.NodeSelector
+	}
+	if update.Tolerations != nil {
+		deployment.Spec.Template.Spec.Tolerations = convertTolerationsToK8s(update.Tolerations)
+	}
+	if update.Affinity != nil {
+		deployment.Spec.Template.Spec.Affinity = buildK8sAffinity(update.Affinity)
+	}
+	if update.ServiceAccountName != "" {
+		deployment.Spec.Template.Spec.ServiceAccountName = update.ServiceAccountName
+	}
+	if update.HostNetwork != nil {
+		deployment.Spec.Template.Spec.HostNetwork = *update.HostNetwork
+	}
+	if update.DNSPolicy != "" {
+		deployment.Spec.Template.Spec.DNSPolicy = corev1.DNSPolicy(update.DNSPolicy)
 	}
 
 	// 更新Deployment
@@ -1337,68 +1376,11 @@ func (ds *DeploymentService) CreateDeployment(clusterName, namespace string, cre
 
 	// 设置容忍度
 	if len(create.Tolerations) > 0 {
-		k8sTolerations := make([]corev1.Toleration, 0, len(create.Tolerations))
-		for _, toleration := range create.Tolerations {
-			k8sToleration := corev1.Toleration{
-				Key:               toleration.Key,
-				Operator:          corev1.TolerationOperator(toleration.Operator),
-				Value:             toleration.Value,
-				Effect:            corev1.TaintEffect(toleration.Effect),
-				TolerationSeconds: toleration.TolerationSeconds,
-			}
-			k8sTolerations = append(k8sTolerations, k8sToleration)
-		}
-		deployment.Spec.Template.Spec.Tolerations = k8sTolerations
+		deployment.Spec.Template.Spec.Tolerations = convertTolerationsToK8s(create.Tolerations)
 	}
 
 	// 设置亲和性
-	if create.Affinity != nil {
-		k8sAffinity := &corev1.Affinity{}
-
-		// 设置节点亲和性
-		if create.Affinity.NodeAffinity != nil {
-			k8sNodeAffinity := &corev1.NodeAffinity{}
-
-			if create.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
-				nodeSelectorTerms := make([]corev1.NodeSelectorTerm, 0, len(create.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms))
-				for _, term := range create.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
-					nodeSelectorTerm := corev1.NodeSelectorTerm{}
-
-					if len(term.MatchExpressions) > 0 {
-						exprs := make([]corev1.NodeSelectorRequirement, 0, len(term.MatchExpressions))
-						for _, expr := range term.MatchExpressions {
-							exprs = append(exprs, corev1.NodeSelectorRequirement{
-								Key:      expr.Key,
-								Operator: corev1.NodeSelectorOperator(expr.Operator),
-								Values:   expr.Values,
-							})
-						}
-						nodeSelectorTerm.MatchExpressions = exprs
-					}
-
-					if len(term.MatchFields) > 0 {
-						fields := make([]corev1.NodeSelectorRequirement, 0, len(term.MatchFields))
-						for _, field := range term.MatchFields {
-							fields = append(fields, corev1.NodeSelectorRequirement{
-								Key:      field.Key,
-								Operator: corev1.NodeSelectorOperator(field.Operator),
-								Values:   field.Values,
-							})
-						}
-						nodeSelectorTerm.MatchFields = fields
-					}
-
-					nodeSelectorTerms = append(nodeSelectorTerms, nodeSelectorTerm)
-				}
-
-				k8sNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{
-					NodeSelectorTerms: nodeSelectorTerms,
-				}
-			}
-
-			k8sAffinity.NodeAffinity = k8sNodeAffinity
-		}
-
+	if k8sAffinity := buildK8sAffinity(create.Affinity); k8sAffinity != nil {
 		deployment.Spec.Template.Spec.Affinity = k8sAffinity
 	}
 

@@ -1,5 +1,60 @@
 import api from './axios';
 
+export interface LabelSelectorExpression {
+  key: string;
+  operator: string;
+  values?: string[];
+}
+
+export interface LabelSelectorConfig {
+  matchLabels?: { [key: string]: string };
+  matchExpressions?: LabelSelectorExpression[];
+}
+
+export interface PodAffinityTermConfig {
+  topologyKey: string;
+  namespaces?: string[];
+  labelSelector?: LabelSelectorConfig;
+}
+
+export interface PodAffinityRuleConfig {
+  requiredDuringSchedulingIgnoredDuringExecution?: PodAffinityTermConfig[];
+  preferredDuringSchedulingIgnoredDuringExecution?: Array<{
+    weight: number;
+    podAffinityTerm: PodAffinityTermConfig;
+  }>;
+}
+
+export interface NodeAffinityRuleConfig {
+  requiredDuringSchedulingIgnoredDuringExecution?: {
+    nodeSelectorTerms: Array<{
+      matchExpressions?: LabelSelectorExpression[];
+      matchFields?: LabelSelectorExpression[];
+    }>;
+  };
+  preferredDuringSchedulingIgnoredDuringExecution?: Array<{
+    weight: number;
+    preference: {
+      matchExpressions?: LabelSelectorExpression[];
+      matchFields?: LabelSelectorExpression[];
+    };
+  }>;
+}
+
+export interface AffinityConfig {
+  nodeAffinity?: NodeAffinityRuleConfig;
+  podAffinity?: PodAffinityRuleConfig;
+  podAntiAffinity?: PodAffinityRuleConfig;
+}
+
+export interface TolerationConfig {
+  key?: string;
+  operator?: string;
+  value?: string;
+  effect?: string;
+  tolerationSeconds?: number;
+}
+
 export interface DeploymentResponse {
   code: number;
   message: string;
@@ -107,6 +162,12 @@ export interface DeploymentDetailResponse {
       minReadySeconds?: number;
       revisionHistoryLimit?: number;
       paused: boolean;
+      nodeSelector?: { [key: string]: string };
+      tolerations?: TolerationConfig[];
+      affinity?: AffinityConfig;
+      serviceAccountName?: string;
+      hostNetwork?: boolean;
+      dnsPolicy?: string;
     };
   };
 }
@@ -239,39 +300,11 @@ export interface UpdateDeploymentRequest {
     }>;
   };
   nodeSelector?: { [key: string]: string };
-  affinity?: {
-    nodeAffinity?: {
-      requiredDuringSchedulingIgnoredDuringExecution?: {
-        nodeSelectorTerms: Array<{
-          matchExpressions?: Array<{
-            key: string;
-            operator: string;
-            values?: string[];
-          }>;
-          matchFields?: Array<{
-            key: string;
-            operator: string;
-            values?: string[];
-          }>;
-        }>;
-      };
-      preferredDuringSchedulingIgnoredDuringExecution?: Array<{
-        weight: number;
-        preference: {
-          matchExpressions?: Array<{
-            key: string;
-            operator: string;
-            values?: string[];
-          }>;
-          matchFields?: Array<{
-            key: string;
-            operator: string;
-            values?: string[];
-          }>;
-        };
-      }>;
-    };
-  };
+  tolerations?: TolerationConfig[];
+  affinity?: AffinityConfig;
+  serviceAccountName?: string;
+  hostNetwork?: boolean;
+  dnsPolicy?: string;
 }
 
 export const updateDeployment = (
@@ -383,39 +416,8 @@ export interface CreateDeploymentRequest {
     };
   }>;
   nodeSelector?: { [key: string]: string };
-  affinity?: {
-    nodeAffinity?: {
-      requiredDuringSchedulingIgnoredDuringExecution?: {
-        nodeSelectorTerms: Array<{
-          matchExpressions?: Array<{
-            key: string;
-            operator: string;
-            values?: string[];
-          }>;
-          matchFields?: Array<{
-            key: string;
-            operator: string;
-            values?: string[];
-          }>;
-        }>;
-      };
-      preferredDuringSchedulingIgnoredDuringExecution?: Array<{
-        weight: number;
-        preference: {
-          matchExpressions?: Array<{
-            key: string;
-            operator: string;
-            values?: string[];
-          }>;
-          matchFields?: Array<{
-            key: string;
-            operator: string;
-            values?: string[];
-          }>;
-        };
-      }>;
-    };
-  };
+  tolerations?: TolerationConfig[];
+  affinity?: AffinityConfig;
   serviceAccountName?: string;
 }
 
