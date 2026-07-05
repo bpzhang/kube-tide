@@ -805,7 +805,7 @@
       }
     },
     "history": {
-      "title": "版本历史",
+      "title": "{name} 版本历史",
       "revision": "版本",
       "changeReason": "变更原因",
       "replicaSet": "副本集",

@@ -808,7 +808,7 @@
       }
     },
     "history": {
-      "title": "Version History",
+      "title": "{name} Version History",
       "revision": "Revision",
       "changeReason": "Change Reason",
       "replicaSet": "ReplicaSet",

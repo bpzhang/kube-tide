@@ -41,7 +41,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
       setRevisions(response.data.revisions || []);
     } catch (error) {
       console.error('Failed to fetch deployment history:', error);
-      message.error(t('deployment.history.fetchFailed'));
+      message.error(t('deployments.history.fetchFailed'));
     } finally {
       setLoading(false);
     }
@@ -54,20 +54,20 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
   // 回滚到指定版本
   const handleRollback = async (revision: number) => {
     Modal.confirm({
-      title: t('deployment.rollback.confirmTitle'),
-      content: t('deployment.rollback.confirmContent', { revision }),
+      title: t('deployments.rollback.confirmTitle'),
+      content: t('deployments.rollback.confirmContent', { revision }),
       okText: t('common.confirm'),
       cancelText: t('common.cancel'),
       onOk: async () => {
         setRollbackLoading(true);
         try {
           await rollbackDeployment(clusterName, namespace, deploymentName, revision);
-          message.success(t('deployment.rollback.success', { revision }));
+          message.success(t('deployments.rollback.success', { revision }));
           onRollbackSuccess?.();
           onClose();
         } catch (error) {
           console.error('Failed to rollback deployment:', error);
-          message.error(t('deployment.rollback.failed'));
+          message.error(t('deployments.rollback.failed'));
         } finally {
           setRollbackLoading(false);
         }
@@ -100,7 +100,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
 
   const columns: ColumnsType<RevisionInfo> = [
     {
-      title: t('deployment.history.revision'),
+      title: t('deployments.history.revision'),
       dataIndex: 'revision',
       key: 'revision',
       width: 100,
@@ -109,20 +109,20 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
       ),
     },
     {
-      title: t('deployment.history.changeReason'),
+      title: t('deployments.history.changeReason'),
       dataIndex: 'changeReason',
       key: 'changeReason',
       ellipsis: true,
       render: (reason: string) => reason || t('common.noData'),
     },
     {
-      title: t('deployment.history.replicaSet'),
+      title: t('deployments.history.replicaSet'),
       dataIndex: 'replicaSetName',
       key: 'replicaSetName',
       ellipsis: true,
     },
     {
-      title: t('deployment.history.replicas'),
+      title: t('deployments.history.replicas'),
       key: 'replicas',
       width: 120,
       render: (_, record) => (
@@ -133,26 +133,26 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
       ),
     },
     {
-      title: t('deployment.history.creationTime'),
+      title: t('deployments.history.creationTime'),
       dataIndex: 'creationTime',
       key: 'creationTime',
       width: 180,
       render: (time: string) => formatTime(time),
     },
     {
-      title: t('common.actions'),
+      title: t('common.operations'),
       key: 'actions',
       width: 150,
       render: (_, record) => (
         <Space>
-          <Tooltip title={t('deployment.history.viewDetails')}>
+          <Tooltip title={t('deployments.history.viewDetails')}>
             <Button
               type="text"
               icon={<EyeOutlined />}
               onClick={() => handleViewDetails(record)}
             />
           </Tooltip>
-          <Tooltip title={t('deployment.rollback.title')}>
+          <Tooltip title={t('deployments.rollback.title')}>
             <Button
               type="text"
               icon={<RollbackOutlined />}
@@ -171,7 +171,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
         title={
           <Space>
             <HistoryOutlined />
-            {t('deployment.history.title', { name: deploymentName })}
+            {t('deployments.history.title', { name: deploymentName })}
           </Space>
         }
         open={visible}
@@ -198,7 +198,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
         title={
           <Space>
             <InfoCircleOutlined />
-            {t('deployment.history.revisionDetails', { revision: selectedRevision?.revision })}
+            {t('deployments.history.revisionDetails', { revision: selectedRevision?.revision })}
           </Space>
         }
         open={detailsVisible}
@@ -207,43 +207,43 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
       >
         {selectedRevision && (
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            <Card size="small" title={t('deployment.history.basicInfo')}>
+            <Card size="small" title={t('deployments.history.basicInfo')}>
               <Descriptions size="small" column={1}>
-                <Descriptions.Item label={t('deployment.history.revision')}>
+                <Descriptions.Item label={t('deployments.history.revision')}>
                   #{selectedRevision.revision}
                 </Descriptions.Item>
-                <Descriptions.Item label={t('deployment.history.replicaSet')}>
+                <Descriptions.Item label={t('deployments.history.replicaSet')}>
                   {selectedRevision.replicaSetName}
                 </Descriptions.Item>
-                <Descriptions.Item label={t('deployment.history.changeReason')}>
+                <Descriptions.Item label={t('deployments.history.changeReason')}>
                   {selectedRevision.changeReason || t('common.noData')}
                 </Descriptions.Item>
-                <Descriptions.Item label={t('deployment.history.creationTime')}>
+                <Descriptions.Item label={t('deployments.history.creationTime')}>
                   {formatTime(selectedRevision.creationTime)}
                 </Descriptions.Item>
-                <Descriptions.Item label={t('deployment.history.replicas')}>
+                <Descriptions.Item label={t('deployments.history.replicas')}>
                   {selectedRevision.readyReplicas}/{selectedRevision.replicas || 0}
                 </Descriptions.Item>
               </Descriptions>
             </Card>
 
             {/* 容器信息 */}
-            <Card size="small" title={t('deployment.containers')}>
+            <Card size="small" title={t('deployments.containers')}>
               {selectedRevision.podTemplateSpec.spec?.containers?.map((container: any, index: number) => (
                 <Card key={index} size="small" type="inner" title={container.name}>
                   <Descriptions size="small" column={1}>
-                    <Descriptions.Item label={t('deployment.container.image')}>
+                    <Descriptions.Item label={t('deployments.container.image')}>
                       {container.image}
                     </Descriptions.Item>
                     {container.command && (
-                      <Descriptions.Item label={t('deployment.container.command')}>
+                      <Descriptions.Item label={t('deployments.container.command')}>
                         <Paragraph code copyable={{ text: container.command.join(' ') }}>
                           {container.command.join(' ')}
                         </Paragraph>
                       </Descriptions.Item>
                     )}
                     {container.args && (
-                      <Descriptions.Item label={t('deployment.container.args')}>
+                      <Descriptions.Item label={t('deployments.container.args')}>
                         <Paragraph code copyable={{ text: container.args.join(' ') }}>
                           {container.args.join(' ')}
                         </Paragraph>
@@ -256,7 +256,7 @@ const DeploymentHistory: React.FC<DeploymentHistoryProps> = ({
 
             {/* 标签信息 */}
             {selectedRevision.labels && Object.keys(selectedRevision.labels).length > 0 && (
-              <Card size="small" title={t('deployment.labels')}>
+              <Card size="small" title={t('deployments.labels')}>
                 <Space wrap>
                   {Object.entries(selectedRevision.labels).map(([key, value]) => (
                     <Tag key={key}>{key}={value}</Tag>

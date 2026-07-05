@@ -320,7 +320,7 @@ const DeploymentsPage: React.FC = () => {
               onClick={() => showScaleModal(record)}
             />
           </Tooltip>
-          <Tooltip title={t('deployment.history.title')}>
+          <Tooltip title={t('deployments.history.title')}>
             <Button
               type="link"
               icon={<HistoryOutlined />}
