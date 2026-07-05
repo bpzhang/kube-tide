@@ -32,17 +32,17 @@ const PodRestartPolicyConfig: React.FC<PodRestartPolicyConfigProps> = ({
   const restartPolicyOptions = [
     {
       value: 'Always',
-      label: t('pod.restartPolicy.always'),
+      label: t('pods.restartPolicy.always'),
       description: 'Container will always be restarted',
     },
     {
       value: 'OnFailure',
-      label: t('pod.restartPolicy.onFailure'),
+      label: t('pods.restartPolicy.onFailure'),
       description: 'Container will be restarted only when it fails',
     },
     {
       value: 'Never',
-      label: t('pod.restartPolicy.never'),
+      label: t('pods.restartPolicy.never'),
       description: 'Container will never be restarted',
     },
   ];
@@ -52,17 +52,17 @@ const PodRestartPolicyConfig: React.FC<PodRestartPolicyConfigProps> = ({
     setLoading(true);
     try {
       const response = await getPodRestartPolicy(clusterName, namespace, podName);
-      if (response.data.code === 200) {
+      if (response.data.code === 0) {
         const policy = response.data.data.restartPolicy;
         setCurrentPolicy(policy);
         setSelectedPolicy(policy);
       } else {
-        message.error(t('pod.restartPolicy.fetchFailed'));
+        message.error(t('pods.restartPolicy.fetchFailed'));
       }
     } catch (error: any) {
       console.error('Failed to fetch restart policy:', error);
       // 显示更详细的错误信息
-      let errorMsg = t('pod.restartPolicy.fetchFailed');
+      let errorMsg = t('pods.restartPolicy.fetchFailed');
       if (error?.response?.data?.message) {
         errorMsg += ': ' + error.response.data.message;
       } else if (error?.message) {
@@ -77,12 +77,12 @@ const PodRestartPolicyConfig: React.FC<PodRestartPolicyConfigProps> = ({
   // 更新重启策略
   const handleUpdatePolicy = async () => {
     if (selectedPolicy === currentPolicy) {
-      message.info(t('pod.restartPolicy.noChanges') || 'No changes detected in restart policy.');
+      message.info(t('pods.restartPolicy.noChanges') || 'No changes detected in restart policy.');
       return;
     }
 
     confirm({
-      title: t('pod.restartPolicy.confirm'),
+      title: t('pods.restartPolicy.confirm'),
       icon: <ExclamationCircleOutlined />,
       content: (
         <div>
@@ -114,21 +114,21 @@ const PodRestartPolicyConfig: React.FC<PodRestartPolicyConfigProps> = ({
             selectedPolicy,
             deleteOriginal
           );
-          if (response.data.code === 200) {
+          if (response.data.code === 0) {
             if (deleteOriginal) {
-              message.success(t('pod.restartPolicy.recreateSuccess'));
+              message.success(t('pods.restartPolicy.recreateSuccess'));
             } else {
-              message.success(t('pod.restartPolicy.createSuccess'));
+              message.success(t('pods.restartPolicy.createSuccess'));
             }
             // 刷新当前策略
             fetchRestartPolicy();
           } else {
-            message.error(t('pod.restartPolicy.updateFailed'));
+            message.error(t('pods.restartPolicy.updateFailed'));
           }
         } catch (error: any) {
           console.error('Failed to update restart policy:', error);
           // 显示更详细的错误信息
-          let errorMsg = t('pod.restartPolicy.updateFailed');
+          let errorMsg = t('pods.restartPolicy.updateFailed');
           if (error?.response?.data?.message) {
             errorMsg += ': ' + error.response.data.message;
           } else if (error?.message) {
@@ -159,7 +159,7 @@ const PodRestartPolicyConfig: React.FC<PodRestartPolicyConfigProps> = ({
       title={
         <Space>
           <SettingOutlined />
-          {t('pod.restartPolicy.title')}
+          {t('pods.restartPolicy.title')}
         </Space>
       }
       size="small"
@@ -167,28 +167,28 @@ const PodRestartPolicyConfig: React.FC<PodRestartPolicyConfigProps> = ({
     >
       <Space direction="vertical" style={{ width: '100%' }}>
         <Alert
-          message={t('pod.restartPolicy.alertMessage')}
-          description={t('pod.restartPolicy.alertDescription')}
+          message={t('pods.restartPolicy.alertMessage')}
+          description={t('pods.restartPolicy.alertDescription')}
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
         />
         
         <div>
-          <Text strong>{t('pod.restartPolicy.current')}: </Text>
+          <Text strong>{t('pods.restartPolicy.current')}: </Text>
           <Text code>{getOptionLabel(currentPolicy)}</Text>
         </div>
 
         <div>
           <label style={{ display: 'block', marginBottom: 8 }}>
-            <Text strong>{t('pod.restartPolicy.update')}:</Text>
+            <Text strong>{t('pods.restartPolicy.update')}:</Text>
           </label>
           <Select
             value={selectedPolicy}
             onChange={setSelectedPolicy}
             style={{ width: '100%', marginBottom: 16 }}
             disabled={disabled || updating}
-            placeholder={t('pod.restartPolicy.title')}
+            placeholder={t('pods.restartPolicy.title')}
           >
             {restartPolicyOptions.map(option => (
               <Option key={option.value} value={option.value}>
@@ -209,7 +209,7 @@ const PodRestartPolicyConfig: React.FC<PodRestartPolicyConfigProps> = ({
             onChange={(e) => setDeleteOriginal(e.target.checked)}
             disabled={disabled || updating}
           >
-            {t('pod.restartPolicy.deleteOriginal')}
+            {t('pods.restartPolicy.deleteOriginal')}
           </Checkbox>
         </div>
 
