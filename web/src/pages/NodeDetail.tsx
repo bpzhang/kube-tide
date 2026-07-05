@@ -4,6 +4,7 @@ import { Card, Descriptions, Row, Col, Table, Tag, Button, Spin, Space, Progress
 import { ArrowLeftOutlined, CloudServerOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { getNodeDetails, getNodeMetrics, getNodePods, getNodeTaints, getNodeLabels } from '../api/node';
+import { getNodePoolName } from '../utils/nodePool';
 
 const { TabPane } = Tabs;
 
@@ -354,7 +355,7 @@ const NodeDetail: React.FC = () => {
   // 获取IP地址
   const nodeIP = node.status?.addresses?.find((addr: any) => addr.type === 'InternalIP')?.address || '-';
   // 节点池
-  const nodePool = labels?.['k8s.io/pool-name'] || '未分配';
+  const nodePool = getNodePoolName(labels) || t('nodeDetail.nodePool.unassigned');
   
   const tabItems = [
     {

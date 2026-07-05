@@ -13,9 +13,30 @@ import (
 // NodePool 节点池配置
 type NodePool struct {
 	Name        string             `json:"name"`
+	DisplayName string             `json:"displayName,omitempty"`
 	Labels      map[string]string  `json:"labels,omitempty"`
 	Taints      []corev1.Taint     `json:"taints,omitempty"`
 	AutoScaling *AutoScalingConfig `json:"autoScaling,omitempty"`
+	Source      string             `json:"source,omitempty"` // configmap 或 discovered
+	NodeCount   int                `json:"nodeCount,omitempty"`
+}
+
+// 节点标签中用于识别节点池的 key（按优先级排序）
+var nodePoolLabelKeys = []string{
+	"k8s.io/pool-name",
+	"alibabacloud.com/nodepool-id",
+	"node.alibabacloud.com/nodepool-id",
+	"eks.amazonaws.com/nodegroup",
+	"cloud.google.com/gke-nodepool",
+}
+
+func poolNameFromLabels(labels map[string]string) string {
+	for _, key := range nodePoolLabelKeys {
+		if value, ok := labels[key]; ok && value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 // AutoScalingConfig 自动扩缩容配置
@@ -49,25 +70,59 @@ func (s *NodePoolService) ListNodePools(ctx context.Context, clusterName string)
 		return nil, err
 	}
 
-	// 从ConfigMap中获取节点池配置
+	poolCounts := make(map[string]int)
+
+	nodeList, err := client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("获取节点列表失败: %w", err)
+	}
+
+	for _, node := range nodeList.Items {
+		poolName := poolNameFromLabels(node.Labels)
+		if poolName != "" {
+			poolCounts[poolName]++
+		}
+	}
+
+	configPools := make(map[string]NodePool)
+
 	configMap, err := client.CoreV1().ConfigMaps("kube-system").Get(ctx, "node-pools", metav1.GetOptions{})
 	if err != nil {
-		if errors.IsNotFound(err) {
-			// 如果ConfigMap不存在，返回空列表
-			return []NodePool{}, nil
+		if !errors.IsNotFound(err) {
+			return nil, fmt.Errorf("获取节点池配置失败: %w", err)
 		}
-		return nil, fmt.Errorf("获取节点池配置失败: %w", err)
-	}
-
-	// 解析节点池配置
-	pools := []NodePool{}
-	if data, ok := configMap.Data["pools"]; ok {
-		if err := json.Unmarshal([]byte(data), &pools); err != nil {
+	} else if data, ok := configMap.Data["pools"]; ok {
+		poolsFromConfig := []NodePool{}
+		if err := json.Unmarshal([]byte(data), &poolsFromConfig); err != nil {
 			return nil, fmt.Errorf("解析节点池配置失败: %w", err)
 		}
+		for _, pool := range poolsFromConfig {
+			pool.Source = "configmap"
+			pool.NodeCount = poolCounts[pool.Name]
+			configPools[pool.Name] = pool
+		}
 	}
 
-	return pools, nil
+	result := make([]NodePool, 0, len(configPools)+len(poolCounts))
+	seen := make(map[string]struct{})
+
+	for _, pool := range configPools {
+		result = append(result, pool)
+		seen[pool.Name] = struct{}{}
+	}
+
+	for poolID, count := range poolCounts {
+		if _, ok := seen[poolID]; ok {
+			continue
+		}
+		result = append(result, NodePool{
+			Name:      poolID,
+			Source:    "discovered",
+			NodeCount: count,
+		})
+	}
+
+	return result, nil
 }
 
 // CreateNodePool 创建新的节点池
@@ -137,20 +192,28 @@ func (s *NodePoolService) CreateNodePool(ctx context.Context, clusterName string
 	return nil
 }
 
-// UpdateNodePool 更新节点池配置
+// UpdateNodePool 更新节点池配置（不存在则创建，用于接管云节点池的本地配置）
 func (s *NodePoolService) UpdateNodePool(ctx context.Context, clusterName string, pool NodePool) error {
 	client, err := s.clientManager.GetClient(clusterName)
 	if err != nil {
 		return err
 	}
 
-	// 获取现有的节点池配置
 	configMap, err := client.CoreV1().ConfigMaps("kube-system").Get(ctx, "node-pools", metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("获取节点池配置失败: %w", err)
+		if errors.IsNotFound(err) {
+			configMap = &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "node-pools",
+					Namespace: "kube-system",
+				},
+				Data: map[string]string{},
+			}
+		} else {
+			return fmt.Errorf("获取节点池配置失败: %w", err)
+		}
 	}
 
-	// 解析现有的节点池列表
 	pools := []NodePool{}
 	if data, ok := configMap.Data["pools"]; ok {
 		if err := json.Unmarshal([]byte(data), &pools); err != nil {
@@ -158,7 +221,7 @@ func (s *NodePoolService) UpdateNodePool(ctx context.Context, clusterName string
 		}
 	}
 
-	// 查找并更新节点池
+	pool.Source = "configmap"
 	found := false
 	for i, p := range pools {
 		if p.Name == pool.Name {
@@ -169,21 +232,26 @@ func (s *NodePoolService) UpdateNodePool(ctx context.Context, clusterName string
 	}
 
 	if !found {
-		return fmt.Errorf("节点池 %s 不存在", pool.Name)
+		pools = append(pools, pool)
 	}
 
-	// 更新ConfigMap
 	poolsData, err := json.Marshal(pools)
 	if err != nil {
 		return fmt.Errorf("序列化节点池配置失败: %w", err)
 	}
 
+	if configMap.Data == nil {
+		configMap.Data = make(map[string]string)
+	}
 	configMap.Data["pools"] = string(poolsData)
 
-	// 保存ConfigMap
-	_, err = client.CoreV1().ConfigMaps("kube-system").Update(ctx, configMap, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("保存节点池配置失败: %w", err)
+	if _, err := client.CoreV1().ConfigMaps("kube-system").Update(ctx, configMap, metav1.UpdateOptions{}); err != nil {
+		if errors.IsNotFound(err) {
+			_, err = client.CoreV1().ConfigMaps("kube-system").Create(ctx, configMap, metav1.CreateOptions{})
+		}
+		if err != nil {
+			return fmt.Errorf("保存节点池配置失败: %w", err)
+		}
 	}
 
 	return nil

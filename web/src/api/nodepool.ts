@@ -2,6 +2,7 @@ import api from './axios';
 
 export interface NodePool {
   name: string;
+  displayName?: string;
   labels?: { [key: string]: string };
   taints?: Array<{
     key: string;
@@ -9,6 +10,9 @@ export interface NodePool {
     effect: string;
   }>;
   autoScaling?: AutoScalingConfig;
+  /** configmap: kube-tide 管理; discovered: 从节点标签发现 */
+  source?: 'configmap' | 'discovered';
+  nodeCount?: number;
 }
 
 export interface AutoScalingConfig {

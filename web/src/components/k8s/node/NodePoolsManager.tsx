@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Modal, Form, Input, Button, Space, Table, Typography, message, Popconfirm, Select, Switch, InputNumber, Collapse } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Modal, Form, Input, Button, Space, Table, Typography, message, Popconfirm, Select, Switch, InputNumber, Collapse, Tooltip, Alert } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { NodePool } from '@/api/nodepool';
 import { createNodePool, updateNodePool, deleteNodePool } from '@/api/nodepool';
+import { resolveNodePoolLabel } from '@/utils/nodePool';
 
 const { Text } = Typography;
 
@@ -17,6 +18,7 @@ interface NodePoolsManagerProps {
 
 interface NodePoolFormData {
   name: string;
+  displayName?: string;
   labels: { key: string; value: string }[];
   taints: { key: string; value?: string; effect: string }[];
   autoScaling: {
@@ -44,11 +46,20 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
+  useEffect(() => {
+    if (visible) {
+      onSuccess();
+    }
+  }, [visible, clusterName]);
+
+  const isDiscoveredOnly = (pool: NodePool) => pool.source === 'discovered';
+
   const handleSubmit = async (values: NodePoolFormData) => {
     setLoading(true);
     try {
       const pool: NodePool = {
         name: values.name,
+        displayName: values.displayName?.trim() || undefined,
         labels: values.labels?.reduce((acc, curr) => ({
           ...acc,
           [curr.key]: curr.value
@@ -72,7 +83,11 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
 
       if (editingPool) {
         await updateNodePool(clusterName, editingPool.name, pool);
-        message.success(t('nodes.nodePool.updateSuccess'));
+        message.success(
+          isDiscoveredOnly(editingPool)
+            ? t('nodes.nodePool.adoptSuccess')
+            : t('nodes.nodePool.updateSuccess')
+        );
       } else {
         await createNodePool(clusterName, pool);
         message.success(t('nodes.nodePool.createSuccess'));
@@ -95,6 +110,7 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
     // 将节点池数据转换为表单格式
     const formData: NodePoolFormData = {
       name: pool.name,
+      displayName: pool.displayName,
       labels: Object.entries(pool.labels || {}).map(([key, value]) => ({
         key,
         value,
@@ -135,6 +151,30 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
       title: t('nodes.nodePool.poolName'),
       dataIndex: 'name',
       key: 'name',
+      render: (name: string, record: NodePool) => {
+        const { title, subtitle } = resolveNodePoolLabel(record);
+        return (
+          <Space direction="vertical" size={0}>
+            <Text>{title}</Text>
+            {subtitle && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {t('nodes.nodePool.poolId')}: {subtitle}
+              </Text>
+            )}
+            {isDiscoveredOnly(record) && !record.displayName && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {t('nodes.nodePool.discoveredHint')}
+              </Text>
+            )}
+          </Space>
+        );
+      },
+    },
+    {
+      title: t('nodes.nodePool.nodeCount'),
+      dataIndex: 'nodeCount',
+      key: 'nodeCount',
+      render: (count?: number) => count ?? 0,
     },
     {
       title: t('nodes.nodePool.labels'),
@@ -194,22 +234,30 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           >
-            {t('common.edit')}
+            {isDiscoveredOnly(record) ? t('nodes.nodePool.adopt') : t('common.edit')}
           </Button>
-          <Popconfirm
-            title={t('nodes.nodePool.confirmDelete')}
-            onConfirm={() => handleDelete(record.name)}
-            okText={t('common.confirm')}
-            cancelText={t('common.cancel')}
-          >
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
+          <Tooltip title={isDiscoveredOnly(record) ? t('nodes.nodePool.discoveredDeleteHint') : undefined}>
+            <Popconfirm
+              title={
+                record.source === 'configmap' && record.nodeCount
+                  ? t('nodes.nodePool.confirmDeleteOverlay')
+                  : t('nodes.nodePool.confirmDelete')
+              }
+              onConfirm={() => handleDelete(record.name)}
+              okText={t('common.confirm')}
+              cancelText={t('common.cancel')}
+              disabled={isDiscoveredOnly(record)}
             >
-              {t('common.delete')}
-            </Button>
-          </Popconfirm>
+              <Button
+                type="text"
+                danger
+                icon={<DeleteOutlined />}
+                disabled={isDiscoveredOnly(record)}
+              >
+                {t('common.delete')}
+              </Button>
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },
@@ -225,6 +273,13 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
       styles={{body: { maxHeight: '80vh', overflow: 'auto' }}}
     >
       <div style={{ marginBottom: 16 }}>
+        <Alert
+          type="info"
+          showIcon
+          message={t('nodes.nodePool.discoveredInfoTitle')}
+          description={t('nodes.nodePool.discoveredInfoDesc')}
+          style={{ marginBottom: 16 }}
+        />
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -269,6 +324,14 @@ const NodePoolsManager: React.FC<NodePoolsManagerProps> = ({
             rules={[{ required: true, message: t('nodes.nodePool.pleaseEnterPoolName') }]}
           >
             <Input placeholder={t('nodes.nodePool.pleaseEnterPoolName')} disabled={!!editingPool} />
+          </Form.Item>
+
+          <Form.Item
+            name="displayName"
+            label={t('nodes.nodePool.displayName')}
+            extra={editingPool && isDiscoveredOnly(editingPool) ? t('nodes.nodePool.displayNameHint') : undefined}
+          >
+            <Input placeholder={t('nodes.nodePool.displayNamePlaceholder')} />
           </Form.Item>
 
           <Typography.Title level={5} style={{ marginTop: 16 }}>{t('nodes.nodePool.labels')}</Typography.Title>

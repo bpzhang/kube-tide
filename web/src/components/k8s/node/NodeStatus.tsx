@@ -4,6 +4,8 @@ import { CloudServerOutlined, MoreOutlined, ExclamationCircleOutlined, EyeOutlin
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import type { MenuProps } from 'antd';
+import { getNodePoolName, getNodePoolDisplayName } from '@/utils/nodePool';
+import type { NodePool } from '@/api/nodepool';
 
 interface NodeInfo {
   name: string;
@@ -31,6 +33,7 @@ interface NodeStatusProps {
   node: NodeInfo;
   metrics?: NodeMetrics;
   clusterName: string;
+  nodePools?: NodePool[];
   onDrain: (nodeName: string) => void;
   onCordon: (nodeName: string) => void;
   onUncordon: (nodeName: string) => void;
@@ -59,6 +62,7 @@ const NodeStatus: FC<NodeStatusProps> = ({
   node, 
   metrics = {}, 
   clusterName,
+  nodePools = [],
   onDrain, 
   onCordon, 
   onUncordon,
@@ -162,7 +166,10 @@ const NodeStatus: FC<NodeStatusProps> = ({
   ];
 
   // Get node pool name from labels
-  const nodePool = node.labels?.['k8s.io/pool-name'] || t('nodeDetail.nodePool.unassigned');
+  const poolId = getNodePoolName(node.labels);
+  const nodePool = poolId
+    ? (getNodePoolDisplayName(poolId, nodePools) || poolId)
+    : t('nodeDetail.nodePool.unassigned');
 
   return (
     <Card

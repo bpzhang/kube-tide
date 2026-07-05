@@ -291,10 +291,12 @@ const Nodes: React.FC = () => {
                   os: node.status?.nodeInfo?.osImage || '',
                   kernelVersion: node.status?.nodeInfo?.kernelVersion || '',
                   containerRuntime: node.status?.nodeInfo?.containerRuntimeVersion || '',
-                  unschedulable: node.spec?.unschedulable || false, // 添加不可调度状态
+                  unschedulable: node.spec?.unschedulable || false,
+                  labels: node.metadata?.labels,
                 }}
                 metrics={metrics[node.metadata?.name]}
                 clusterName={selectedCluster}
+                nodePools={nodePools}
                 onDrain={handleDrainNode}
                 onCordon={handleCordonNode}
                 onUncordon={handleUncordonNode}
