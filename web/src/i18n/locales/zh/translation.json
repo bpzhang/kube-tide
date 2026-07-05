@@ -1284,6 +1284,12 @@
       "firstTimestamp": "首次出现",
       "lastTimestamp": "最后出现",
       "count": "次数"
+    },
+    "tabs": {
+      "all": "全部",
+      "deployment": "Deployment",
+      "replicaSet": "ReplicaSet",
+      "pod": "Pod"
     }
   },
   "timeRange": {

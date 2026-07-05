@@ -1282,10 +1282,17 @@
       "type": "Type",
       "reason": "Reason",
       "message": "Message",
+      "involved": "Object",
       "source": "Source",
       "firstTimestamp": "First Seen",
       "lastTimestamp": "Last Seen",
       "count": "Count"
+    },
+    "tabs": {
+      "all": "All",
+      "deployment": "Deployment",
+      "replicaSet": "ReplicaSet",
+      "pod": "Pod"
     }
   },
   "timeRange": {

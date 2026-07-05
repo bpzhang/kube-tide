@@ -45,11 +45,11 @@ const DeploymentEvents: React.FC<DeploymentEventsProps> = ({
           pod: []
         });
       } else {
-        message.error(response.data.message || 'Failed to fetch events');
+        message.error(response.data.message || t('events.fetchFailed', { resourceKind: 'Deployment' }));
       }
     } catch (error) {
-      console.error('Failed to fetch events:', error);
-      message.error('Failed to fetch events, please try again later');
+      console.error(t('events.fetchErrorLog', { resourceKind: 'Deployment' }), error);
+      message.error(t('events.fetchErrorRetry', { resourceKind: 'Deployment' }));
     } finally {
       setLoading(false);
     }
@@ -255,7 +255,7 @@ const EventsTable: React.FC<EventsTableProps> = ({ events, columns, loading }) =
   }
   
   if (events && events.length === 0) {
-    return <Empty description={t('common.noDataFound')} />;
+    return <Empty description={t('events.noEvents', { resourceKind: 'Deployment' })} />;
   }
   
   return (
