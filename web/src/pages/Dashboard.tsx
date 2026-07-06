@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Spin, Select, Button, Space, Progress, Tabs } from 'antd';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, Row, Col, Statistic, Spin, Select, Button, Space, Progress, Tabs, Alert, List } from 'antd';
 import {
   LineChart,
   Line,
@@ -20,6 +20,51 @@ import { getClusterList, getClusterMetrics } from '../api/cluster';
 
 // 定义颜色常量
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+interface ClusterAlert {
+  level: 'warning' | 'error' | 'info';
+  message: string;
+}
+
+const buildClusterAlerts = (metrics: any, t: (key: string, opts?: Record<string, unknown>) => string): ClusterAlert[] => {
+  if (!metrics) return [];
+  const alerts: ClusterAlert[] = [];
+
+  if (metrics.cpuUsage > 80) {
+    alerts.push({
+      level: metrics.cpuUsage > 90 ? 'error' : 'warning',
+      message: t('dashboard.alerts.highCpu', { value: metrics.cpuUsage.toFixed(1) }),
+    });
+  }
+  if (metrics.memoryUsage > 80) {
+    alerts.push({
+      level: metrics.memoryUsage > 90 ? 'error' : 'warning',
+      message: t('dashboard.alerts.highMemory', { value: metrics.memoryUsage.toFixed(1) }),
+    });
+  }
+  if (metrics.nodeCounts?.notReady > 0) {
+    alerts.push({
+      level: 'error',
+      message: t('dashboard.alerts.unhealthyNodes', { count: metrics.nodeCounts.notReady }),
+    });
+  }
+  const total = metrics.deploymentReadiness?.total || 0;
+  const available = metrics.deploymentReadiness?.available || 0;
+  if (total > 0 && available < total) {
+    alerts.push({
+      level: 'warning',
+      message: t('dashboard.alerts.deploymentUnavailable', { available, total }),
+    });
+  }
+  if (metrics.cpuLimitsPercentage > 100 || metrics.memoryLimitsPercentage > 100) {
+    alerts.push({
+      level: 'warning',
+      message: t('dashboard.alerts.overcommitted'),
+    });
+  }
+
+  return alerts;
+};
 
 const Dashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -109,6 +154,8 @@ const Dashboard: React.FC = () => {
     }
   }, [selectedCluster]);
 
+  const clusterAlerts = useMemo(() => buildClusterAlerts(metrics, t), [metrics, t]);
+
   return (
     <div>
       <Card
@@ -143,6 +190,24 @@ const Dashboard: React.FC = () => {
             {t('common.noData')}
           </div>
         ) : (
+          <>
+            {clusterAlerts.length > 0 && (
+              <Card title={t('dashboard.alerts.title')} style={{ marginBottom: 16 }}>
+                <List
+                  dataSource={clusterAlerts}
+                  renderItem={(alert, index) => (
+                    <List.Item key={index}>
+                      <Alert
+                        type={alert.level}
+                        message={alert.message}
+                        showIcon
+                        style={{ width: '100%' }}
+                      />
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            )}
           <Tabs
             activeKey={activeTabKey}
             onChange={handleTabChange}
@@ -385,6 +450,7 @@ const Dashboard: React.FC = () => {
               },
             ]}
           />
+          </>
         )}
       </Card>
     </div>

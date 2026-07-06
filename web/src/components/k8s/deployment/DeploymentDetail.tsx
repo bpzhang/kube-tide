@@ -11,6 +11,9 @@ import { getPodsBySelector } from '@/api/pod';
 import { getServicesByNamespace, getServiceEndpoints } from '@/api/service';
 import DeploymentEvents from './DeploymentEvents';
 import DeploymentMonitoring from './DeploymentMonitoring';
+import DeploymentHPATab from './DeploymentHPATab';
+import DeploymentRolloutTab from './DeploymentRolloutTab';
+import DeploymentPrometheusTab from './DeploymentPrometheusTab';
 import { useTranslation } from 'react-i18next';
 
 const { Title } = Typography;
@@ -833,6 +836,39 @@ const DeploymentDetail: React.FC<DeploymentDetailProps> = ({
       forceRender: true,
       children: (
         <DeploymentMonitoring
+          clusterName={clusterName}
+          namespace={deployment.namespace}
+          deploymentName={deployment.name}
+        />
+      ),
+    },
+    {
+      key: 'prometheus',
+      label: t('deployments.detail.tabs.prometheus'),
+      children: (
+        <DeploymentPrometheusTab
+          clusterName={clusterName}
+          namespace={deployment.namespace}
+          deploymentName={deployment.name}
+        />
+      ),
+    },
+    {
+      key: 'hpa',
+      label: t('deployments.detail.tabs.hpa'),
+      children: (
+        <DeploymentHPATab
+          clusterName={clusterName}
+          namespace={deployment.namespace}
+          deploymentName={deployment.name}
+        />
+      ),
+    },
+    {
+      key: 'rollout',
+      label: t('deployments.detail.tabs.rollout'),
+      children: (
+        <DeploymentRolloutTab
           clusterName={clusterName}
           namespace={deployment.namespace}
           deploymentName={deployment.name}

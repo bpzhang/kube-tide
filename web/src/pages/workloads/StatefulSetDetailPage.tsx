@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, Button, Spin, message, Tabs, Space, Popconfirm, Tooltip } from 'antd';
 import { 
   ArrowLeftOutlined, 
@@ -46,6 +46,7 @@ interface VolumeClaimTemplate {
   storageClassName: string;
   accessModes: string[];
   storage: string;
+  updateStrategy?: string;
 }
 
 interface StatefulSet {
@@ -271,6 +272,12 @@ const StatefulSetDetailPage: React.FC = () => {
             <span className="info-label">{t('statefulsets.updateStrategy')}:</span>
             <span className="info-value">{statefulset.updateStrategy}</span>
           </div>
+          {statefulset.updateStrategy === 'RollingUpdate' && (
+            <div className="info-item">
+              <span className="info-label">{t('statefulsets.rollingUpdate')}:</span>
+              <span className="info-value">{t('statefulsets.rollingUpdateDesc')}</span>
+            </div>
+          )}
           <div className="info-item">
             <span className="info-label">{t('statefulsets.podManagementPolicy')}:</span>
             <span className="info-value">{statefulset.podManagementPolicy}</span>
@@ -423,10 +430,24 @@ const StatefulSetDetailPage: React.FC = () => {
     return (
       <div className="volume-claim-templates">
         <Card title={t('statefulsets.volumeClaimTemplates')} bordered={false}>
-          {statefulset.volumeClaimTemplates.map((pvc) => (
+          {statefulset.volumeClaimTemplates.map((pvc) => {
+            const pvcName = `${pvc.name}-${statefulset.name}-0`;
+            return (
             <div key={pvc.name} className="pvc-item">
-              <h3>{pvc.name}</h3>
+              <h3>
+                {pvc.name}
+                <Link
+                  to={`/storage/pvcs?cluster=${clusterName}&namespace=${namespace}`}
+                  style={{ marginLeft: 12, fontSize: 14 }}
+                >
+                  {t('statefulsets.viewPVCs')}
+                </Link>
+              </h3>
               <div className="pvc-info">
+                <div className="info-item">
+                  <span className="info-label">{t('statefulsets.pvcNamePattern')}:</span>
+                  <span className="info-value">{pvcName}</span>
+                </div>
                 <div className="info-item">
                   <span className="info-label">{t('statefulsets.storageClassName')}:</span>
                   <span className="info-value">{pvc.storageClassName || '(default)'}</span>
@@ -441,7 +462,8 @@ const StatefulSetDetailPage: React.FC = () => {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </Card>
       </div>
     );
@@ -457,7 +479,7 @@ const StatefulSetDetailPage: React.FC = () => {
               {pods.map((pod) => (
                 <div key={pod.metadata.name} className="pod-item">
                   <div className="pod-name">
-                    <a onClick={() => navigate(`/workloads/pods/detail/${clusterName}/${pod.metadata.namespace}/${pod.metadata.name}`)}>
+                    <a onClick={() => navigate(`/workloads/pods/${clusterName}/${pod.metadata.namespace}/${pod.metadata.name}`)}>
                       {pod.metadata.name}
                     </a>
                   </div>

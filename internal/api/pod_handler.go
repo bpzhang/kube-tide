@@ -662,3 +662,34 @@ func (h *PodHandler) GetPodLifecycleStatus(c *gin.Context) {
 		"status": status,
 	})
 }
+
+// GetLogsByLabelSelector 按标签选择器批量获取 Pod 日志
+func (h *PodHandler) GetLogsByLabelSelector(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	namespace := c.Param("namespace")
+	if clusterName == "" || namespace == "" {
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
+		return
+	}
+
+	var req struct {
+		LabelSelector      string `json:"labelSelector" binding:"required"`
+		Container          string `json:"container"`
+		TailLines          int64  `json:"tailLines"`
+		ConcurrencyLimit   int    `json:"concurrencyLimit"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ResponseError(c, http.StatusBadRequest, "pod.invalidRequest", err.Error())
+		return
+	}
+	if req.TailLines <= 0 {
+		req.TailLines = 100
+	}
+
+	logs, err := h.service.GetLogsByLabelSelector(context.Background(), clusterName, namespace, req.LabelSelector, req.Container, req.TailLines, req.ConcurrencyLimit)
+	if err != nil {
+		FailWithError(c, http.StatusInternalServerError, "pod.logFailed", err)
+		return
+	}
+	ResponseSuccess(c, gin.H{"logs": logs})
+}

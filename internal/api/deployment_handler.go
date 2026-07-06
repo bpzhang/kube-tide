@@ -477,3 +477,46 @@ func (h *DeploymentHandler) GetDeploymentMetrics(c *gin.Context) {
 		"metrics": metrics,
 	})
 }
+
+// PauseRollout 暂停 Deployment 滚动更新
+func (h *DeploymentHandler) PauseRollout(c *gin.Context) {
+	if err := h.service.PauseRollout(context.Background(), c.Param("cluster"), c.Param("namespace"), c.Param("deployment")); err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	ResponseSuccess(c, gin.H{"message": "Deployment rollout paused"})
+}
+
+// ResumeRollout 恢复 Deployment 滚动更新
+func (h *DeploymentHandler) ResumeRollout(c *gin.Context) {
+	if err := h.service.ResumeRollout(context.Background(), c.Param("cluster"), c.Param("namespace"), c.Param("deployment")); err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	ResponseSuccess(c, gin.H{"message": "Deployment rollout resumed"})
+}
+
+// GetRolloutStatus 获取 Deployment 滚动更新状态
+func (h *DeploymentHandler) GetRolloutStatus(c *gin.Context) {
+	status, err := h.service.GetRolloutStatus(context.Background(), c.Param("cluster"), c.Param("namespace"), c.Param("deployment"))
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	ResponseSuccess(c, gin.H{"rollout": status})
+}
+
+// CreateCanaryDeployment 创建金丝雀 Deployment
+func (h *DeploymentHandler) CreateCanaryDeployment(c *gin.Context) {
+	var req k8s.CreateCanaryDeploymentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ResponseError(c, http.StatusBadRequest, "deployment.invalidRequest", err.Error())
+		return
+	}
+	deployment, err := h.service.CreateCanaryDeployment(context.Background(), c.Param("cluster"), c.Param("namespace"), c.Param("deployment"), req)
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	ResponseSuccess(c, gin.H{"deployment": deployment})
+}

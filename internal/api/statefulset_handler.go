@@ -30,11 +30,7 @@ func NewStatefulSetHandler(service *k8s.StatefulSetService) *StatefulSetHandler 
 // ListStatefulSets 获取所有StatefulSet列表
 func (h *StatefulSetHandler) ListStatefulSets(c *gin.Context) {
 	clusterName := c.Param("cluster")
-	namespace := c.Query("namespace")
-
-	if namespace == "" {
-		namespace = "default"
-	}
+	namespace := namespaceFromRequest(c)
 
 	if clusterName == "" {
 		ResponseError(c, http.StatusBadRequest, "statefulsets.clusterNameEmpty")

@@ -53,6 +53,22 @@ func main() {
 	namespaceService := k8s.NewNamespaceService(clientManager)     // 初始化命名空间服务
 	statefulSetService := k8s.NewStatefulSetService(clientManager) // 初始化StatefulSet服务
 	autoScalerService := k8s.NewAutoScalerService(clientManager)
+	hpaService := k8s.NewHPAService(clientManager)
+	daemonSetService := k8s.NewDaemonSetService(clientManager)
+	jobService := k8s.NewJobService(clientManager)
+	cronJobService := k8s.NewCronJobService(clientManager)
+	networkPolicyService := k8s.NewNetworkPolicyService(clientManager)
+	pvcService := k8s.NewPVCService(clientManager)
+	pvService := k8s.NewPVService(clientManager)
+	storageClassService := k8s.NewStorageClassService(clientManager)
+	resourceQuotaService := k8s.NewResourceQuotaService(clientManager)
+	limitRangeService := k8s.NewLimitRangeService(clientManager)
+	pdbService := k8s.NewPDBService(clientManager)
+	rbacService := k8s.NewRBACService(clientManager)
+	prometheusService := k8s.NewPrometheusService(clientManager)
+	clusterEventService := k8s.NewClusterEventService(clientManager)
+	configMapService := k8s.NewConfigMapService(clientManager)
+	secretService := k8s.NewSecretService(clientManager)
 
 	// 初始化Pod指标服务，用于收集和缓存监控数据
 	podMetricsService := k8s.NewPodMetricsService(clientManager)
@@ -94,12 +110,27 @@ func main() {
 	nodePoolHandler := api.NewNodePoolHandler(nodePoolService)
 	serviceHandler := api.NewServiceHandler(serviceManager)
 	ingressHandler := api.NewIngressHandler(ingressManager)
-	clusterHandler := api.NewClusterHandler(clientManager)
+	clusterHandler := api.NewClusterHandler(clientManager, clusterEventService)
 	healthHandler := api.NewHealthCheckHandler()
 	podTerminalHandler := api.NewPodTerminalHandler(podService)
 	namespaceHandler := api.NewNamespaceHandler(namespaceService)       // 初始化命名空间处理器
 	statefulSetHandler := api.NewStatefulSetHandler(statefulSetService) // 初始化StatefulSet处理器
 	autoScalerHandler := api.NewAutoScalerHandler(autoScalerService)
+	hpaHandler := api.NewHPAHandler(hpaService)
+	daemonSetHandler := api.NewDaemonSetHandler(daemonSetService)
+	jobHandler := api.NewJobHandler(jobService)
+	cronJobHandler := api.NewCronJobHandler(cronJobService)
+	networkPolicyHandler := api.NewNetworkPolicyHandler(networkPolicyService)
+	pvcHandler := api.NewPVCHandler(pvcService)
+	pvHandler := api.NewPVHandler(pvService)
+	storageClassHandler := api.NewStorageClassHandler(storageClassService)
+	resourceQuotaHandler := api.NewResourceQuotaHandler(resourceQuotaService)
+	limitRangeHandler := api.NewLimitRangeHandler(limitRangeService)
+	pdbHandler := api.NewPDBHandler(pdbService)
+	rbacHandler := api.NewRBACHandler(rbacService)
+	prometheusHandler := api.NewPrometheusHandler(prometheusService)
+	configMapHandler := api.NewConfigMapHandler(configMapService)
+	secretHandler := api.NewSecretHandler(secretService)
 
 	// Create an app instance and initialize the route
 	app := &api.App{
@@ -113,8 +144,23 @@ func main() {
 		AutoScalerHandler:  autoScalerHandler,
 		HealthHandler:      healthHandler,
 		PodTerminalHandler: podTerminalHandler,
-		NamespaceHandler:   namespaceHandler,   // 添加到App实例
-		StatefulSetHandler: statefulSetHandler, // 添加StatefulSet处理器到App实例
+		NamespaceHandler:     namespaceHandler,
+		StatefulSetHandler:   statefulSetHandler,
+		HPAHandler:           hpaHandler,
+		DaemonSetHandler:     daemonSetHandler,
+		JobHandler:           jobHandler,
+		CronJobHandler:       cronJobHandler,
+		NetworkPolicyHandler: networkPolicyHandler,
+		PVCHandler:           pvcHandler,
+		PVHandler:            pvHandler,
+		StorageClassHandler:  storageClassHandler,
+		ResourceQuotaHandler: resourceQuotaHandler,
+		LimitRangeHandler:    limitRangeHandler,
+		PDBHandler:           pdbHandler,
+		RBACHandler:          rbacHandler,
+		PrometheusHandler:    prometheusHandler,
+		ConfigMapHandler:     configMapHandler,
+		SecretHandler:        secretHandler,
 	}
 
 	// Initialize the router defined in router.go

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"sort"
+	"strconv"
 
 	"kube-tide/internal/core/k8s"
 	"kube-tide/internal/utils/i18n"
@@ -16,13 +16,15 @@ import (
 
 // ClusterHandler 集群管理处理器
 type ClusterHandler struct {
-	clientManager *k8s.ClientManager
+	clientManager      *k8s.ClientManager
+	clusterEventService *k8s.ClusterEventService
 }
 
 // NewClusterHandler 创建集群管理处理器
-func NewClusterHandler(clientManager *k8s.ClientManager) *ClusterHandler {
+func NewClusterHandler(clientManager *k8s.ClientManager, clusterEventService *k8s.ClusterEventService) *ClusterHandler {
 	return &ClusterHandler{
-		clientManager: clientManager,
+		clientManager:       clientManager,
+		clusterEventService: clusterEventService,
 	}
 }
 
@@ -72,9 +74,6 @@ func (h *ClusterHandler) AddCluster(c *gin.Context) {
 			FailWithError(c, http.StatusBadRequest, "cluster.invalidKubeconfig", err)
 			return
 		}
-
-		// 添加集群
-		err = h.clientManager.AddClusterWithContent(cluster.Name, cluster.KubeconfigContent)
 	} else {
 		// 默认通过kubeconfig文件路径添加
 		if cluster.KubeconfigPath == "" {
@@ -89,10 +88,9 @@ func (h *ClusterHandler) AddCluster(c *gin.Context) {
 			FailWithError(c, http.StatusBadRequest, "cluster.invalidKubeconfig", err)
 			return
 		}
-
-		// 添加集群
-		err = h.clientManager.AddCluster(cluster.Name, cluster.KubeconfigPath)
 	}
+
+	err = h.clientManager.AddClusterWithOptions(cluster)
 
 	if err != nil {
 		logger.Errorf(i18n.T(c, "cluster.add.failed"), err.Error())
@@ -266,7 +264,7 @@ func (h *ClusterHandler) GetClusterMetrics(c *gin.Context) {
 	})
 }
 
-// GetClusterEvents 获取集群事件列表
+// GetClusterEvents 获取集群事件列表（支持过滤）
 func (h *ClusterHandler) GetClusterEvents(c *gin.Context) {
 	clusterName := c.Param("cluster")
 	if clusterName == "" {
@@ -274,28 +272,24 @@ func (h *ClusterHandler) GetClusterEvents(c *gin.Context) {
 		return
 	}
 
-	// 使用通用日志函数和上下文
+	limit := 0
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if v, err := strconv.Atoi(limitStr); err == nil {
+			limit = v
+		}
+	}
+	filter := k8s.EventFilterOptions{
+		Namespace:          c.Query("namespace"),
+		Kind:               c.Query("kind"),
+		Type:               c.Query("type"),
+		Reason:             c.Query("reason"),
+		InvolvedObjectName: c.Query("involvedObjectName"),
+		Limit:              limit,
+	}
+
 	events, err := logger.LogFuncWithContext(c.Request.Context(), i18n.T(c, "cluster.events.get"), func(ctx context.Context) (interface{}, error) {
 		logger.Info(i18n.T(c, "cluster.events.getting"), "clusterName", clusterName)
-
-		// 获取集群客户端
-		client, err := h.clientManager.GetClient(clusterName)
-		if err != nil {
-			return nil, err
-		}
-
-		// 获取集群范围内的事件
-		events, err := client.CoreV1().Events("").List(ctx, metav1.ListOptions{})
-		if err != nil {
-			return nil, fmt.Errorf(i18n.T(c, "cluster.events.failed"), err)
-		}
-
-		// 按时间倒序排序，最新的事件在前面
-		sort.Slice(events.Items, func(i, j int) bool {
-			return events.Items[i].LastTimestamp.After(events.Items[j].LastTimestamp.Time)
-		})
-
-		return events.Items, nil
+		return h.clusterEventService.ListClusterEvents(ctx, clusterName, filter)
 	})
 
 	if err != nil {

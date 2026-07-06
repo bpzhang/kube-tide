@@ -646,3 +646,51 @@ export const getDeploymentMetrics = (
     { timeout: 60000 },
   );
 };
+
+export interface RolloutStatus {
+  updatedReplicas: number;
+  readyReplicas: number;
+  availableReplicas: number;
+  unavailableReplicas: number;
+  replicas: number;
+  observedGeneration: number;
+  paused: boolean;
+  conditions?: Array<{
+    type: string;
+    status: string;
+    lastUpdateTime: string;
+    lastTransitionTime: string;
+    reason: string;
+    message: string;
+  }>;
+}
+
+export interface CreateCanaryDeploymentRequest {
+  name: string;
+  replicas?: number;
+  labels?: Record<string, string>;
+  canaryLabelKey?: string;
+  canaryLabelValue?: string;
+}
+
+export const pauseRollout = (clusterName: string, namespace: string, deploymentName: string) =>
+  api.post(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/pause`);
+
+export const resumeRollout = (clusterName: string, namespace: string, deploymentName: string) =>
+  api.post(`/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/resume`);
+
+export const getRolloutStatus = (clusterName: string, namespace: string, deploymentName: string) =>
+  api.get<{ code: number; message: string; data: { rollout: RolloutStatus } }>(
+    `/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/rollout`,
+  );
+
+export const createCanaryDeployment = (
+  clusterName: string,
+  namespace: string,
+  deploymentName: string,
+  data: CreateCanaryDeploymentRequest,
+) =>
+  api.post(
+    `/clusters/${clusterName}/namespaces/${namespace}/deployments/${deploymentName}/canary`,
+    data,
+  );

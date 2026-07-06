@@ -156,6 +156,14 @@ const Clusters: React.FC = () => {
               />
             </Form.Item>
           )}
+
+          <Form.Item
+            name="prometheusUrl"
+            label={t('clusters.prometheusUrl')}
+            extra={t('clusters.prometheusUrlHint')}
+          >
+            <Input placeholder="http://prometheus:9090" />
+          </Form.Item>
         </Form>
       </Modal>
     </div>

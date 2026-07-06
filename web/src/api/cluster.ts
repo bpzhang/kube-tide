@@ -5,6 +5,7 @@ interface Cluster {
   kubeconfigPath?: string;
   kubeconfigContent?: string;
   addType?: 'path' | 'content'; // addType: 'path' (file path) or 'content' (content)
+  prometheusUrl?: string;
 }
 
 export interface ClusterResponse {
@@ -104,8 +105,11 @@ export const getClusterNamespaces = (clusterName: string) => {
   return api.get<{code: number; message: string; data: {namespaces: string[]}}>(`/clusters/${clusterName}/namespaces`);
 };
 
-export const getClusterEvents = (clusterName: string) => {
-  return api.get<ClusterEventsResponse>(`/clusters/${clusterName}/events`);
+export const getClusterEvents = (
+  clusterName: string,
+  params?: { namespace?: string; kind?: string; type?: string; reason?: string; involvedObjectName?: string; limit?: number }
+) => {
+  return api.get<ClusterEventsResponse>(`/clusters/${clusterName}/events`, { params });
 };
 
 export interface ClusterAddTypeResponse {

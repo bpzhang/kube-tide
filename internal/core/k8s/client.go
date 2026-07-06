@@ -16,10 +16,11 @@ import (
 
 // ClientManager Manages k8s client connections
 type ClientManager struct {
-	clients  map[string]*kubernetes.Clientset
-	configs  map[string]*rest.Config
-	addTypes map[string]string // 存储集群添加方式："path"或"content"
-	mutex    sync.RWMutex
+	clients         map[string]*kubernetes.Clientset
+	configs         map[string]*rest.Config
+	addTypes        map[string]string // 存储集群添加方式："path"或"content"
+	prometheusURLs  map[string]string
+	mutex           sync.RWMutex
 }
 
 func (cm *ClientManager) ValidateKubeconfig(path string) error {
@@ -68,6 +69,7 @@ type Cluster struct {
 	Name              string `json:"name"`
 	KubeconfigPath    string `json:"kubeconfigPath"`
 	KubeconfigContent string `json:"kubeconfigContent,omitempty"`
+	PrometheusURL     string `json:"prometheusUrl,omitempty"`
 	// 添加一个类型字段，标识用户通过哪种方式添加的集群
 	AddType string `json:"addType,omitempty"` // "path" 或 "content"
 }
@@ -75,14 +77,19 @@ type Cluster struct {
 // NewClientManager Create client manager
 func NewClientManager() *ClientManager {
 	return &ClientManager{
-		clients:  make(map[string]*kubernetes.Clientset),
-		configs:  make(map[string]*rest.Config),
-		addTypes: make(map[string]string),
+		clients:        make(map[string]*kubernetes.Clientset),
+		configs:        make(map[string]*rest.Config),
+		addTypes:       make(map[string]string),
+		prometheusURLs: make(map[string]string),
 	}
 }
 
 // AddCluster Add cluster
 func (cm *ClientManager) AddCluster(clusterName, kubeconfigPath string) error {
+	return cm.addCluster(clusterName, kubeconfigPath, "path", "")
+}
+
+func (cm *ClientManager) addCluster(clusterName, kubeconfigPath, addType, prometheusURL string) error {
 	cm.mutex.Lock()
 	defer cm.mutex.Unlock()
 
@@ -107,7 +114,10 @@ func (cm *ClientManager) AddCluster(clusterName, kubeconfigPath string) error {
 	// Store client
 	cm.clients[clusterName] = clientset
 	cm.configs[clusterName] = config
-	cm.addTypes[clusterName] = "path"
+	cm.addTypes[clusterName] = addType
+	if err := cm.storePrometheusURL(clusterName, prometheusURL); err != nil {
+		return err
+	}
 
 	if report := PrepareClusterAccess(context.Background(), clientset); report != nil && !report.AllGranted {
 		logger.Warn("cluster permissions incomplete", "cluster", clusterName, "message", report.Message)
@@ -118,6 +128,10 @@ func (cm *ClientManager) AddCluster(clusterName, kubeconfigPath string) error {
 
 // AddClusterWithContent 通过kubeconfig内容添加集群
 func (cm *ClientManager) AddClusterWithContent(clusterName, content string) error {
+	return cm.addClusterWithContent(clusterName, content, "")
+}
+
+func (cm *ClientManager) addClusterWithContent(clusterName, content, prometheusURL string) error {
 	cm.mutex.Lock()
 	defer cm.mutex.Unlock()
 
@@ -155,6 +169,9 @@ func (cm *ClientManager) AddClusterWithContent(clusterName, content string) erro
 	cm.clients[clusterName] = clientset
 	cm.configs[clusterName] = config
 	cm.addTypes[clusterName] = "content"
+	if err := cm.storePrometheusURL(clusterName, prometheusURL); err != nil {
+		return err
+	}
 
 	if report := PrepareClusterAccess(context.Background(), clientset); report != nil && !report.AllGranted {
 		logger.Warn("cluster permissions incomplete", "cluster", clusterName, "message", report.Message)
@@ -175,6 +192,7 @@ func (cm *ClientManager) RemoveCluster(clusterName string) error {
 	delete(cm.clients, clusterName)
 	delete(cm.configs, clusterName)
 	delete(cm.addTypes, clusterName)
+	delete(cm.prometheusURLs, clusterName)
 	return nil
 }
 
@@ -238,4 +256,49 @@ func (cm *ClientManager) GetAddType(clusterName string) string {
 		return "unknown" // 如果找不到添加方式，返回"unknown"
 	}
 	return addType
+}
+
+// AddClusterWithOptions 添加集群并可选配置 Prometheus URL
+func (cm *ClientManager) AddClusterWithOptions(cluster Cluster) error {
+	if cluster.AddType == "content" {
+		return cm.addClusterWithContent(cluster.Name, cluster.KubeconfigContent, cluster.PrometheusURL)
+	}
+	return cm.addCluster(cluster.Name, cluster.KubeconfigPath, "path", cluster.PrometheusURL)
+}
+
+// SetPrometheusURL 设置集群 Prometheus URL
+func (cm *ClientManager) SetPrometheusURL(clusterName, url string) {
+	cm.mutex.Lock()
+	defer cm.mutex.Unlock()
+	_ = cm.storePrometheusURLLocked(clusterName, url)
+}
+
+func (cm *ClientManager) storePrometheusURL(clusterName, prometheusURL string) error {
+	if prometheusURL == "" {
+		return nil
+	}
+	if err := ValidatePrometheusURL(prometheusURL); err != nil {
+		return err
+	}
+	cm.prometheusURLs[clusterName] = prometheusURL
+	return nil
+}
+
+func (cm *ClientManager) storePrometheusURLLocked(clusterName, prometheusURL string) error {
+	if err := ValidatePrometheusURL(prometheusURL); err != nil {
+		return err
+	}
+	if prometheusURL != "" {
+		cm.prometheusURLs[clusterName] = prometheusURL
+	} else {
+		delete(cm.prometheusURLs, clusterName)
+	}
+	return nil
+}
+
+// GetPrometheusURL 获取集群 Prometheus URL
+func (cm *ClientManager) GetPrometheusURL(clusterName string) string {
+	cm.mutex.RLock()
+	defer cm.mutex.RUnlock()
+	return cm.prometheusURLs[clusterName]
 }

@@ -6,6 +6,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -147,6 +148,56 @@ func (s *PodService) GetPodLogs(ctx context.Context, clusterName, namespace, pod
 	}
 
 	return string(*buf), nil
+}
+
+const defaultLogsConcurrencyLimit = 5
+
+// PodLogEntry 单个 Pod 日志条目
+type PodLogEntry struct {
+	PodName   string `json:"podName"`
+	Container string `json:"container,omitempty"`
+	Logs      string `json:"logs,omitempty"`
+	Error     string `json:"error,omitempty"`
+}
+
+// GetLogsByLabelSelector 按标签选择器批量获取 Pod 日志（带并发限制）
+func (s *PodService) GetLogsByLabelSelector(ctx context.Context, clusterName, namespace, labelSelector, containerName string, tailLines int64, concurrencyLimit int) ([]PodLogEntry, error) {
+	client, err := s.clientManager.GetClient(clusterName)
+	if err != nil {
+		return nil, err
+	}
+	if concurrencyLimit <= 0 {
+		concurrencyLimit = defaultLogsConcurrencyLimit
+	}
+
+	pods, err := client.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
+	if err != nil {
+		return nil, fmt.Errorf("获取 Pod 列表失败: %w", err)
+	}
+
+	results := make([]PodLogEntry, len(pods.Items))
+	sem := make(chan struct{}, concurrencyLimit)
+	var wg sync.WaitGroup
+
+	for i, pod := range pods.Items {
+		wg.Add(1)
+		go func(idx int, podName string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			logs, logErr := s.GetPodLogs(ctx, clusterName, namespace, podName, containerName, tailLines)
+			entry := PodLogEntry{PodName: podName, Container: containerName}
+			if logErr != nil {
+				entry.Error = logErr.Error()
+			} else {
+				entry.Logs = logs
+			}
+			results[idx] = entry
+		}(i, pod.Name)
+	}
+	wg.Wait()
+	return results, nil
 }
 
 // StreamPodLogs 获取Pod日志流，适用于实时日志

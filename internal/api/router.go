@@ -13,18 +13,33 @@ import (
 
 // App Application structure
 type App struct {
-	ClusterHandler     *ClusterHandler
-	NodeHandler        *NodeHandler
-	PodHandler         *PodHandler
-	ServiceHandler     *ServiceHandler
-	IngressHandler     *IngressHandler
-	DeploymentHandler  *DeploymentHandler
-	StatefulSetHandler *StatefulSetHandler // 添加StatefulSet处理器
-	NodePoolHandler    *NodePoolHandler
-	AutoScalerHandler  *AutoScalerHandler // 添加自动扩缩容处理器
-	HealthHandler      *HealthCheckHandler
-	PodTerminalHandler *PodTerminalHandler
-	NamespaceHandler   *NamespaceHandler // Add namespace handler
+	ClusterHandler       *ClusterHandler
+	NodeHandler          *NodeHandler
+	PodHandler           *PodHandler
+	ServiceHandler       *ServiceHandler
+	IngressHandler       *IngressHandler
+	DeploymentHandler    *DeploymentHandler
+	StatefulSetHandler   *StatefulSetHandler
+	NodePoolHandler      *NodePoolHandler
+	AutoScalerHandler    *AutoScalerHandler
+	HealthHandler        *HealthCheckHandler
+	PodTerminalHandler   *PodTerminalHandler
+	NamespaceHandler     *NamespaceHandler
+	HPAHandler           *HPAHandler
+	DaemonSetHandler     *DaemonSetHandler
+	JobHandler           *JobHandler
+	CronJobHandler       *CronJobHandler
+	NetworkPolicyHandler *NetworkPolicyHandler
+	PVCHandler           *PVCHandler
+	PVHandler            *PVHandler
+	StorageClassHandler  *StorageClassHandler
+	ResourceQuotaHandler *ResourceQuotaHandler
+	LimitRangeHandler    *LimitRangeHandler
+	PDBHandler           *PDBHandler
+	RBACHandler          *RBACHandler
+	PrometheusHandler    *PrometheusHandler
+	ConfigMapHandler     *ConfigMapHandler
+	SecretHandler        *SecretHandler
 }
 
 // InitRouter Initialize router
@@ -92,8 +107,32 @@ func InitRouter(app *App) *gin.Engine {
 		// Get cluster add type information
 		v1.GET("/clusters/:cluster/add-type", app.ClusterHandler.GetClusterAddType)
 
-		// Namespace management - Use dedicated NamespaceHandler
+		// Namespace management
 		v1.GET("/clusters/:cluster/namespaces", app.NamespaceHandler.ListNamespaces)
+		v1.GET("/clusters/:cluster/namespaces/:namespace", app.NamespaceHandler.GetNamespace)
+		v1.POST("/clusters/:cluster/namespaces", app.NamespaceHandler.CreateNamespace)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace", app.NamespaceHandler.DeleteNamespace)
+		v1.PATCH("/clusters/:cluster/namespaces/:namespace/labels", app.NamespaceHandler.PatchNamespaceLabels)
+
+		// ConfigMap management
+		v1.GET("/clusters/:cluster/configmaps", app.ConfigMapHandler.ListConfigMaps)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/configmaps", app.ConfigMapHandler.ListConfigMapsByNamespace)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/configmaps/:name", app.ConfigMapHandler.GetConfigMap)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/configmaps", app.ConfigMapHandler.CreateConfigMap)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/configmaps/:name", app.ConfigMapHandler.UpdateConfigMap)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/configmaps/:name", app.ConfigMapHandler.DeleteConfigMap)
+
+		// Secret management
+		v1.GET("/clusters/:cluster/secrets", app.SecretHandler.ListSecrets)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/secrets", app.SecretHandler.ListSecretsByNamespace)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/secrets/:name", app.SecretHandler.GetSecret)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/secrets", app.SecretHandler.CreateSecret)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/secrets/:name", app.SecretHandler.UpdateSecret)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/secrets/:name", app.SecretHandler.DeleteSecret)
+
+		// Prometheus proxy
+		v1.GET("/clusters/:cluster/prometheus/query_range", app.PrometheusHandler.QueryRange)
+		v1.POST("/clusters/:cluster/prometheus/query_range", app.PrometheusHandler.QueryRange)
 
 		// Node pool management
 		v1.GET("/clusters/:cluster/nodepools", app.NodePoolHandler.ListNodePools)
@@ -137,6 +176,7 @@ func InitRouter(app *App) *gin.Engine {
 		v1.DELETE("/clusters/:cluster/namespaces/:namespace/pods/:pod", app.PodHandler.DeletePod)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/logs", app.PodHandler.GetPodLogs)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/logs/stream", app.PodHandler.StreamPodLogs)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/pods/logs/selector", app.PodHandler.GetLogsByLabelSelector)
 		// Pod metrics API
 		v1.GET("/clusters/:cluster/namespaces/:namespace/pods/:pod/metrics", app.PodHandler.GetPodMetrics)
 		// Pod existence check API
@@ -155,9 +195,14 @@ func InitRouter(app *App) *gin.Engine {
 		v1.GET("/clusters/:cluster/services", app.ServiceHandler.ListServices)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/services", app.ServiceHandler.ListServicesByNamespace)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/ingresses", app.IngressHandler.ListIngressesByNamespace)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/ingresses/:ingress", app.IngressHandler.GetIngress)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/ingresses", app.IngressHandler.CreateIngress)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/ingresses/:ingress", app.IngressHandler.UpdateIngress)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/ingresses/:ingress", app.IngressHandler.DeleteIngress)
 		v1.POST("/clusters/:cluster/namespaces/:namespace/services", app.ServiceHandler.CreateService)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/services/:service", app.ServiceHandler.GetServiceDetails)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/services/:service/endpoints", app.ServiceHandler.GetServiceEndpoints)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/services/:service", app.ServiceHandler.UpdateService)
 		v1.DELETE("/clusters/:cluster/namespaces/:namespace/services/:service", app.ServiceHandler.DeleteService)
 
 		// Deployment management
@@ -176,6 +221,10 @@ func InitRouter(app *App) *gin.Engine {
 		v1.GET("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/history", app.DeploymentHandler.GetDeploymentRolloutHistory)
 		v1.GET("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/revisions/:revision", app.DeploymentHandler.GetDeploymentRevisionDetails)
 		v1.POST("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/rollback", app.DeploymentHandler.RollbackDeployment)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/pause", app.DeploymentHandler.PauseRollout)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/resume", app.DeploymentHandler.ResumeRollout)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/rollout", app.DeploymentHandler.GetRolloutStatus)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/deployments/:deployment/canary", app.DeploymentHandler.CreateCanaryDeployment)
 
 		// StatefulSet management
 		v1.GET("/clusters/:cluster/statefulsets", app.StatefulSetHandler.ListStatefulSets)
@@ -189,6 +238,102 @@ func InitRouter(app *App) *gin.Engine {
 		v1.PUT("/clusters/:cluster/namespaces/:namespace/statefulsets/:statefulset/scale", app.StatefulSetHandler.ScaleStatefulSet)
 		v1.POST("/clusters/:cluster/namespaces/:namespace/statefulsets/:statefulset/restart", app.StatefulSetHandler.RestartStatefulSet)
 		v1.DELETE("/clusters/:cluster/namespaces/:namespace/statefulsets/:statefulset", app.StatefulSetHandler.DeleteStatefulSet)
+
+		// HPA management
+		v1.GET("/clusters/:cluster/hpas", app.HPAHandler.ListHPAs)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/hpas", app.HPAHandler.ListHPAs)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/hpas/:hpa", app.HPAHandler.GetHPA)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/hpas", app.HPAHandler.CreateHPA)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/hpas/:hpa", app.HPAHandler.UpdateHPA)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/hpas/:hpa", app.HPAHandler.DeleteHPA)
+
+		// DaemonSet management
+		v1.GET("/clusters/:cluster/daemonsets", app.DaemonSetHandler.ListDaemonSets)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/daemonsets", app.DaemonSetHandler.ListDaemonSets)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/daemonsets/:daemonset", app.DaemonSetHandler.GetDaemonSet)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/daemonsets/:daemonset/pods", app.DaemonSetHandler.GetDaemonSetPods)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/daemonsets", app.DaemonSetHandler.CreateDaemonSet)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/daemonsets/:daemonset", app.DaemonSetHandler.UpdateDaemonSet)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/daemonsets/:daemonset", app.DaemonSetHandler.DeleteDaemonSet)
+
+		// Job management
+		v1.GET("/clusters/:cluster/jobs", app.JobHandler.ListJobs)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/jobs", app.JobHandler.ListJobs)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/jobs/:job", app.JobHandler.GetJob)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/jobs", app.JobHandler.CreateJob)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/jobs/:job", app.JobHandler.DeleteJob)
+
+		// CronJob management
+		v1.GET("/clusters/:cluster/cronjobs", app.CronJobHandler.ListCronJobs)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/cronjobs", app.CronJobHandler.ListCronJobs)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/cronjobs/:cronjob", app.CronJobHandler.GetCronJob)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/cronjobs", app.CronJobHandler.CreateCronJob)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/cronjobs/:cronjob", app.CronJobHandler.UpdateCronJob)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/cronjobs/:cronjob/suspend", app.CronJobHandler.SuspendCronJob)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/cronjobs/:cronjob", app.CronJobHandler.DeleteCronJob)
+
+		// NetworkPolicy management
+		v1.GET("/clusters/:cluster/networkpolicies", app.NetworkPolicyHandler.ListNetworkPolicies)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/networkpolicies", app.NetworkPolicyHandler.ListNetworkPolicies)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/networkpolicies/:networkpolicy", app.NetworkPolicyHandler.GetNetworkPolicy)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/networkpolicies", app.NetworkPolicyHandler.CreateNetworkPolicy)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/networkpolicies/:networkpolicy", app.NetworkPolicyHandler.UpdateNetworkPolicy)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/networkpolicies/:networkpolicy", app.NetworkPolicyHandler.DeleteNetworkPolicy)
+
+		// PVC management
+		v1.GET("/clusters/:cluster/pvcs", app.PVCHandler.ListPVCs)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/pvcs", app.PVCHandler.ListPVCs)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/pvcs/:pvc", app.PVCHandler.GetPVC)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/pvcs", app.PVCHandler.CreatePVC)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/pvcs/:pvc", app.PVCHandler.DeletePVC)
+
+		// PV management (read-only)
+		v1.GET("/clusters/:cluster/pvs", app.PVHandler.ListPVs)
+		v1.GET("/clusters/:cluster/pvs/:pv", app.PVHandler.GetPV)
+
+		// StorageClass management (read-only)
+		v1.GET("/clusters/:cluster/storageclasses", app.StorageClassHandler.ListStorageClasses)
+		v1.GET("/clusters/:cluster/storageclasses/:storageclass", app.StorageClassHandler.GetStorageClass)
+
+		// ResourceQuota management
+		v1.GET("/clusters/:cluster/resourcequotas", app.ResourceQuotaHandler.ListResourceQuotas)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/resourcequotas", app.ResourceQuotaHandler.ListResourceQuotas)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/resourcequotas/:resourcequota", app.ResourceQuotaHandler.GetResourceQuota)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/resourcequotas", app.ResourceQuotaHandler.CreateResourceQuota)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/resourcequotas/:resourcequota", app.ResourceQuotaHandler.UpdateResourceQuota)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/resourcequotas/:resourcequota", app.ResourceQuotaHandler.DeleteResourceQuota)
+
+		// LimitRange management
+		v1.GET("/clusters/:cluster/limitranges", app.LimitRangeHandler.ListLimitRanges)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/limitranges", app.LimitRangeHandler.ListLimitRanges)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/limitranges/:limitrange", app.LimitRangeHandler.GetLimitRange)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/limitranges", app.LimitRangeHandler.CreateLimitRange)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/limitranges/:limitrange", app.LimitRangeHandler.UpdateLimitRange)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/limitranges/:limitrange", app.LimitRangeHandler.DeleteLimitRange)
+
+		// PDB management
+		v1.GET("/clusters/:cluster/pdbs", app.PDBHandler.ListPDBs)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/pdbs", app.PDBHandler.ListPDBs)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/pdbs/:pdb", app.PDBHandler.GetPDB)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/pdbs", app.PDBHandler.CreatePDB)
+		v1.PUT("/clusters/:cluster/namespaces/:namespace/pdbs/:pdb", app.PDBHandler.UpdatePDB)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/pdbs/:pdb", app.PDBHandler.DeletePDB)
+
+		// RBAC management
+		v1.GET("/clusters/:cluster/roles", app.RBACHandler.ListRoles)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/roles", app.RBACHandler.ListRoles)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/roles/:role", app.RBACHandler.GetRole)
+		v1.GET("/clusters/:cluster/clusterroles", app.RBACHandler.ListClusterRoles)
+		v1.GET("/clusters/:cluster/clusterroles/:clusterrole", app.RBACHandler.GetClusterRole)
+		v1.GET("/clusters/:cluster/rolebindings", app.RBACHandler.ListRoleBindings)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/rolebindings", app.RBACHandler.ListRoleBindings)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/rolebindings/:rolebinding", app.RBACHandler.GetRoleBinding)
+		v1.POST("/clusters/:cluster/namespaces/:namespace/rolebindings", app.RBACHandler.CreateRoleBinding)
+		v1.DELETE("/clusters/:cluster/namespaces/:namespace/rolebindings/:rolebinding", app.RBACHandler.DeleteRoleBinding)
+		v1.GET("/clusters/:cluster/clusterrolebindings", app.RBACHandler.ListClusterRoleBindings)
+		v1.GET("/clusters/:cluster/clusterrolebindings/:clusterrolebinding", app.RBACHandler.GetClusterRoleBinding)
+		v1.POST("/clusters/:cluster/clusterrolebindings", app.RBACHandler.CreateClusterRoleBinding)
+		v1.DELETE("/clusters/:cluster/clusterrolebindings/:clusterrolebinding", app.RBACHandler.DeleteClusterRoleBinding)
 	}
 
 	return router

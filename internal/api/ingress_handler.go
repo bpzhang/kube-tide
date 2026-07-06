@@ -73,6 +73,55 @@ func (h *IngressHandler) ListIngressesByNamespace(c *gin.Context) {
 	ResponseSuccess(c, gin.H{"ingresses": result})
 }
 
+// GetIngress 获取 Ingress 详情
+func (h *IngressHandler) GetIngress(c *gin.Context) {
+	ing, err := h.manager.GetIngress(context.Background(), c.Param("cluster"), c.Param("namespace"), c.Param("ingress"))
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	ResponseSuccess(c, gin.H{"ingress": convertIngressToResponse(*ing)})
+}
+
+// CreateIngress 创建 Ingress
+func (h *IngressHandler) CreateIngress(c *gin.Context) {
+	var req k8s.CreateIngressRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ResponseError(c, http.StatusBadRequest, "ingress.invalidRequest", err.Error())
+		return
+	}
+	ing, err := h.manager.CreateIngress(context.Background(), c.Param("cluster"), c.Param("namespace"), req)
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	ResponseSuccess(c, gin.H{"ingress": convertIngressToResponse(*ing)})
+}
+
+// UpdateIngress 更新 Ingress
+func (h *IngressHandler) UpdateIngress(c *gin.Context) {
+	var req k8s.UpdateIngressRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ResponseError(c, http.StatusBadRequest, "ingress.invalidRequest", err.Error())
+		return
+	}
+	ing, err := h.manager.UpdateIngress(context.Background(), c.Param("cluster"), c.Param("namespace"), c.Param("ingress"), req)
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	ResponseSuccess(c, gin.H{"ingress": convertIngressToResponse(*ing)})
+}
+
+// DeleteIngress 删除 Ingress
+func (h *IngressHandler) DeleteIngress(c *gin.Context) {
+	if err := h.manager.DeleteIngress(context.Background(), c.Param("cluster"), c.Param("namespace"), c.Param("ingress")); err != nil {
+		ResponseError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	ResponseSuccess(c, gin.H{"message": "Ingress deleted successfully"})
+}
+
 func convertIngressToResponse(ing networkingv1.Ingress) ingressResponse {
 	rules := make([]ingressRuleResponse, 0, len(ing.Spec.Rules))
 	for _, rule := range ing.Spec.Rules {

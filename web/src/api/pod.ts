@@ -366,3 +366,27 @@ export const getPodLifecycleStatus = (
     `/clusters/${clusterName}/namespaces/${namespace}/pods/${podName}/lifecycle/status`
   );
 };
+
+export interface PodLogEntry {
+  podName: string;
+  container?: string;
+  logs?: string;
+  error?: string;
+}
+
+export interface LogsBySelectorRequest {
+  labelSelector: string;
+  container?: string;
+  tailLines?: number;
+  concurrencyLimit?: number;
+}
+
+export const getLogsByLabelSelector = (
+  clusterName: string,
+  namespace: string,
+  request: LogsBySelectorRequest,
+) =>
+  api.post<{ code: number; message: string; data: { logs: PodLogEntry[] } }>(
+    `/clusters/${clusterName}/namespaces/${namespace}/pods/logs/selector`,
+    request,
+  );
