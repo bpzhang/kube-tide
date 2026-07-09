@@ -13,33 +13,34 @@ import (
 
 // App Application structure
 type App struct {
-	ClusterHandler       *ClusterHandler
-	NodeHandler          *NodeHandler
-	PodHandler           *PodHandler
-	ServiceHandler       *ServiceHandler
-	IngressHandler       *IngressHandler
-	DeploymentHandler    *DeploymentHandler
-	StatefulSetHandler   *StatefulSetHandler
-	NodePoolHandler      *NodePoolHandler
-	AutoScalerHandler    *AutoScalerHandler
-	HealthHandler        *HealthCheckHandler
-	PodTerminalHandler   *PodTerminalHandler
-	NamespaceHandler     *NamespaceHandler
-	HPAHandler           *HPAHandler
-	DaemonSetHandler     *DaemonSetHandler
-	JobHandler           *JobHandler
-	CronJobHandler       *CronJobHandler
-	NetworkPolicyHandler *NetworkPolicyHandler
-	PVCHandler           *PVCHandler
-	PVHandler            *PVHandler
-	StorageClassHandler  *StorageClassHandler
-	ResourceQuotaHandler *ResourceQuotaHandler
-	LimitRangeHandler    *LimitRangeHandler
-	PDBHandler           *PDBHandler
-	RBACHandler          *RBACHandler
-	PrometheusHandler    *PrometheusHandler
-	ConfigMapHandler     *ConfigMapHandler
-	SecretHandler        *SecretHandler
+	ClusterHandler         *ClusterHandler
+	NodeHandler            *NodeHandler
+	PodHandler             *PodHandler
+	ServiceHandler         *ServiceHandler
+	IngressHandler         *IngressHandler
+	DeploymentHandler      *DeploymentHandler
+	StatefulSetHandler     *StatefulSetHandler
+	NodePoolHandler        *NodePoolHandler
+	AutoScalerHandler      *AutoScalerHandler
+	HealthHandler          *HealthCheckHandler
+	PodTerminalHandler     *PodTerminalHandler
+	NamespaceHandler       *NamespaceHandler
+	HPAHandler             *HPAHandler
+	DaemonSetHandler       *DaemonSetHandler
+	JobHandler             *JobHandler
+	CronJobHandler         *CronJobHandler
+	NetworkPolicyHandler   *NetworkPolicyHandler
+	PVCHandler             *PVCHandler
+	PVHandler              *PVHandler
+	StorageClassHandler    *StorageClassHandler
+	ResourceQuotaHandler   *ResourceQuotaHandler
+	LimitRangeHandler      *LimitRangeHandler
+	PDBHandler             *PDBHandler
+	RBACHandler            *RBACHandler
+	PrometheusHandler      *PrometheusHandler
+	ConfigMapHandler       *ConfigMapHandler
+	SecretHandler          *SecretHandler
+	TrafficTopologyHandler *TrafficTopologyHandler
 }
 
 // InitRouter Initialize router
@@ -133,6 +134,10 @@ func InitRouter(app *App) *gin.Engine {
 		// Prometheus proxy
 		v1.GET("/clusters/:cluster/prometheus/query_range", app.PrometheusHandler.QueryRange)
 		v1.POST("/clusters/:cluster/prometheus/query_range", app.PrometheusHandler.QueryRange)
+
+		// Traffic topology (service call graph & paths)
+		v1.GET("/clusters/:cluster/traffic-topology", app.TrafficTopologyHandler.GetTrafficTopology)
+		v1.GET("/clusters/:cluster/namespaces/:namespace/traffic-topology", app.TrafficTopologyHandler.GetTrafficTopology)
 
 		// Node pool management
 		v1.GET("/clusters/:cluster/nodepools", app.NodePoolHandler.ListNodePools)

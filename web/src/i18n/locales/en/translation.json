@@ -80,7 +80,8 @@
     "pdbs": "Pod Disruption Budgets",
     "rbac": "RBAC",
     "observability": "Observability",
-    "labelLogs": "Label Logs"
+    "labelLogs": "Label Logs",
+    "serviceTopology": "Service Topology"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1655,6 +1656,79 @@
     "cpuCores": "CPU Cores",
     "queryFailed": "Prometheus query failed. Ensure the cluster has a Prometheus URL configured.",
     "noData": "No Prometheus data. Verify cAdvisor/kubelet metrics and PromQL match your setup."
+  },
+  "trafficTopology": {
+    "title": "Service Traffic Topology",
+    "hintTitle": "Note",
+    "hint": "Paths and NetworkPolicy come from cluster APIs. Terway clusters auto-connect to in-cluster hubble-metrics or Prometheus — no extra setup required.",
+    "fetchFailed": "Failed to load traffic topology",
+    "pathsTitle": "Traffic Paths",
+    "routesTitle": "Ingress Routes",
+    "callsTitle": "Service Call Graph",
+    "graphTitle": "Topology Graph",
+    "edgeRoutes": "Ingress routes",
+    "edgeSelects": "Service selectors",
+    "edgeCalls": "Service calls (inferred)",
+    "edgePolicy": "NetworkPolicy allow",
+    "policyTitle": "Network Policy Allows",
+    "emptyPolicy": "No NetworkPolicy allow rules",
+    "emptyGraph": "No topology nodes",
+    "selectCluster": "Please select a cluster first",
+    "network": {
+      "title": "Cluster Network Observability",
+      "terwayTitle": "Terway Network",
+      "dataSource": "Metrics source",
+      "cni": "CNI",
+      "mode": "Mode",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "hubbleRelay": "Hubble Relay",
+      "ready": "Ready",
+      "notReady": "Not ready",
+      "messages": {
+        "terway_detected": "Terway network detected. Topology is built from cluster APIs.",
+        "terway_observable": "Auto-connected to in-cluster network observability (Hubble Metrics).",
+        "terway_hubble_ready": "Terway + Hubble ready. Showing declared topology and L4 metrics.",
+        "terway_hubble_configured": "Hubble enabled; collecting network metrics.",
+        "hubble_available": "Hubble components found in cluster; attempting to collect metrics.",
+        "cni_unknown": "CNI not identified; service topology still available from K8s API."
+      }
+    },
+    "hubble": {
+      "title": "Hubble L4 Metrics (last 5m)",
+      "dropReason": "Drop reason",
+      "protocol": "Protocol",
+      "count": "Count",
+      "emptyDrops": "No drop data",
+      "emptyPorts": "No port distribution",
+      "messages": {
+        "in_cluster_hubble": "Source: in-cluster hubble-metrics",
+        "cluster_prometheus": "Source: in-cluster Prometheus",
+        "hubble_no_data": "No L4 metrics yet (no traffic or metrics not reported)."
+      }
+    },
+    "inferred": "Inferred",
+    "declared": "Declared",
+    "emptyPaths": "No traffic paths found",
+    "emptyRoutes": "No ingress routes",
+    "emptyCalls": "No service calls inferred",
+    "stats": {
+      "ingress": "Ingress",
+      "services": "Services",
+      "routes": "Route edges",
+      "calls": "Call edges"
+    },
+    "columns": {
+      "ingress": "Ingress",
+      "service": "Service",
+      "workload": "Workload",
+      "pods": "Pods",
+      "caller": "Caller",
+      "callee": "Callee",
+      "evidence": "Evidence",
+      "inferred": "Type",
+      "port": "Port"
+    }
   },
   "labelLogs": {
     "management": "Multi-Pod Logs by Label",

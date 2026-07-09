@@ -31,6 +31,7 @@ import LimitRanges from './pages/governance/LimitRanges';
 import PDBs from './pages/governance/PDBs';
 import RBAC from './pages/governance/RBAC';
 import LabelLogs from './pages/observability/LabelLogs';
+import ServiceTopology from './pages/observability/ServiceTopology';
 import Dashboard from './pages/Dashboard';
 
 const App: React.FC = () => {
@@ -85,6 +86,7 @@ const App: React.FC = () => {
           </Route>
           <Route path="observability">
             <Route path="label-logs" element={<LabelLogs />} />
+            <Route path="service-topology" element={<ServiceTopology />} />
           </Route>
           <Route path="clusters/:clusterName/deployments" element={<Deployments />} />
           <Route path="clusters/:clusterName/deployments/:namespace" element={<Deployments />} />

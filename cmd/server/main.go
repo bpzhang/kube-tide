@@ -69,6 +69,7 @@ func main() {
 	clusterEventService := k8s.NewClusterEventService(clientManager)
 	configMapService := k8s.NewConfigMapService(clientManager)
 	secretService := k8s.NewSecretService(clientManager)
+	trafficTopologyService := k8s.NewTrafficTopologyService(clientManager, prometheusService)
 
 	// 初始化Pod指标服务，用于收集和缓存监控数据
 	podMetricsService := k8s.NewPodMetricsService(clientManager)
@@ -131,36 +132,38 @@ func main() {
 	prometheusHandler := api.NewPrometheusHandler(prometheusService)
 	configMapHandler := api.NewConfigMapHandler(configMapService)
 	secretHandler := api.NewSecretHandler(secretService)
+	trafficTopologyHandler := api.NewTrafficTopologyHandler(trafficTopologyService)
 
 	// Create an app instance and initialize the route
 	app := &api.App{
-		ClusterHandler:     clusterHandler,
-		NodeHandler:        nodeHandler,
-		PodHandler:         podHandler,
-		ServiceHandler:     serviceHandler,
-		IngressHandler:     ingressHandler,
-		DeploymentHandler:  deploymentHandler,
-		NodePoolHandler:    nodePoolHandler,
-		AutoScalerHandler:  autoScalerHandler,
-		HealthHandler:      healthHandler,
-		PodTerminalHandler: podTerminalHandler,
-		NamespaceHandler:     namespaceHandler,
-		StatefulSetHandler:   statefulSetHandler,
-		HPAHandler:           hpaHandler,
-		DaemonSetHandler:     daemonSetHandler,
-		JobHandler:           jobHandler,
-		CronJobHandler:       cronJobHandler,
-		NetworkPolicyHandler: networkPolicyHandler,
-		PVCHandler:           pvcHandler,
-		PVHandler:            pvHandler,
-		StorageClassHandler:  storageClassHandler,
-		ResourceQuotaHandler: resourceQuotaHandler,
-		LimitRangeHandler:    limitRangeHandler,
-		PDBHandler:           pdbHandler,
-		RBACHandler:          rbacHandler,
-		PrometheusHandler:    prometheusHandler,
-		ConfigMapHandler:     configMapHandler,
-		SecretHandler:        secretHandler,
+		ClusterHandler:         clusterHandler,
+		NodeHandler:            nodeHandler,
+		PodHandler:             podHandler,
+		ServiceHandler:         serviceHandler,
+		IngressHandler:         ingressHandler,
+		DeploymentHandler:      deploymentHandler,
+		NodePoolHandler:        nodePoolHandler,
+		AutoScalerHandler:      autoScalerHandler,
+		HealthHandler:          healthHandler,
+		PodTerminalHandler:     podTerminalHandler,
+		NamespaceHandler:       namespaceHandler,
+		StatefulSetHandler:     statefulSetHandler,
+		HPAHandler:             hpaHandler,
+		DaemonSetHandler:       daemonSetHandler,
+		JobHandler:             jobHandler,
+		CronJobHandler:         cronJobHandler,
+		NetworkPolicyHandler:   networkPolicyHandler,
+		PVCHandler:             pvcHandler,
+		PVHandler:              pvHandler,
+		StorageClassHandler:    storageClassHandler,
+		ResourceQuotaHandler:   resourceQuotaHandler,
+		LimitRangeHandler:      limitRangeHandler,
+		PDBHandler:             pdbHandler,
+		RBACHandler:            rbacHandler,
+		PrometheusHandler:      prometheusHandler,
+		ConfigMapHandler:       configMapHandler,
+		SecretHandler:          secretHandler,
+		TrafficTopologyHandler: trafficTopologyHandler,
 	}
 
 	// Initialize the router defined in router.go

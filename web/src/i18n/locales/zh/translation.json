@@ -82,7 +82,8 @@
     "pdbs": "Pod 中断预算",
     "rbac": "RBAC",
     "observability": "可观测性",
-    "labelLogs": "标签日志"
+    "labelLogs": "标签日志",
+    "serviceTopology": "服务拓扑"
   },
   "dashboard": {
     "title": "仪表盘",
@@ -1652,6 +1653,79 @@
     "cpuCores": "CPU 核数",
     "queryFailed": "Prometheus 查询失败，请确认集群已配置 Prometheus URL",
     "noData": "无 Prometheus 数据，请确认已安装 cAdvisor/kubelet 指标且 PromQL 匹配"
+  },
+  "trafficTopology": {
+    "title": "服务流量拓扑",
+    "hintTitle": "说明",
+    "hint": "流量路径与 NetworkPolicy 来自集群声明配置；Terway 集群会自动接入 kube-system/hubble-metrics 或集群内 Prometheus，无需额外配置。",
+    "fetchFailed": "获取流量拓扑失败",
+    "pathsTitle": "流量路径",
+    "routesTitle": "入口路由",
+    "callsTitle": "服务调用关系",
+    "graphTitle": "拓扑图",
+    "edgeRoutes": "入口路由",
+    "edgeSelects": "服务选择",
+    "edgeCalls": "服务调用（推断）",
+    "edgePolicy": "NetworkPolicy 放行",
+    "policyTitle": "网络策略放行",
+    "emptyPolicy": "暂无 NetworkPolicy 放行规则",
+    "emptyGraph": "暂无拓扑节点",
+    "selectCluster": "请先选择集群",
+    "network": {
+      "title": "集群网络可观测性",
+      "terwayTitle": "Terway 网络",
+      "dataSource": "指标来源",
+      "cni": "CNI",
+      "mode": "模式",
+      "enabled": "已启用",
+      "disabled": "未启用",
+      "hubbleRelay": "Hubble Relay",
+      "ready": "就绪",
+      "notReady": "未就绪",
+      "messages": {
+        "terway_detected": "已识别 Terway 网络，拓扑数据来自集群 API。",
+        "terway_observable": "已自动接入集群内网络可观测组件（Hubble Metrics）。",
+        "terway_hubble_ready": "Terway + Hubble 已就绪，展示声明式拓扑与 L4 网络指标。",
+        "terway_hubble_configured": "Hubble 已启用，正在采集网络指标。",
+        "hubble_available": "集群内存在 Hubble 组件，正在尝试采集指标。",
+        "cni_unknown": "未识别 CNI 类型，仍可从 K8s API 构建服务拓扑。"
+      }
+    },
+    "hubble": {
+      "title": "Hubble L4 流量指标（近 5 分钟）",
+      "dropReason": "丢包原因",
+      "protocol": "协议",
+      "count": "次数",
+      "emptyDrops": "暂无丢包数据",
+      "emptyPorts": "暂无端口分布",
+      "messages": {
+        "in_cluster_hubble": "数据来源：集群内 hubble-metrics",
+        "cluster_prometheus": "数据来源：集群内 Prometheus",
+        "hubble_no_data": "暂未采集到 L4 指标数据（可能当前无流量或指标尚未上报）。"
+      }
+    },
+    "inferred": "推断",
+    "declared": "声明",
+    "emptyPaths": "暂无流量路径",
+    "emptyRoutes": "暂无 Ingress 路由",
+    "emptyCalls": "暂未推断到服务间调用",
+    "stats": {
+      "ingress": "Ingress",
+      "services": "Service",
+      "routes": "路由边",
+      "calls": "调用边"
+    },
+    "columns": {
+      "ingress": "入口",
+      "service": "服务",
+      "workload": "工作负载",
+      "pods": "Pod 数",
+      "caller": "调用方",
+      "callee": "被调服务",
+      "evidence": "依据",
+      "inferred": "类型",
+      "port": "端口"
+    }
   },
   "labelLogs": {
     "management": "按标签批量查看日志",

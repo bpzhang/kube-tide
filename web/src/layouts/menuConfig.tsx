@@ -246,6 +246,13 @@ export const createMenuConfig = (
         path: '/observability/label-logs',
         match: (pathname) => pathname.startsWith('/observability/label-logs'),
       },
+      {
+        key: 'service-topology',
+        icon: <ApartmentOutlined />,
+        label: t('navigation.serviceTopology'),
+        path: '/observability/service-topology',
+        match: (pathname) => pathname.startsWith('/observability/service-topology'),
+      },
     ],
   },
 ];

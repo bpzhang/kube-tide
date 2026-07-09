@@ -36,9 +36,12 @@ type QueryRangeParams struct {
 
 // QueryRange 代理 Prometheus query_range API
 func (s *PrometheusService) QueryRange(ctx context.Context, clusterName string, params QueryRangeParams, timeout time.Duration) (json.RawMessage, error) {
-	promURL := s.clientManager.GetPrometheusURL(clusterName)
+	promURL, err := s.ResolvePrometheusURL(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
 	if promURL == "" {
-		return nil, fmt.Errorf("集群 %s 未配置 Prometheus URL", clusterName)
+		return nil, fmt.Errorf("集群 %s 未找到 Prometheus 端点", clusterName)
 	}
 	if err := ValidatePrometheusURL(promURL); err != nil {
 		return nil, err
@@ -83,6 +86,75 @@ func (s *PrometheusService) QueryRange(ctx context.Context, clusterName string, 
 		return nil, fmt.Errorf("Prometheus 返回错误 %d: %s", resp.StatusCode, string(body))
 	}
 	return json.RawMessage(body), nil
+}
+
+// QueryInstant 代理 Prometheus query API（即时查询）；未配置 URL 时自动发现集群内 Prometheus
+func (s *PrometheusService) QueryInstant(ctx context.Context, clusterName, query string, timeout time.Duration) (json.RawMessage, error) {
+	promURL, err := s.ResolvePrometheusURL(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+	if promURL == "" {
+		return nil, fmt.Errorf("集群 %s 未找到 Prometheus 端点", clusterName)
+	}
+	if err := ValidatePrometheusURL(promURL); err != nil {
+		return nil, err
+	}
+	if len(query) > maxPrometheusQueryLen {
+		return nil, fmt.Errorf("PromQL 查询长度超过限制 (%d)", maxPrometheusQueryLen)
+	}
+
+	endpoint, err := url.Parse(promURL)
+	if err != nil {
+		return nil, fmt.Errorf("无效的 Prometheus URL: %w", err)
+	}
+	endpoint.Path = joinURLPath(endpoint.Path, "/api/v1/query")
+	q := endpoint.Query()
+	q.Set("query", query)
+	endpoint.RawQuery = q.Encode()
+
+	if timeout <= 0 {
+		timeout = defaultPrometheusTimeout
+	}
+	client := &http.Client{Timeout: timeout}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("创建 Prometheus 请求失败: %w", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("Prometheus 请求失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("读取 Prometheus 响应失败: %w", err)
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, fmt.Errorf("Prometheus 返回错误 %d: %s", resp.StatusCode, string(body))
+	}
+	return json.RawMessage(body), nil
+}
+
+// ResolvePrometheusURL 返回手动配置或集群内自动发现的 Prometheus 地址
+func (s *PrometheusService) ResolvePrometheusURL(ctx context.Context, clusterName string) (string, error) {
+	if u := s.clientManager.GetPrometheusURL(clusterName); u != "" {
+		return u, nil
+	}
+	client, err := s.clientManager.GetClient(clusterName)
+	if err != nil {
+		return "", err
+	}
+	if u := DiscoverPrometheusURL(ctx, client); u != "" {
+		if err := ValidatePrometheusURL(u); err != nil {
+			return "", err
+		}
+		return u, nil
+	}
+	return "", nil
 }
 
 func joinURLPath(base, path string) string {
