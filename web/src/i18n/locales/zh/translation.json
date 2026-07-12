@@ -82,7 +82,12 @@
     "pdbs": "Pod 中断预算",
     "rbac": "RBAC",
     "observability": "可观测性",
+    "observabilityOverview": "可观测总览",
+    "prometheus": "Prometheus",
+    "alerts": "告警中心",
+    "callChain": "调用链",
     "labelLogs": "标签日志",
+    "clusterEvents": "集群事件",
     "serviceTopology": "服务拓扑"
   },
   "dashboard": {
@@ -1285,6 +1290,19 @@
     "events": {
       "title": "集群事件"
     },
+    "health": {
+      "title": "组件健康",
+      "overall": "整体状态",
+      "component": "组件",
+      "status": "状态",
+      "message": "说明",
+      "fetchFailed": "获取集群健康状态失败"
+    },
+    "prometheus": {
+      "title": "Prometheus 配置",
+      "saveSuccess": "Prometheus URL 已更新",
+      "saveFailed": "更新 Prometheus URL 失败"
+    },
     "actions": {
       "test": "测试连接",
       "testSuccess": "集群连接测试成功",
@@ -1650,9 +1668,61 @@
   "prometheus": {
     "title": "Prometheus 指标",
     "cpuUsage": "CPU 使用率",
+    "memoryUsage": "内存使用量",
     "cpuCores": "CPU 核数",
+    "memoryBytes": "字节",
     "queryFailed": "Prometheus 查询失败，请确认集群已配置 Prometheus URL",
-    "noData": "无 Prometheus 数据，请确认已安装 cAdvisor/kubelet 指标且 PromQL 匹配"
+    "noData": "无 Prometheus 数据，请确认已安装 cAdvisor/kubelet 指标且 PromQL 匹配",
+    "explorer": {
+      "title": "Prometheus 查询",
+      "queryType": "查询类型",
+      "range": "范围查询",
+      "instant": "即时查询",
+      "presets": "预设查询",
+      "selectPreset": "选择预设",
+      "timeRange": "时间范围",
+      "step": "步长",
+      "run": "执行查询",
+      "chart": "查询结果",
+      "metric": "指标",
+      "value": "值",
+      "status": "Prometheus 状态",
+      "presetsList": {
+        "cluster_cpu": "集群 CPU 使用率",
+        "cluster_memory": "集群内存使用量",
+        "pod_restarts": "Pod 重启 Top10",
+        "node_cpu": "节点 CPU 使用率",
+        "apiserver_requests": "API Server 请求量"
+      }
+    }
+  },
+  "observability": {
+    "fetchFailed": "获取可观测性数据失败",
+    "selectCluster": "请先选择集群",
+    "overview": {
+      "title": "可观测性总览",
+      "prometheus": "Prometheus",
+      "connected": "已连接",
+      "disconnected": "未连接",
+      "clusterHealth": "集群健康",
+      "problemPods": "异常 Pod",
+      "running": "运行中",
+      "warningEvents": "近 1h 警告事件",
+      "components": "组件状态",
+      "quickLinks": "快捷入口",
+      "recentAlerts": "最近告警",
+      "viewAll": "查看全部"
+    },
+    "alerts": {
+      "title": "告警中心",
+      "fetchFailed": "获取告警失败",
+      "empty": "暂无告警",
+      "level": "级别",
+      "category": "类别",
+      "message": "说明",
+      "filterLevel": "按级别筛选",
+      "filterCategory": "按类别筛选"
+    }
   },
   "trafficTopology": {
     "title": "服务流量拓扑",
@@ -1739,5 +1809,52 @@
     "fetchFailed": "获取日志失败",
     "noPods": "没有 Pod 匹配该选择器",
     "empty": "输入标签选择器并点击获取日志"
+  },
+  "clusterEvents": {
+    "title": "集群事件",
+    "fetchFailed": "获取集群事件失败",
+    "filters": {
+      "kind": "资源类型",
+      "objectName": "资源名称",
+      "type": "事件类型"
+    },
+    "columns": {
+      "object": "关联资源"
+    }
+  },
+  "callChain": {
+    "title": "服务调用链",
+    "fetchFailed": "获取调用链数据失败",
+    "hintTitle": "说明",
+    "hint": "观测流量来自 Hubble（Terway/Cilium）或 Prometheus；推断调用来自 Pod 环境变量与 DNS 配置。实线橙色边表示 Hubble 观测到的真实流量。",
+    "viewTopology": "服务拓扑",
+    "observed": "观测",
+    "inferred": "推断",
+    "graphTitle": "调用链拓扑",
+    "emptyChains": "暂无调用链路径",
+    "emptyFlows": "暂无 Hubble 观测流量，请确认集群已启用 Hubble Metrics",
+    "stats": {
+      "flows": "调用流",
+      "observedFlows": "观测流",
+      "chains": "调用链",
+      "observedChains": "观测链",
+      "observedChainsTip": "包含 Hubble 真实流量的调用链",
+      "totalQPS": "总 QPS",
+      "drops": "丢包/s"
+    },
+    "tabs": {
+      "chains": "调用链路径",
+      "flows": "Hubble 流量",
+      "inferredCalls": "推断调用",
+      "graph": "拓扑图"
+    },
+    "columns": {
+      "source": "调用方",
+      "target": "被调方",
+      "flows": "流量",
+      "drops": "丢包",
+      "port": "端口/协议",
+      "type": "来源"
+    }
   }
 }

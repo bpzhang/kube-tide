@@ -77,6 +77,25 @@ export interface ClusterEventsResponse {
   };
 }
 
+export interface ComponentHealth {
+  name: string;
+  status: 'healthy' | 'degraded' | 'missing' | 'unhealthy' | 'unknown';
+  message?: string;
+}
+
+export interface ClusterHealthReport {
+  overall: 'healthy' | 'degraded' | 'unhealthy';
+  components: ComponentHealth[];
+}
+
+export interface ClusterHealthResponse {
+  code: number;
+  message: string;
+  data: {
+    health: ClusterHealthReport;
+  };
+}
+
 export const getClusterList = () => {
   return api.get<ClusterResponse>('/clusters');
 };
@@ -123,4 +142,15 @@ export interface ClusterAddTypeResponse {
 
 export const getClusterAddType = (clusterName: string) => {
   return api.get<ClusterAddTypeResponse>(`/clusters/${clusterName}/add-type`);
+};
+
+export const getClusterHealth = (clusterName: string) => {
+  return api.get<ClusterHealthResponse>(`/clusters/${clusterName}/health`);
+};
+
+export const patchClusterPrometheus = (clusterName: string, prometheusUrl: string) => {
+  return api.patch<{ code: number; message: string; data: { prometheusUrl: string } }>(
+    `/clusters/${clusterName}/prometheus`,
+    { prometheusUrl },
+  );
 };

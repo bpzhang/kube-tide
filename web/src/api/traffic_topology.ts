@@ -15,6 +15,12 @@ export interface TopologyEdge {
   port?: string;
   inferred?: boolean;
   evidence?: string;
+  metrics?: {
+    flowsPerSec?: number;
+    bytesPerSec?: number;
+    drops?: number;
+    observed?: boolean;
+  };
 }
 
 export interface TrafficPath {
@@ -60,8 +66,42 @@ export interface TrafficTopology {
   nodes: TopologyNode[];
   edges: TopologyEdge[];
   paths: TrafficPath[];
+  callFlows?: CallFlowStat[];
+  callChains?: CallChainPath[];
   network?: ClusterNetworkInfo;
   hubble?: HubbleMetricsSummary;
+}
+
+export interface CallFlowStat {
+  sourceNamespace: string;
+  source: string;
+  sourceType?: string;
+  targetNamespace: string;
+  target: string;
+  targetType?: string;
+  port?: string;
+  protocol?: string;
+  flowsPerSec: number;
+  bytesPerSec?: number;
+  drops?: number;
+  observed: boolean;
+  evidence?: string;
+}
+
+export interface CallChainHop {
+  nodeId: string;
+  type: string;
+  name: string;
+  namespace: string;
+}
+
+export interface CallChainPath {
+  id: string;
+  entry?: string;
+  hops: CallChainHop[];
+  depth: number;
+  observed: boolean;
+  flowsPerSec?: number;
 }
 
 export interface ApiResponse<T> {

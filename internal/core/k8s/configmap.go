@@ -134,7 +134,12 @@ func (s *ConfigMapService) UpdateConfigMap(ctx context.Context, clusterName, nam
 		return nil, fmt.Errorf("获取 ConfigMap 失败: %w", err)
 	}
 	if data != nil {
-		cm.Data = data
+		if cm.Data == nil {
+			cm.Data = make(map[string]string)
+		}
+		for k, v := range data {
+			cm.Data[k] = v
+		}
 	}
 	if labels != nil {
 		cm.Labels = labels

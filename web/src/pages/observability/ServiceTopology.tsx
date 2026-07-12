@@ -46,12 +46,13 @@ const ServiceTopology: React.FC = () => {
   }, [selectedCluster, namespace]);
 
   const stats = useMemo(() => {
-    if (!topology) return { ingress: 0, service: 0, routes: 0, calls: 0 };
+    if (!topology) return { ingress: 0, service: 0, routes: 0, calls: 0, observedFlows: 0 };
     const ingress = topology.nodes.filter((n) => n.type === 'ingress').length;
     const service = topology.nodes.filter((n) => n.type === 'service').length;
     const routes = topology.edges.filter((e) => e.edgeType === 'routes').length;
     const calls = topology.edges.filter((e) => e.edgeType === 'calls').length;
-    return { ingress, service, routes, calls };
+    const observedFlows = (topology.callFlows || []).filter((f) => f.observed).length;
+    return { ingress, service, routes, calls, observedFlows };
   }, [topology]);
 
   const callEdges = useMemo(
@@ -245,17 +246,20 @@ const ServiceTopology: React.FC = () => {
       />
 
       <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={6}>
+        <Col span={4}>
           <Statistic title={t('trafficTopology.stats.ingress')} value={stats.ingress} prefix={<ApiOutlined />} />
         </Col>
-        <Col span={6}>
+        <Col span={5}>
           <Statistic title={t('trafficTopology.stats.services')} value={stats.service} prefix={<ClusterOutlined />} />
         </Col>
-        <Col span={6}>
+        <Col span={5}>
           <Statistic title={t('trafficTopology.stats.routes')} value={stats.routes} prefix={<ArrowRightOutlined />} />
         </Col>
-        <Col span={6}>
+        <Col span={5}>
           <Statistic title={t('trafficTopology.stats.calls')} value={stats.calls} prefix={<DeploymentUnitOutlined />} />
+        </Col>
+        <Col span={5}>
+          <Statistic title={t('callChain.stats.observedFlows')} value={stats.observedFlows} />
         </Col>
       </Row>
 

@@ -26,12 +26,13 @@ type TopologyNode struct {
 
 // TopologyEdge 拓扑边
 type TopologyEdge struct {
-	Source   string `json:"source"`
-	Target   string `json:"target"`
-	EdgeType string `json:"edgeType"`
-	Port     string `json:"port,omitempty"`
-	Inferred bool   `json:"inferred,omitempty"`
-	Evidence string `json:"evidence,omitempty"`
+	Source   string       `json:"source"`
+	Target   string       `json:"target"`
+	EdgeType string       `json:"edgeType"`
+	Port     string       `json:"port,omitempty"`
+	Inferred bool         `json:"inferred,omitempty"`
+	Evidence string       `json:"evidence,omitempty"`
+	Metrics  *EdgeMetrics `json:"metrics,omitempty"`
 }
 
 // TrafficPath 外部到后端的流量路径
@@ -48,11 +49,13 @@ type TrafficPath struct {
 
 // TrafficTopology 服务流量拓扑
 type TrafficTopology struct {
-	Nodes   []TopologyNode        `json:"nodes"`
-	Edges   []TopologyEdge        `json:"edges"`
-	Paths   []TrafficPath         `json:"paths"`
-	Network *ClusterNetworkInfo   `json:"network,omitempty"`
-	Hubble  *HubbleMetricsSummary `json:"hubble,omitempty"`
+	Nodes      []TopologyNode        `json:"nodes"`
+	Edges      []TopologyEdge        `json:"edges"`
+	Paths      []TrafficPath         `json:"paths"`
+	CallFlows  []CallFlowStat        `json:"callFlows,omitempty"`
+	CallChains []CallChainPath       `json:"callChains,omitempty"`
+	Network    *ClusterNetworkInfo   `json:"network,omitempty"`
+	Hubble     *HubbleMetricsSummary `json:"hubble,omitempty"`
 }
 
 // TrafficTopologyService 流量拓扑服务
@@ -258,6 +261,7 @@ func (s *TrafficTopologyService) GetTrafficTopology(ctx context.Context, cluster
 	addNetworkPolicyEdges(ctx, client, nsList, podsByNS, workloadByPod, addEdge, nodeIndex)
 	topology.Network = detectClusterNetwork(ctx, client)
 	topology.Hubble = fetchHubbleMetrics(ctx, client, s.prometheus, clusterName, namespace, topology.Network)
+	enrichCallChainObservability(ctx, client, s.prometheus, clusterName, topology, serviceByKey, workloadByPod)
 	setNetworkMessage(topology.Network)
 
 	sortTopology(topology)

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Descriptions, Space, Button, message, Spin, Table, Tag, Tabs, Progress, Row, Col, Statistic } from 'antd';
+import { Card, Descriptions, Space, Button, message, Spin, Table, Tag, Tabs, Progress, Row, Col, Statistic, Input } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   testClusterConnection,
   getClusterDetails,
   getClusterMetrics,
-  getClusterEvents
+  getClusterEvents,
+  getClusterHealth,
+  patchClusterPrometheus,
 } from '../api/cluster';
-import type { ClusterDetail, ClusterMetrics } from '../api/cluster';
+import type { ClusterDetail, ClusterMetrics, ClusterHealthReport } from '../api/cluster';
 import K8sEvents from '../components/k8s/common/K8sEvents';
 import {
   LineChart,
@@ -57,6 +59,10 @@ const ClusterDetailPage: React.FC = () => {
   const [clusterInfo, setClusterInfo] = useState<ClusterDetail | null>(null);
   const [metrics, setMetrics] = useState<ClusterMetrics | null>(null);
   const [activeTabKey, setActiveTabKey] = useState('overview');
+  const [healthReport, setHealthReport] = useState<ClusterHealthReport | null>(null);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [prometheusUrl, setPrometheusUrl] = useState('');
+  const [prometheusSaving, setPrometheusSaving] = useState(false);
 
   const fetchClusterDetails = async () => {
     if (!clusterName) return;
@@ -116,12 +122,58 @@ const ClusterDetailPage: React.FC = () => {
     }
   };
 
+  const fetchClusterHealth = async () => {
+    if (!clusterName || connectionStatus !== 'connected') return;
+    setHealthLoading(true);
+    try {
+      const response = await getClusterHealth(clusterName);
+      if (response.data.code === 0) {
+        setHealthReport(response.data.data.health);
+      }
+    } catch {
+      message.error(t('clusterDetail.health.fetchFailed'));
+    } finally {
+      setHealthLoading(false);
+    }
+  };
+
+  const handleSavePrometheus = async () => {
+    if (!clusterName) return;
+    setPrometheusSaving(true);
+    try {
+      const response = await patchClusterPrometheus(clusterName, prometheusUrl);
+      if (response.data.code === 0) {
+        message.success(t('clusterDetail.prometheus.saveSuccess'));
+      } else {
+        message.error(response.data.message || t('clusterDetail.prometheus.saveFailed'));
+      }
+    } catch {
+      message.error(t('clusterDetail.prometheus.saveFailed'));
+    } finally {
+      setPrometheusSaving(false);
+    }
+  };
+
+  const healthStatusColor = (status: string) => {
+    switch (status) {
+      case 'healthy':
+        return 'green';
+      case 'degraded':
+        return 'orange';
+      case 'missing':
+      case 'unhealthy':
+        return 'red';
+      default:
+        return 'default';
+    }
+  };
+
   // 当集群连接状态变更时，获取监控数据
   useEffect(() => {
     if (connectionStatus === 'connected') {
       fetchClusterMetrics();
+      fetchClusterHealth();
 
-      // 设置定时刷新（每30秒）
       const timer = setInterval(fetchClusterMetrics, 30000);
       return () => clearInterval(timer);
     }
@@ -230,6 +282,56 @@ const ClusterDetailPage: React.FC = () => {
               {(!clusterInfo?.addType || clusterInfo?.addType === 'unknown') && (t('clusters.addTypeUnknown') || '未知方式')}
             </Descriptions.Item>
           </Descriptions>
+        </Card>
+
+        {connectionStatus === 'connected' && (
+          <Card
+            title={t('clusterDetail.health.title')}
+            loading={healthLoading}
+            extra={
+              <Button onClick={fetchClusterHealth} loading={healthLoading}>
+                {t('common.refresh')}
+              </Button>
+            }
+          >
+            {healthReport && (
+              <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                <div>
+                  <span style={{ marginRight: 8 }}>{t('clusterDetail.health.overall')}:</span>
+                  <Tag color={healthStatusColor(healthReport.overall)}>{healthReport.overall}</Tag>
+                </div>
+                <Table
+                  size="small"
+                  pagination={false}
+                  rowKey="name"
+                  dataSource={healthReport.components}
+                  columns={[
+                    { title: t('clusterDetail.health.component'), dataIndex: 'name', key: 'name' },
+                    {
+                      title: t('clusterDetail.health.status'),
+                      dataIndex: 'status',
+                      key: 'status',
+                      render: (status: string) => <Tag color={healthStatusColor(status)}>{status}</Tag>,
+                    },
+                    { title: t('clusterDetail.health.message'), dataIndex: 'message', key: 'message' },
+                  ]}
+                />
+              </Space>
+            )}
+          </Card>
+        )}
+
+        <Card title={t('clusterDetail.prometheus.title')}>
+          <Space.Compact style={{ width: '100%', maxWidth: 640 }}>
+            <Input
+              value={prometheusUrl}
+              onChange={(e) => setPrometheusUrl(e.target.value)}
+              placeholder={t('clusters.prometheusUrlHint')}
+            />
+            <Button type="primary" loading={prometheusSaving} onClick={handleSavePrometheus}>
+              {t('common.save')}
+            </Button>
+          </Space.Compact>
         </Card>
 
         {/* 监控仪表板 */}

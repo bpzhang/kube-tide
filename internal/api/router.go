@@ -41,6 +41,7 @@ type App struct {
 	ConfigMapHandler       *ConfigMapHandler
 	SecretHandler          *SecretHandler
 	TrafficTopologyHandler *TrafficTopologyHandler
+	ObservabilityHandler   *ObservabilityHandler
 }
 
 // InitRouter Initialize router
@@ -93,12 +94,15 @@ func InitRouter(app *App) *gin.Engine {
 	{
 		// Health check
 		v1.GET("/health", app.HealthHandler.CheckHealth)
+		v1.GET("/health/ready", app.HealthHandler.CheckReadiness)
 		// Cluster management
 		v1.GET("/clusters", app.ClusterHandler.ListClusters)
 		v1.POST("/clusters", app.ClusterHandler.AddCluster)
 		v1.DELETE("/clusters/:cluster", app.ClusterHandler.RemoveCluster)
 		// Change to GET method to match the frontend
 		v1.GET("/clusters/:cluster/test", app.ClusterHandler.TestConnection)
+		v1.PATCH("/clusters/:cluster/prometheus", app.ClusterHandler.PatchClusterPrometheus)
+		v1.GET("/clusters/:cluster/health", app.ClusterHandler.GetClusterHealth)
 		// Ensure cluster details route exists
 		v1.GET("/clusters/:cluster", app.ClusterHandler.GetClusterDetails)
 		// Cluster monitoring metrics
@@ -134,6 +138,13 @@ func InitRouter(app *App) *gin.Engine {
 		// Prometheus proxy
 		v1.GET("/clusters/:cluster/prometheus/query_range", app.PrometheusHandler.QueryRange)
 		v1.POST("/clusters/:cluster/prometheus/query_range", app.PrometheusHandler.QueryRange)
+		v1.GET("/clusters/:cluster/prometheus/query", app.PrometheusHandler.QueryInstant)
+		v1.POST("/clusters/:cluster/prometheus/query", app.PrometheusHandler.QueryInstant)
+		v1.GET("/clusters/:cluster/prometheus/info", app.ObservabilityHandler.GetPrometheusInfo)
+
+		// Observability
+		v1.GET("/clusters/:cluster/observability/summary", app.ObservabilityHandler.GetSummary)
+		v1.GET("/clusters/:cluster/observability/alerts", app.ObservabilityHandler.ListAlerts)
 
 		// Traffic topology (service call graph & paths)
 		v1.GET("/clusters/:cluster/traffic-topology", app.TrafficTopologyHandler.GetTrafficTopology)

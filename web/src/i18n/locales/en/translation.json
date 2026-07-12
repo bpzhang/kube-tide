@@ -80,7 +80,12 @@
     "pdbs": "Pod Disruption Budgets",
     "rbac": "RBAC",
     "observability": "Observability",
+    "observabilityOverview": "Overview",
+    "prometheus": "Prometheus",
+    "alerts": "Alerts",
+    "callChain": "Call Chain",
     "labelLogs": "Label Logs",
+    "clusterEvents": "Cluster Events",
     "serviceTopology": "Service Topology"
   },
   "dashboard": {
@@ -1288,6 +1293,19 @@
     "events": {
       "title": "Cluster Events"
     },
+    "health": {
+      "title": "Component Health",
+      "overall": "Overall",
+      "component": "Component",
+      "status": "Status",
+      "message": "Message",
+      "fetchFailed": "Failed to fetch cluster health"
+    },
+    "prometheus": {
+      "title": "Prometheus Configuration",
+      "saveSuccess": "Prometheus URL updated",
+      "saveFailed": "Failed to update Prometheus URL"
+    },
     "actions": {
       "test": "Test Connection",
       "testSuccess": "Cluster connection test successful",
@@ -1653,9 +1671,61 @@
   "prometheus": {
     "title": "Prometheus Metrics",
     "cpuUsage": "CPU Usage",
+    "memoryUsage": "Memory Usage",
     "cpuCores": "CPU Cores",
+    "memoryBytes": "Bytes",
     "queryFailed": "Prometheus query failed. Ensure the cluster has a Prometheus URL configured.",
-    "noData": "No Prometheus data. Verify cAdvisor/kubelet metrics and PromQL match your setup."
+    "noData": "No Prometheus data. Verify cAdvisor/kubelet metrics and PromQL match your setup.",
+    "explorer": {
+      "title": "Prometheus Explorer",
+      "queryType": "Query Type",
+      "range": "Range",
+      "instant": "Instant",
+      "presets": "Presets",
+      "selectPreset": "Select preset",
+      "timeRange": "Time Range",
+      "step": "Step",
+      "run": "Run Query",
+      "chart": "Results",
+      "metric": "Metric",
+      "value": "Value",
+      "status": "Prometheus Status",
+      "presetsList": {
+        "cluster_cpu": "Cluster CPU Usage",
+        "cluster_memory": "Cluster Memory Usage",
+        "pod_restarts": "Top Pod Restarts",
+        "node_cpu": "Node CPU Usage",
+        "apiserver_requests": "API Server Requests"
+      }
+    }
+  },
+  "observability": {
+    "fetchFailed": "Failed to fetch observability data",
+    "selectCluster": "Please select a cluster first",
+    "overview": {
+      "title": "Observability Overview",
+      "prometheus": "Prometheus",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "clusterHealth": "Cluster Health",
+      "problemPods": "Problem Pods",
+      "running": "Running",
+      "warningEvents": "Warnings (1h)",
+      "components": "Components",
+      "quickLinks": "Quick Links",
+      "recentAlerts": "Recent Alerts",
+      "viewAll": "View All"
+    },
+    "alerts": {
+      "title": "Alert Center",
+      "fetchFailed": "Failed to fetch alerts",
+      "empty": "No alerts",
+      "level": "Level",
+      "category": "Category",
+      "message": "Message",
+      "filterLevel": "Filter by level",
+      "filterCategory": "Filter by category"
+    }
   },
   "trafficTopology": {
     "title": "Service Traffic Topology",
@@ -1742,5 +1812,52 @@
     "fetchFailed": "Failed to fetch logs",
     "noPods": "No pods matched the selector",
     "empty": "Enter a label selector and click Fetch Logs"
+  },
+  "clusterEvents": {
+    "title": "Cluster Events",
+    "fetchFailed": "Failed to fetch cluster events",
+    "filters": {
+      "kind": "Resource Kind",
+      "objectName": "Object Name",
+      "type": "Event Type"
+    },
+    "columns": {
+      "object": "Involved Object"
+    }
+  },
+  "callChain": {
+    "title": "Service Call Chain",
+    "fetchFailed": "Failed to fetch call chain data",
+    "hintTitle": "Note",
+    "hint": "Observed traffic comes from Hubble (Terway/Cilium) or Prometheus. Inferred calls are derived from Pod env vars and DNS. Solid orange edges indicate Hubble-observed traffic.",
+    "viewTopology": "Service Topology",
+    "observed": "Observed",
+    "inferred": "Inferred",
+    "graphTitle": "Call Chain Graph",
+    "emptyChains": "No call chains found",
+    "emptyFlows": "No Hubble flows detected. Ensure Hubble Metrics is enabled.",
+    "stats": {
+      "flows": "Call Flows",
+      "observedFlows": "Observed",
+      "chains": "Chains",
+      "observedChains": "Observed Chains",
+      "observedChainsTip": "Chains with Hubble-observed traffic",
+      "totalQPS": "Total QPS",
+      "drops": "Drops/s"
+    },
+    "tabs": {
+      "chains": "Call Paths",
+      "flows": "Hubble Flows",
+      "inferredCalls": "Inferred Calls",
+      "graph": "Graph"
+    },
+    "columns": {
+      "source": "Caller",
+      "target": "Callee",
+      "flows": "Rate",
+      "drops": "Drops",
+      "port": "Port/Protocol",
+      "type": "Source"
+    }
   }
 }

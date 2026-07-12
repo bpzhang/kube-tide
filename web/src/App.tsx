@@ -32,6 +32,11 @@ import PDBs from './pages/governance/PDBs';
 import RBAC from './pages/governance/RBAC';
 import LabelLogs from './pages/observability/LabelLogs';
 import ServiceTopology from './pages/observability/ServiceTopology';
+import ClusterEventsPage from './pages/observability/ClusterEvents';
+import ObservabilityOverview from './pages/observability/ObservabilityOverview';
+import PrometheusExplorer from './pages/observability/PrometheusExplorer';
+import Alerts from './pages/observability/Alerts';
+import CallChain from './pages/observability/CallChain';
 import Dashboard from './pages/Dashboard';
 
 const App: React.FC = () => {
@@ -85,7 +90,13 @@ const App: React.FC = () => {
             <Route path="rbac" element={<RBAC />} />
           </Route>
           <Route path="observability">
+            <Route index element={<ObservabilityOverview />} />
+            <Route path="overview" element={<ObservabilityOverview />} />
+            <Route path="prometheus" element={<PrometheusExplorer />} />
+            <Route path="alerts" element={<Alerts />} />
+            <Route path="call-chain" element={<CallChain />} />
             <Route path="label-logs" element={<LabelLogs />} />
+            <Route path="cluster-events" element={<ClusterEventsPage />} />
             <Route path="service-topology" element={<ServiceTopology />} />
           </Route>
           <Route path="clusters/:clusterName/deployments" element={<Deployments />} />

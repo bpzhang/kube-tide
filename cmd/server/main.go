@@ -70,6 +70,7 @@ func main() {
 	configMapService := k8s.NewConfigMapService(clientManager)
 	secretService := k8s.NewSecretService(clientManager)
 	trafficTopologyService := k8s.NewTrafficTopologyService(clientManager, prometheusService)
+	observabilityService := k8s.NewObservabilityService(clientManager, prometheusService)
 
 	// 初始化Pod指标服务，用于收集和缓存监控数据
 	podMetricsService := k8s.NewPodMetricsService(clientManager)
@@ -112,7 +113,7 @@ func main() {
 	serviceHandler := api.NewServiceHandler(serviceManager)
 	ingressHandler := api.NewIngressHandler(ingressManager)
 	clusterHandler := api.NewClusterHandler(clientManager, clusterEventService)
-	healthHandler := api.NewHealthCheckHandler()
+	healthHandler := api.NewHealthCheckHandler(clientManager)
 	podTerminalHandler := api.NewPodTerminalHandler(podService)
 	namespaceHandler := api.NewNamespaceHandler(namespaceService)       // 初始化命名空间处理器
 	statefulSetHandler := api.NewStatefulSetHandler(statefulSetService) // 初始化StatefulSet处理器
@@ -133,6 +134,7 @@ func main() {
 	configMapHandler := api.NewConfigMapHandler(configMapService)
 	secretHandler := api.NewSecretHandler(secretService)
 	trafficTopologyHandler := api.NewTrafficTopologyHandler(trafficTopologyService)
+	observabilityHandler := api.NewObservabilityHandler(observabilityService)
 
 	// Create an app instance and initialize the route
 	app := &api.App{
@@ -164,6 +166,7 @@ func main() {
 		ConfigMapHandler:       configMapHandler,
 		SecretHandler:          secretHandler,
 		TrafficTopologyHandler: trafficTopologyHandler,
+		ObservabilityHandler:   observabilityHandler,
 	}
 
 	// Initialize the router defined in router.go

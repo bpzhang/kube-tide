@@ -19,6 +19,7 @@ import {
   ThunderboltOutlined,
   FileProtectOutlined,
   KeyOutlined,
+  AlertOutlined,
 } from '@ant-design/icons';
 
 export type MenuConfigItem = {
@@ -240,11 +241,46 @@ export const createMenuConfig = (
     label: t('navigation.observability'),
     children: [
       {
+        key: 'observability-overview',
+        icon: <DashboardOutlined />,
+        label: t('navigation.observabilityOverview'),
+        path: '/observability',
+        match: (pathname) => pathname === '/observability' || pathname === '/observability/overview',
+      },
+      {
+        key: 'prometheus',
+        icon: <LineChartOutlined />,
+        label: t('navigation.prometheus'),
+        path: '/observability/prometheus',
+        match: (pathname) => pathname.startsWith('/observability/prometheus'),
+      },
+      {
+        key: 'alerts',
+        icon: <AlertOutlined />,
+        label: t('navigation.alerts'),
+        path: '/observability/alerts',
+        match: (pathname) => pathname.startsWith('/observability/alerts'),
+      },
+      {
         key: 'label-logs',
         icon: <LineChartOutlined />,
         label: t('navigation.labelLogs'),
         path: '/observability/label-logs',
         match: (pathname) => pathname.startsWith('/observability/label-logs'),
+      },
+      {
+        key: 'cluster-events',
+        icon: <ThunderboltOutlined />,
+        label: t('navigation.clusterEvents'),
+        path: '/observability/cluster-events',
+        match: (pathname) => pathname.startsWith('/observability/cluster-events'),
+      },
+      {
+        key: 'call-chain',
+        icon: <ApartmentOutlined />,
+        label: t('navigation.callChain'),
+        path: '/observability/call-chain',
+        match: (pathname) => pathname.startsWith('/observability/call-chain'),
       },
       {
         key: 'service-topology',

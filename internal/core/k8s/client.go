@@ -267,10 +267,10 @@ func (cm *ClientManager) AddClusterWithOptions(cluster Cluster) error {
 }
 
 // SetPrometheusURL 设置集群 Prometheus URL
-func (cm *ClientManager) SetPrometheusURL(clusterName, url string) {
+func (cm *ClientManager) SetPrometheusURL(clusterName, url string) error {
 	cm.mutex.Lock()
 	defer cm.mutex.Unlock()
-	_ = cm.storePrometheusURLLocked(clusterName, url)
+	return cm.storePrometheusURLLocked(clusterName, url)
 }
 
 func (cm *ClientManager) storePrometheusURL(clusterName, prometheusURL string) error {

@@ -317,3 +317,57 @@ func (h *ClusterHandler) GetClusterAddType(c *gin.Context) {
 		"addType": addType,
 	})
 }
+
+// GetClusterHealth 获取集群组件健康状态
+func (h *ClusterHandler) GetClusterHealth(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
+		return
+	}
+
+	client, err := h.clientManager.GetClient(clusterName)
+	if err != nil {
+		FailWithError(c, http.StatusBadRequest, "cluster.notFound", err)
+		return
+	}
+
+	report, err := k8s.CheckClusterHealth(c.Request.Context(), client)
+	if err != nil {
+		FailWithError(c, http.StatusInternalServerError, "cluster.healthFailed", err)
+		return
+	}
+
+	ResponseSuccess(c, gin.H{"health": report})
+}
+
+// PatchClusterPrometheus 更新集群 Prometheus URL
+func (h *ClusterHandler) PatchClusterPrometheus(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	if clusterName == "" {
+		ResponseError(c, http.StatusBadRequest, "cluster.clusterNameEmpty")
+		return
+	}
+
+	var req struct {
+		PrometheusURL string `json:"prometheusUrl"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ResponseError(c, http.StatusBadRequest, "common.invalidRequest")
+		return
+	}
+
+	if _, err := h.clientManager.GetClient(clusterName); err != nil {
+		FailWithError(c, http.StatusBadRequest, "cluster.notFound", err)
+		return
+	}
+
+	if err := h.clientManager.SetPrometheusURL(clusterName, req.PrometheusURL); err != nil {
+		FailWithError(c, http.StatusBadRequest, "cluster.invalidPrometheusUrl", err)
+		return
+	}
+
+	ResponseSuccess(c, gin.H{
+		"prometheusUrl": h.clientManager.GetPrometheusURL(clusterName),
+	})
+}

@@ -39,11 +39,12 @@ interface PositionedNode extends TopologyNode {
 interface TrafficTopologyGraphProps {
   topology: TrafficTopology | null;
   loading?: boolean;
+  highlightCalls?: boolean;
 }
 
 const truncate = (text: string, max = 16) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
 
-const TrafficTopologyGraph: React.FC<TrafficTopologyGraphProps> = ({ topology, loading }) => {
+const TrafficTopologyGraph: React.FC<TrafficTopologyGraphProps> = ({ topology, loading, highlightCalls }) => {
   const { t } = useTranslation();
   const [showRoutes, setShowRoutes] = useState(true);
   const [showSelects, setShowSelects] = useState(true);
@@ -85,6 +86,15 @@ const TrafficTopologyGraph: React.FC<TrafficTopologyGraphProps> = ({ topology, l
     return { positionedNodes: placed, positions: posMap, width: graphWidth, height: graphHeight };
   }, [topology]);
 
+  const maxFlowRate = useMemo(() => {
+    if (!topology?.edges.length) return 1;
+    return Math.max(
+      1,
+      ...topology.edges.map((e) => e.metrics?.flowsPerSec || 0),
+      ...(topology.callFlows || []).map((f) => f.flowsPerSec || 0),
+    );
+  }, [topology]);
+
   const visibleEdges = useMemo(() => {
     if (!topology) return [];
     return topology.edges.filter((edge) => {
@@ -122,18 +132,28 @@ const TrafficTopologyGraph: React.FC<TrafficTopologyGraphProps> = ({ topology, l
     if (!source || !target) return null;
 
     const style = EDGE_STYLES[edge.edgeType] || EDGE_STYLES.routes;
-    const label = edge.port || edge.evidence || edge.edgeType;
+    const flowRate = edge.metrics?.flowsPerSec || 0;
+    const strokeWidth =
+      edge.edgeType === 'calls' && flowRate > 0
+        ? 1.5 + (flowRate / maxFlowRate) * 4
+        : edge.edgeType === 'calls'
+          ? 1.5
+          : 2;
+    const observed = edge.metrics?.observed;
+    const labelParts = [edge.port, edge.evidence, edge.edgeType];
+    if (flowRate > 0) labelParts.unshift(`${flowRate.toFixed(1)}/s`);
+    const label = labelParts.filter(Boolean).join(' · ');
 
     return (
       <g key={`${edge.source}-${edge.target}-${edge.edgeType}-${index}`}>
         <path
           d={edgePath(source, target)}
           fill="none"
-          stroke={style.stroke}
-          strokeWidth={edge.edgeType === 'calls' ? 1.5 : 2}
-          strokeDasharray={style.dash}
+          stroke={observed ? '#fa541c' : style.stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={observed ? undefined : style.dash}
           markerEnd={`url(#arrow-${edge.edgeType})`}
-          opacity={0.85}
+          opacity={highlightCalls && edge.edgeType !== 'calls' ? 0.35 : 0.85}
         />
         {label && (
           <text
@@ -141,9 +161,9 @@ const TrafficTopologyGraph: React.FC<TrafficTopologyGraphProps> = ({ topology, l
             y={(source.y + target.y) / 2 + NODE_HEIGHT / 2 - 6}
             textAnchor="middle"
             fontSize={10}
-            fill="#8c8c8c"
+            fill={observed ? '#fa541c' : '#8c8c8c'}
           >
-            {truncate(label, 20)}
+            {truncate(label, 24)}
           </text>
         )}
       </g>

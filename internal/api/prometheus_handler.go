@@ -46,17 +46,50 @@ func (h *PrometheusHandler) QueryRange(c *gin.Context) {
 		return
 	}
 
-	timeout := 30 * time.Second
-	if t := c.Query("timeout"); t != "" {
-		if seconds, err := strconv.Atoi(t); err == nil && seconds > 0 {
-			timeout = time.Duration(seconds) * time.Second
-		}
-	}
-
+	timeout := prometheusTimeout(c)
 	result, err := h.service.QueryRange(context.Background(), clusterName, params, timeout)
 	if err != nil {
 		ResponseError(c, http.StatusInternalServerError, "prometheus.queryFailed", err.Error())
 		return
 	}
 	c.Data(http.StatusOK, "application/json", result)
+}
+
+func (h *PrometheusHandler) QueryInstant(c *gin.Context) {
+	clusterName := c.Param("cluster")
+	query := c.Query("query")
+	if query == "" {
+		var body struct {
+			Query string `json:"query"`
+		}
+		if err := c.ShouldBindJSON(&body); err == nil {
+			query = body.Query
+		}
+	}
+	if query == "" {
+		ResponseError(c, http.StatusBadRequest, "prometheus.queryRequired")
+		return
+	}
+	if len(query) > k8s.MaxPrometheusQueryLen() {
+		ResponseError(c, http.StatusBadRequest, "prometheus.queryTooLong")
+		return
+	}
+
+	timeout := prometheusTimeout(c)
+	result, err := h.service.QueryInstant(context.Background(), clusterName, query, timeout)
+	if err != nil {
+		ResponseError(c, http.StatusInternalServerError, "prometheus.queryFailed", err.Error())
+		return
+	}
+	c.Data(http.StatusOK, "application/json", result)
+}
+
+func prometheusTimeout(c *gin.Context) time.Duration {
+	timeout := 30 * time.Second
+	if t := c.Query("timeout"); t != "" {
+		if seconds, err := strconv.Atoi(t); err == nil && seconds > 0 {
+			timeout = time.Duration(seconds) * time.Second
+		}
+	}
+	return timeout
 }
