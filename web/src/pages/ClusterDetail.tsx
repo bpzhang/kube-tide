@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Descriptions, Space, Button, message, Spin, Table, Tag, Tabs, Progress, Row, Col, Statistic, Input } from 'antd';
+import { Card, Descriptions, Space, Button, message, Spin, Table, Tag, Tabs, Progress, Row, Col, Statistic, Input, Alert, Collapse } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -10,6 +10,8 @@ import {
   getClusterHealth,
   patchClusterPrometheus,
 } from '../api/cluster';
+import { getPrometheusInfo } from '../api/observability';
+import type { PrometheusInfo } from '../api/observability';
 import type { ClusterDetail, ClusterMetrics, ClusterHealthReport } from '../api/cluster';
 import K8sEvents from '../components/k8s/common/K8sEvents';
 import {
@@ -63,6 +65,7 @@ const ClusterDetailPage: React.FC = () => {
   const [healthLoading, setHealthLoading] = useState(false);
   const [prometheusUrl, setPrometheusUrl] = useState('');
   const [prometheusSaving, setPrometheusSaving] = useState(false);
+  const [prometheusInfo, setPrometheusInfo] = useState<PrometheusInfo | null>(null);
 
   const fetchClusterDetails = async () => {
     if (!clusterName) return;
@@ -137,6 +140,18 @@ const ClusterDetailPage: React.FC = () => {
     }
   };
 
+  const fetchPrometheusInfo = async () => {
+    if (!clusterName || connectionStatus !== 'connected') return;
+    try {
+      const response = await getPrometheusInfo(clusterName);
+      if (response.data.code === 0) {
+        setPrometheusInfo(response.data.data.prometheus);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const handleSavePrometheus = async () => {
     if (!clusterName) return;
     setPrometheusSaving(true);
@@ -144,6 +159,7 @@ const ClusterDetailPage: React.FC = () => {
       const response = await patchClusterPrometheus(clusterName, prometheusUrl);
       if (response.data.code === 0) {
         message.success(t('clusterDetail.prometheus.saveSuccess'));
+        fetchPrometheusInfo();
       } else {
         message.error(response.data.message || t('clusterDetail.prometheus.saveFailed'));
       }
@@ -173,6 +189,7 @@ const ClusterDetailPage: React.FC = () => {
     if (connectionStatus === 'connected') {
       fetchClusterMetrics();
       fetchClusterHealth();
+      fetchPrometheusInfo();
 
       const timer = setInterval(fetchClusterMetrics, 30000);
       return () => clearInterval(timer);
@@ -322,16 +339,55 @@ const ClusterDetailPage: React.FC = () => {
         )}
 
         <Card title={t('clusterDetail.prometheus.title')}>
-          <Space.Compact style={{ width: '100%', maxWidth: 640 }}>
-            <Input
-              value={prometheusUrl}
-              onChange={(e) => setPrometheusUrl(e.target.value)}
-              placeholder={t('clusters.prometheusUrlHint')}
-            />
-            <Button type="primary" loading={prometheusSaving} onClick={handleSavePrometheus}>
-              {t('common.save')}
-            </Button>
-          </Space.Compact>
+          <Alert
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+            message={t('clusterDetail.prometheus.ackHintTitle')}
+            description={t('clusterDetail.prometheus.ackHint')}
+          />
+          {prometheusInfo && (
+            <Descriptions size="small" column={1} style={{ marginBottom: 16 }}>
+              <Descriptions.Item label={t('clusterDetail.prometheus.status')}>
+                <Tag color={prometheusInfo.healthy ? 'green' : 'orange'}>
+                  {prometheusInfo.healthy
+                    ? t('observability.overview.connected')
+                    : t('observability.overview.disconnected')}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label={t('clusterDetail.prometheus.source')}>
+                {t(`observability.overview.sources.${prometheusInfo.source}`, {
+                  defaultValue: prometheusInfo.source,
+                })}
+              </Descriptions.Item>
+              {prometheusInfo.url && (
+                <Descriptions.Item label={t('clusterDetail.prometheus.endpoint')}>
+                  <code>{prometheusInfo.url}</code>
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+          )}
+          <Collapse
+            ghost
+            items={[
+              {
+                key: 'manual',
+                label: t('clusterDetail.prometheus.manualOverride'),
+                children: (
+                  <Space.Compact style={{ width: '100%', maxWidth: 640 }}>
+                    <Input
+                      value={prometheusUrl}
+                      onChange={(e) => setPrometheusUrl(e.target.value)}
+                      placeholder={t('clusterDetail.prometheus.manualPlaceholder')}
+                    />
+                    <Button type="primary" loading={prometheusSaving} onClick={handleSavePrometheus}>
+                      {t('common.save')}
+                    </Button>
+                  </Space.Compact>
+                ),
+              },
+            ]}
+          />
         </Card>
 
         {/* 监控仪表板 */}

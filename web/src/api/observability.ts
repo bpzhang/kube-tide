@@ -3,7 +3,7 @@ import api from './axios';
 export interface PrometheusInfo {
   configured: boolean;
   url?: string;
-  source: 'manual' | 'discovered' | 'unconfigured';
+  source: 'ack_managed_prometheus' | 'manual' | 'unconfigured' | string;
   healthy: boolean;
   message?: string;
 }

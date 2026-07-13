@@ -139,16 +139,80 @@ func (s *PrometheusService) QueryInstant(ctx context.Context, clusterName, query
 	return json.RawMessage(body), nil
 }
 
-// ResolvePrometheusURL 返回手动配置或集群内自动发现的 Prometheus 地址
-func (s *PrometheusService) ResolvePrometheusURL(ctx context.Context, clusterName string) (string, error) {
-	if u := s.clientManager.GetPrometheusURL(clusterName); u != "" {
-		return u, nil
+// QueryInstantOnURL 在指定 Prometheus 端点执行即时查询（用于 ACK 托管 Prometheus）
+func (s *PrometheusService) QueryInstantOnURL(ctx context.Context, promURL, query string, timeout time.Duration) (json.RawMessage, error) {
+	if promURL == "" {
+		return nil, fmt.Errorf("Prometheus URL 为空")
 	}
+	if err := ValidatePrometheusURL(promURL); err != nil {
+		return nil, err
+	}
+	if len(query) > maxPrometheusQueryLen {
+		return nil, fmt.Errorf("PromQL 查询长度超过限制 (%d)", maxPrometheusQueryLen)
+	}
+
+	endpoint, err := url.Parse(promURL)
+	if err != nil {
+		return nil, fmt.Errorf("无效的 Prometheus URL: %w", err)
+	}
+	endpoint.Path = joinURLPath(endpoint.Path, "/api/v1/query")
+	q := endpoint.Query()
+	q.Set("query", query)
+	endpoint.RawQuery = q.Encode()
+
+	if timeout <= 0 {
+		timeout = defaultPrometheusTimeout
+	}
+	client := &http.Client{Timeout: timeout}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("创建 Prometheus 请求失败: %w", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("Prometheus 请求失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("读取 Prometheus 响应失败: %w", err)
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, fmt.Errorf("Prometheus 返回错误 %d: %s", resp.StatusCode, string(body))
+	}
+	return json.RawMessage(body), nil
+}
+
+// ResolvePrometheusURL 返回 ACK 托管 Prometheus 或（兼容）手动配置的地址
+func (s *PrometheusService) ResolvePrometheusURL(ctx context.Context, clusterName string) (string, error) {
 	client, err := s.clientManager.GetClient(clusterName)
 	if err != nil {
 		return "", err
 	}
-	if u := DiscoverPrometheusURL(ctx, client); u != "" {
+	// 优先 ACK 容器监控 / ARMS Prometheus（集群创建时勾选即可，无需额外中间件）
+	if u := DiscoverACKPrometheusURL(ctx, client); u != "" {
+		if err := ValidatePrometheusURL(u); err != nil {
+			return "", err
+		}
+		return u, nil
+	}
+	// 兼容：用户手动填写的地址（非 ACK 推荐路径）
+	if u := s.clientManager.GetPrometheusURL(clusterName); u != "" {
+		return u, nil
+	}
+	return "", nil
+}
+
+// ResolveACKPrometheusURL 仅返回 ACK 托管 Prometheus，不读取手动配置
+func (s *PrometheusService) ResolveACKPrometheusURL(ctx context.Context, clusterName string) (string, error) {
+	client, err := s.clientManager.GetClient(clusterName)
+	if err != nil {
+		return "", err
+	}
+	if u := DiscoverACKPrometheusURL(ctx, client); u != "" {
 		if err := ValidatePrometheusURL(u); err != nil {
 			return "", err
 		}

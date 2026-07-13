@@ -154,8 +154,8 @@
     "deleteConfirmMessage": "Are you sure you want to delete cluster {name}?",
     "deleteSuccess": "Cluster {name} has been deleted successfully",
     "deleteFailed": "Failed to delete cluster",
-    "prometheusUrl": "Prometheus URL (optional)",
-    "prometheusUrlHint": "Optional Prometheus base URL for metrics proxy, e.g. http://prometheus:9090"
+    "prometheusUrl": "Prometheus URL (advanced)",
+    "prometheusUrlHint": "Usually not required. Enable Container Monitoring in the ACK console to auto-install managed Prometheus (arms-prom)."
   },
   "nodes": {
     "title": "Nodes",
@@ -1302,7 +1302,14 @@
       "fetchFailed": "Failed to fetch cluster health"
     },
     "prometheus": {
-      "title": "Prometheus Configuration",
+      "title": "Container Monitoring / Prometheus",
+      "ackHintTitle": "Powered by ACK native capabilities",
+      "ackHint": "Enable Container Monitoring in the ACK console to auto-deploy managed Prometheus (arms-prom namespace). No self-hosted Prometheus required. For network observability, enable Terway Hubble Metrics.",
+      "status": "Connection",
+      "source": "Data source",
+      "endpoint": "Query endpoint",
+      "manualOverride": "Advanced: manual Prometheus URL override (not recommended)",
+      "manualPlaceholder": "Use only when auto-discovery fails",
       "saveSuccess": "Prometheus URL updated",
       "saveFailed": "Failed to update Prometheus URL"
     },
@@ -1674,8 +1681,8 @@
     "memoryUsage": "Memory Usage",
     "cpuCores": "CPU Cores",
     "memoryBytes": "Bytes",
-    "queryFailed": "Prometheus query failed. Ensure the cluster has a Prometheus URL configured.",
-    "noData": "No Prometheus data. Verify cAdvisor/kubelet metrics and PromQL match your setup.",
+    "queryFailed": "Prometheus query failed. Enable Container Monitoring in the ACK console.",
+    "noData": "No metrics data. Ensure ACK Container Monitoring is enabled and PromQL matches collected metrics.",
     "explorer": {
       "title": "Prometheus Explorer",
       "queryType": "Query Type",
@@ -1694,7 +1701,8 @@
         "cluster_cpu": "Cluster CPU Usage",
         "cluster_memory": "Cluster Memory Usage",
         "pod_restarts": "Top Pod Restarts",
-        "node_cpu": "Node CPU Usage",
+        "hubble_flows": "Top Hubble Service Flows",
+        "hubble_drops": "Top Hubble Drops",
         "apiserver_requests": "API Server Requests"
       }
     }
@@ -1714,7 +1722,12 @@
       "components": "Components",
       "quickLinks": "Quick Links",
       "recentAlerts": "Recent Alerts",
-      "viewAll": "View All"
+      "viewAll": "View All",
+      "sources": {
+        "ack_managed_prometheus": "ACK Managed Prometheus",
+        "manual": "Manual",
+        "unconfigured": "Not configured"
+      }
     },
     "alerts": {
       "title": "Alert Center",
@@ -1730,7 +1743,7 @@
   "trafficTopology": {
     "title": "Service Traffic Topology",
     "hintTitle": "Note",
-    "hint": "Paths and NetworkPolicy come from cluster APIs. Terway clusters auto-connect to in-cluster hubble-metrics or Prometheus — no extra setup required.",
+    "hint": "Paths and NetworkPolicy come from K8s APIs. ACK Terway clusters auto-connect to kube-system/hubble-metrics; container metrics come from ACK managed Prometheus (arms-prom) — no extra middleware required.",
     "fetchFailed": "Failed to load traffic topology",
     "pathsTitle": "Traffic Paths",
     "routesTitle": "Ingress Routes",
@@ -1756,7 +1769,8 @@
       "ready": "Ready",
       "notReady": "Not ready",
       "messages": {
-        "terway_detected": "Terway network detected. Topology is built from cluster APIs.",
+        "terway_enable_hubble": "ACK Terway detected. Enable cilium_enable_hubble in eni-config via the ACK console for network observability.",
+        "terway_detected": "ACK Terway network detected. Topology is built from K8s APIs.",
         "terway_observable": "Auto-connected to in-cluster network observability (Hubble Metrics).",
         "terway_hubble_ready": "Terway + Hubble ready. Showing declared topology and L4 metrics.",
         "terway_hubble_configured": "Hubble enabled; collecting network metrics.",
@@ -1772,9 +1786,10 @@
       "emptyDrops": "No drop data",
       "emptyPorts": "No port distribution",
       "messages": {
-        "in_cluster_hubble": "Source: in-cluster hubble-metrics",
-        "cluster_prometheus": "Source: in-cluster Prometheus",
-        "hubble_no_data": "No L4 metrics yet (no traffic or metrics not reported)."
+        "ack_terway_hubble": "Source: ACK Terway hubble-metrics",
+        "ack_managed_prometheus": "Source: ACK managed Prometheus",
+        "terway_enable_hubble": "Enable Terway Hubble Metrics in the ACK console",
+        "hubble_no_data": "No L4 metrics yet (no traffic or Hubble not enabled)."
       }
     },
     "inferred": "Inferred",
@@ -1829,13 +1844,13 @@
     "title": "Service Call Chain",
     "fetchFailed": "Failed to fetch call chain data",
     "hintTitle": "Note",
-    "hint": "Observed traffic comes from Hubble (Terway/Cilium) or Prometheus. Inferred calls are derived from Pod env vars and DNS. Solid orange edges indicate Hubble-observed traffic.",
+    "hint": "Observed traffic comes from ACK Terway Hubble or ACK managed Prometheus. Inferred calls use Pod env vars and DNS. Enable Container Monitoring and Hubble Metrics in the ACK console — no self-hosted Jaeger/Prometheus required.",
     "viewTopology": "Service Topology",
     "observed": "Observed",
     "inferred": "Inferred",
     "graphTitle": "Call Chain Graph",
     "emptyChains": "No call chains found",
-    "emptyFlows": "No Hubble flows detected. Ensure Hubble Metrics is enabled.",
+    "emptyFlows": "No observed flows. Enable Terway Hubble Metrics and Container Monitoring in the ACK console.",
     "stats": {
       "flows": "Call Flows",
       "observedFlows": "Observed",
@@ -1847,7 +1862,7 @@
     },
     "tabs": {
       "chains": "Call Paths",
-      "flows": "Hubble Flows",
+      "flows": "ACK Hubble Flows",
       "inferredCalls": "Inferred Calls",
       "graph": "Graph"
     },

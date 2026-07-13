@@ -69,8 +69,13 @@ export const PROMQL_PRESETS = [
     query: 'topk(10, increase(kube_pod_container_status_restarts_total[1h]))',
   },
   {
-    key: 'node_cpu',
-    query: '100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)',
+    key: 'hubble_flows',
+    query:
+      'topk(10, sum by (source, destination) (rate(hubble_flows_processed_total{verdict="FORWARDED"}[5m])))',
+  },
+  {
+    key: 'hubble_drops',
+    query: 'topk(10, sum by (reason) (increase(hubble_drop_total[5m])))',
   },
   {
     key: 'apiserver_requests',

@@ -23,52 +23,67 @@ func fetchHubbleMetrics(
 		network = &ClusterNetworkInfo{}
 	}
 
-	ports := []struct{ name, port string }{
-		{"hubble-metrics", "9091"},
-		{"hubble-metrics", "9965"},
-	}
-	for _, target := range ports {
-		if body, err := proxyServiceGET(ctx, client, "kube-system", target.name, target.port, "/metrics"); err == nil {
+	// 1. ACK Terway 内置 hubble-metrics
+	if IsACKTerwayObservable(network) {
+		if body, ok := FetchACKTerwayHubbleMetrics(ctx, client); ok {
 			samples := parsePrometheusText(body)
 			summary.Drops = topHubbleDrops(samples, 8)
 			summary.TopPorts = topHubblePorts(samples, 10)
 			if len(summary.Drops) > 0 || len(summary.TopPorts) > 0 {
 				summary.Available = true
-				summary.Message = "in_cluster_hubble"
-				network.MetricsSource = "in_cluster_hubble"
+				summary.Message = MetricsSourceACKTerwayHubble
+				network.MetricsSource = MetricsSourceACKTerwayHubble
 				network.HubbleMetricsSvc = true
 				return summary
 			}
 		}
 	}
 
-	// 回退：通过集群内自动发现的 Prometheus 查询
+	// 2. ACK 托管 Prometheus 中已采集的 Hubble 指标
 	if prom != nil {
-		if drops, ports, ok := fetchHubbleViaPrometheus(ctx, prom, clusterName); ok {
+		if drops, ports, ok := fetchHubbleViaACKPrometheus(ctx, prom, clusterName); ok {
 			summary.Drops = drops
 			summary.TopPorts = ports
 			summary.Available = true
-			summary.Message = "cluster_prometheus"
-			network.MetricsSource = "cluster_prometheus"
+			summary.Message = MetricsSourceACKManagedPrometheus
+			network.MetricsSource = MetricsSourceACKManagedPrometheus
 			return summary
 		}
 	}
 
-	if network.HubbleMetricsSvc || network.HubbleEnabled {
+	if network.CNI == "terway" && !network.HubbleMetricsSvc && !network.HubbleEnabled {
+		summary.Message = "terway_enable_hubble"
+	} else if network.HubbleMetricsSvc || network.HubbleEnabled {
 		summary.Message = "hubble_no_data"
 	}
 	return summary
 }
 
+func fetchHubbleViaACKPrometheus(ctx context.Context, prom *PrometheusService, clusterName string) ([]HubbleDropStat, []HubblePortStat, bool) {
+	ackURL, err := prom.ResolveACKPrometheusURL(ctx, clusterName)
+	if err != nil || ackURL == "" {
+		return nil, nil, false
+	}
+	return fetchHubbleViaPrometheusOnURL(ctx, prom, ackURL)
+}
+
 func fetchHubbleViaPrometheus(ctx context.Context, prom *PrometheusService, clusterName string) ([]HubbleDropStat, []HubblePortStat, bool) {
+	ackURL, err := prom.ResolveACKPrometheusURL(ctx, clusterName)
+	if err != nil || ackURL == "" {
+		return nil, nil, false
+	}
+	return fetchHubbleViaPrometheusOnURL(ctx, prom, ackURL)
+}
+
+func fetchHubbleViaPrometheusOnURL(ctx context.Context, prom *PrometheusService, promURL string) ([]HubbleDropStat, []HubblePortStat, bool) {
 	dropQuery := `topk(8, sum by (reason) (increase(hubble_drop_total[5m])))`
 	portQuery := `topk(10, sum by (protocol, port) (increase(hubble_port_distribution_total[5m])))`
 
-	dropsRaw, err := prom.QueryInstant(ctx, clusterName, dropQuery, 15*time.Second)
+	dropsRaw, err := prom.QueryInstantOnURL(ctx, promURL, dropQuery, 15*time.Second)
 	if err != nil {
 		return nil, nil, false
 	}
-	portsRaw, _ := prom.QueryInstant(ctx, clusterName, portQuery, 15*time.Second)
+	portsRaw, _ := prom.QueryInstantOnURL(ctx, promURL, portQuery, 15*time.Second)
 
 	drops := parseVectorMetrics(dropsRaw, "reason", "")
 	ports := parsePortMetrics(portsRaw)

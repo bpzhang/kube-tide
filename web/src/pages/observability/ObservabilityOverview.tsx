@@ -96,7 +96,11 @@ const ObservabilityOverview: React.FC = () => {
                     prefix={<ApiOutlined />}
                   />
                   <div style={{ marginTop: 8 }}>
-                    <Tag>{summary.prometheus.source}</Tag>
+                    <Tag>
+                      {t(`observability.overview.sources.${summary.prometheus.source}`, {
+                        defaultValue: summary.prometheus.source,
+                      })}
+                    </Tag>
                   </div>
                 </Card>
               </Col>

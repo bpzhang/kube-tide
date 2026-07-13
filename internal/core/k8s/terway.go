@@ -157,6 +157,8 @@ func setNetworkMessage(info *ClusterNetworkInfo) {
 		info.Message = "terway_observable"
 	case info.CNI == "terway" && info.HubbleEnabled && info.HubbleRelayReady:
 		info.Message = "terway_hubble_ready"
+	case info.CNI == "terway" && !info.HubbleEnabled && !info.HubbleMetricsSvc:
+		info.Message = "terway_enable_hubble"
 	case info.CNI == "terway":
 		info.Message = "terway_detected"
 	case info.HubbleMetricsSvc:

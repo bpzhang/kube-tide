@@ -154,8 +154,8 @@
     "deleteConfirmMessage": "确定要删除集群 {name} 吗？",
     "deleteSuccess": "集群 {name} 已成功删除",
     "deleteFailed": "删除集群失败",
-    "prometheusUrl": "Prometheus URL（可选）",
-    "prometheusUrlHint": "可选的 Prometheus 基础 URL，用于指标代理，例如 http://prometheus:9090"
+    "prometheusUrl": "Prometheus URL（高级）",
+    "prometheusUrlHint": "通常无需填写。ACK 集群在控制台开启「容器监控」后会自动安装托管 Prometheus（arms-prom）。"
   },
   "nodes": {
     "title": "节点",
@@ -1299,9 +1299,16 @@
       "fetchFailed": "获取集群健康状态失败"
     },
     "prometheus": {
-      "title": "Prometheus 配置",
-      "saveSuccess": "Prometheus URL 已更新",
-      "saveFailed": "更新 Prometheus URL 失败"
+      "title": "容器监控 / Prometheus",
+      "ackHintTitle": "基于阿里云 ACK 原生能力",
+      "ackHint": "在 ACK 控制台为集群开启「容器监控」，系统会自动部署托管 Prometheus（arms-prom 命名空间），无需自建 Prometheus。网络可观测性请确保 Terway 集群已开启 Hubble Metrics。",
+      "status": "连接状态",
+      "source": "数据来源",
+      "endpoint": "查询端点",
+      "manualOverride": "高级：手动覆盖 Prometheus 地址（不推荐）",
+      "manualPlaceholder": "仅当自动发现失败时使用",
+      "saveSuccess": "Prometheus 地址已更新",
+      "saveFailed": "更新 Prometheus 地址失败"
     },
     "actions": {
       "test": "测试连接",
@@ -1671,8 +1678,8 @@
     "memoryUsage": "内存使用量",
     "cpuCores": "CPU 核数",
     "memoryBytes": "字节",
-    "queryFailed": "Prometheus 查询失败，请确认集群已配置 Prometheus URL",
-    "noData": "无 Prometheus 数据，请确认已安装 cAdvisor/kubelet 指标且 PromQL 匹配",
+    "queryFailed": "Prometheus 查询失败，请确认 ACK 集群已在控制台开启容器监控",
+    "noData": "无指标数据，请确认已开启 ACK 容器监控且 PromQL 与当前采集指标匹配",
     "explorer": {
       "title": "Prometheus 查询",
       "queryType": "查询类型",
@@ -1691,7 +1698,8 @@
         "cluster_cpu": "集群 CPU 使用率",
         "cluster_memory": "集群内存使用量",
         "pod_restarts": "Pod 重启 Top10",
-        "node_cpu": "节点 CPU 使用率",
+        "hubble_flows": "Hubble 服务间流量 Top10",
+        "hubble_drops": "Hubble 丢包 Top10",
         "apiserver_requests": "API Server 请求量"
       }
     }
@@ -1711,7 +1719,12 @@
       "components": "组件状态",
       "quickLinks": "快捷入口",
       "recentAlerts": "最近告警",
-      "viewAll": "查看全部"
+      "viewAll": "查看全部",
+      "sources": {
+        "ack_managed_prometheus": "ACK 托管 Prometheus",
+        "manual": "手动配置",
+        "unconfigured": "未配置"
+      }
     },
     "alerts": {
       "title": "告警中心",
@@ -1727,7 +1740,7 @@
   "trafficTopology": {
     "title": "服务流量拓扑",
     "hintTitle": "说明",
-    "hint": "流量路径与 NetworkPolicy 来自集群声明配置；Terway 集群会自动接入 kube-system/hubble-metrics 或集群内 Prometheus，无需额外配置。",
+    "hint": "流量路径与 NetworkPolicy 来自 K8s API 声明配置。ACK Terway 集群自动接入 kube-system/hubble-metrics；容器指标来自 ACK 托管 Prometheus（arms-prom），无需自建中间件。",
     "fetchFailed": "获取流量拓扑失败",
     "pathsTitle": "流量路径",
     "routesTitle": "入口路由",
@@ -1753,7 +1766,8 @@
       "ready": "就绪",
       "notReady": "未就绪",
       "messages": {
-        "terway_detected": "已识别 Terway 网络，拓扑数据来自集群 API。",
+        "terway_enable_hubble": "已识别 ACK Terway，请在控制台 eni-config 中开启 cilium_enable_hubble 以启用网络可观测。",
+        "terway_detected": "已识别 ACK Terway 网络，拓扑数据来自 K8s API。",
         "terway_observable": "已自动接入集群内网络可观测组件（Hubble Metrics）。",
         "terway_hubble_ready": "Terway + Hubble 已就绪，展示声明式拓扑与 L4 网络指标。",
         "terway_hubble_configured": "Hubble 已启用，正在采集网络指标。",
@@ -1769,9 +1783,10 @@
       "emptyDrops": "暂无丢包数据",
       "emptyPorts": "暂无端口分布",
       "messages": {
-        "in_cluster_hubble": "数据来源：集群内 hubble-metrics",
-        "cluster_prometheus": "数据来源：集群内 Prometheus",
-        "hubble_no_data": "暂未采集到 L4 指标数据（可能当前无流量或指标尚未上报）。"
+        "ack_terway_hubble": "数据来源：ACK Terway hubble-metrics",
+        "ack_managed_prometheus": "数据来源：ACK 托管 Prometheus",
+        "terway_enable_hubble": "请在 ACK 控制台为 Terway 开启 Hubble Metrics",
+        "hubble_no_data": "暂未采集到 L4 指标（可能无流量或 Hubble 未开启）。"
       }
     },
     "inferred": "推断",
@@ -1826,13 +1841,13 @@
     "title": "服务调用链",
     "fetchFailed": "获取调用链数据失败",
     "hintTitle": "说明",
-    "hint": "观测流量来自 Hubble（Terway/Cilium）或 Prometheus；推断调用来自 Pod 环境变量与 DNS 配置。实线橙色边表示 Hubble 观测到的真实流量。",
+    "hint": "观测流量来自 ACK Terway Hubble 或 ACK 托管 Prometheus；推断调用来自 Pod 环境变量与 DNS。请在 ACK 控制台开启容器监控与 Hubble Metrics，无需自建 Jaeger/Prometheus。",
     "viewTopology": "服务拓扑",
     "observed": "观测",
     "inferred": "推断",
     "graphTitle": "调用链拓扑",
     "emptyChains": "暂无调用链路径",
-    "emptyFlows": "暂无 Hubble 观测流量，请确认集群已启用 Hubble Metrics",
+    "emptyFlows": "暂无观测流量。请在 ACK 控制台为 Terway 集群开启 Hubble Metrics，并确保已开启容器监控。",
     "stats": {
       "flows": "调用流",
       "observedFlows": "观测流",
@@ -1844,7 +1859,7 @@
     },
     "tabs": {
       "chains": "调用链路径",
-      "flows": "Hubble 流量",
+      "flows": "ACK Hubble 流量",
       "inferredCalls": "推断调用",
       "graph": "拓扑图"
     },

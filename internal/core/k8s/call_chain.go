@@ -84,40 +84,63 @@ func enrichCallChainObservability(
 		return
 	}
 
-	flows := fetchCallFlows(ctx, client, prom, clusterName)
-	resolved := resolveFlowEndpoints(flows, serviceByKey, workloadByPod)
+	flows, flowSource := fetchCallFlows(ctx, client, prom, clusterName, topology.Network)
+	resolved := resolveFlowEndpoints(flows, serviceByKey, workloadByPod, flowSource)
 	topology.CallFlows = resolved
 
 	enrichEdgeMetrics(topology, resolved)
 	topology.CallChains = buildCallChains(topology)
 }
 
-func fetchCallFlows(ctx context.Context, client *kubernetes.Clientset, prom *PrometheusService, clusterName string) []hubbleFlowSample {
-	if prom != nil {
-		if flows, ok := fetchFlowsViaPrometheus(ctx, prom, clusterName); ok {
-			return flows
+func fetchCallFlows(ctx context.Context, client *kubernetes.Clientset, prom *PrometheusService, clusterName string, network *ClusterNetworkInfo) ([]hubbleFlowSample, string) {
+	// 1. ACK Terway 内置 hubble-metrics（kube-system，无需额外组件）
+	if IsACKTerwayObservable(network) {
+		if flows := fetchFlowsFromACKHubbleMetrics(ctx, client); len(flows) > 0 {
+			return flows, MetricsSourceACKTerwayHubble
 		}
 	}
-	return fetchFlowsFromHubbleMetrics(ctx, client)
+	// 2. ACK 托管 Prometheus 中已采集的 Hubble 指标
+	if prom != nil {
+		if flows, ok := fetchFlowsViaACKPrometheus(ctx, prom, clusterName); ok {
+			return flows, MetricsSourceACKManagedPrometheus
+		}
+	}
+	return nil, ""
 }
 
-func fetchFlowsViaPrometheus(ctx context.Context, prom *PrometheusService, clusterName string) ([]hubbleFlowSample, bool) {
+func fetchFlowsFromACKHubbleMetrics(ctx context.Context, client *kubernetes.Clientset) []hubbleFlowSample {
+	body, ok := FetchACKTerwayHubbleMetrics(ctx, client)
+	if !ok {
+		return nil
+	}
+	return parseFlowsFromTextSamples(parsePrometheusText(body))
+}
+
+func fetchFlowsViaACKPrometheus(ctx context.Context, prom *PrometheusService, clusterName string) ([]hubbleFlowSample, bool) {
+	ackURL, err := prom.ResolveACKPrometheusURL(ctx, clusterName)
+	if err != nil || ackURL == "" {
+		return nil, false
+	}
+	return fetchFlowsViaPrometheusOnURL(ctx, prom, ackURL)
+}
+
+func fetchFlowsViaPrometheusOnURL(ctx context.Context, prom *PrometheusService, promURL string) ([]hubbleFlowSample, bool) {
 	flowQuery := `sum by (source, destination) (rate(hubble_flows_processed_total{verdict="FORWARDED"}[5m]))`
 	dropQuery := `sum by (source, destination) (rate(hubble_drop_total[5m]))`
 
-	flowRaw, err := prom.QueryInstant(ctx, clusterName, flowQuery, 15*time.Second)
+	flowRaw, err := prom.QueryInstantOnURL(ctx, promURL, flowQuery, 15*time.Second)
 	if err != nil {
 		return nil, false
 	}
 
-	drops := parseFlowDrops(dropQuery, prom, ctx, clusterName)
+	drops := parseFlowDropsOnURL(dropQuery, prom, ctx, promURL)
 	flows := parseHubbleFlowMetrics(flowRaw, drops)
 	return flows, len(flows) > 0
 }
 
-func parseFlowDrops(query string, prom *PrometheusService, ctx context.Context, clusterName string) map[string]float64 {
+func parseFlowDropsOnURL(query string, prom *PrometheusService, ctx context.Context, promURL string) map[string]float64 {
 	result := map[string]float64{}
-	raw, err := prom.QueryInstant(ctx, clusterName, query, 15*time.Second)
+	raw, err := prom.QueryInstantOnURL(ctx, promURL, query, 15*time.Second)
 	if err != nil {
 		return result
 	}
@@ -176,25 +199,6 @@ func splitHubbleEndpoint(raw string) (namespace, name string) {
 	return "", raw
 }
 
-func fetchFlowsFromHubbleMetrics(ctx context.Context, client *kubernetes.Clientset) []hubbleFlowSample {
-	ports := []struct{ name, port string }{
-		{"hubble-metrics", "9091"},
-		{"hubble-metrics", "9965"},
-	}
-	for _, target := range ports {
-		body, err := proxyServiceGET(ctx, client, "kube-system", target.name, target.port, "/metrics")
-		if err != nil {
-			continue
-		}
-		samples := parsePrometheusText(body)
-		flows := parseFlowsFromTextSamples(samples)
-		if len(flows) > 0 {
-			return flows
-		}
-	}
-	return nil
-}
-
 func parseFlowsFromTextSamples(samples []promSample) []hubbleFlowSample {
 	flows := make([]hubbleFlowSample, 0)
 	for _, s := range samples {
@@ -225,6 +229,7 @@ func resolveFlowEndpoints(
 	flows []hubbleFlowSample,
 	serviceByKey map[string]corev1.Service,
 	workloadByPod map[string]workloadRef,
+	evidence string,
 ) []CallFlowStat {
 	result := make([]CallFlowStat, 0, len(flows))
 	for _, f := range flows {
@@ -238,7 +243,7 @@ func resolveFlowEndpoints(
 			TargetNS: dst.namespace, Target: dst.name, TargetType: dst.kind,
 			Port: f.port, Protocol: f.protocol,
 			FlowsPerSec: f.flowsPerSec, BytesPerSec: f.bytesPerSec, Drops: f.drops,
-			Observed: true, Evidence: "hubble",
+			Observed: true, Evidence: evidence,
 		})
 	}
 	sort.Slice(result, func(i, j int) bool {

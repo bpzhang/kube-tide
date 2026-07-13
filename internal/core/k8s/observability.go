@@ -15,7 +15,7 @@ import (
 type PrometheusInfo struct {
 	Configured bool   `json:"configured"`
 	URL        string `json:"url,omitempty"`
-	Source     string `json:"source"` // manual, discovered, unconfigured
+	Source     string `json:"source"` // ack_managed_prometheus, manual, unconfigured
 	Healthy    bool   `json:"healthy"`
 	Message    string `json:"message,omitempty"`
 }
@@ -63,40 +63,42 @@ func NewObservabilityService(clientManager *ClientManager, prometheus *Prometheu
 	return &ObservabilityService{clientManager: clientManager, prometheus: prometheus}
 }
 
-// GetPrometheusInfo 获取 Prometheus 配置与连通性
+// GetPrometheusInfo 获取 ACK 托管 Prometheus 配置与连通性
 func (s *ObservabilityService) GetPrometheusInfo(ctx context.Context, clusterName string) (*PrometheusInfo, error) {
-	info := &PrometheusInfo{Source: "unconfigured"}
-	manual := s.clientManager.GetPrometheusURL(clusterName)
-	if manual != "" {
+	info := &PrometheusInfo{Source: MetricsSourceUnconfigured}
+	client, err := s.clientManager.GetClient(clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	if discovered := DiscoverACKPrometheusURL(ctx, client); discovered != "" {
+		info.Configured = true
+		info.URL = discovered
+		info.Source = MetricsSourceACKManagedPrometheus
+	} else if manual := s.clientManager.GetPrometheusURL(clusterName); manual != "" {
 		info.Configured = true
 		info.URL = manual
 		info.Source = "manual"
-	} else {
-		client, err := s.clientManager.GetClient(clusterName)
-		if err != nil {
-			return nil, err
-		}
-		if discovered := DiscoverPrometheusURL(ctx, client); discovered != "" {
-			info.Configured = true
-			info.URL = discovered
-			info.Source = "discovered"
-		}
+		info.Message = "ack_prometheus_preferred"
 	}
+
 	if !info.Configured {
-		info.Message = "prometheus_not_configured"
+		info.Message = "ack_prometheus_not_configured"
 		return info, nil
 	}
 	if err := ValidatePrometheusURL(info.URL); err != nil {
 		info.Message = err.Error()
 		return info, nil
 	}
-	_, err := s.prometheus.QueryInstant(ctx, clusterName, "up", 5*time.Second)
+	_, err = s.prometheus.QueryInstant(ctx, clusterName, "up", 5*time.Second)
 	if err != nil {
 		info.Message = err.Error()
 		return info, nil
 	}
 	info.Healthy = true
-	info.Message = "ok"
+	if info.Message == "" {
+		info.Message = "ok"
+	}
 	return info, nil
 }
 
