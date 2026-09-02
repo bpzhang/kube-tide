@@ -4,29 +4,29 @@
   "type": "module",
   "license": "MIT",
   "dependencies": {
-    "@ant-design/icons": "^6.2.5",
+    "@ant-design/icons": "^6.3.4",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.2",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^6.1.1",
     "@xterm/addon-attach": "^0.12.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
-    "antd": "^6.4.4",
-    "axios": "^1.18.0",
-    "i18next": "^26.3.1",
+    "antd": "^6.6.2",
+    "axios": "^1.20.0",
+    "i18next": "^26.4.1",
     "i18next-browser-languagedetector": "^8.2.1",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-i18next": "^17.0.8",
-    "react-router-dom": "^7.18.0",
-    "recharts": "^3.8.1",
-    "typescript": "^6.0.3"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.13",
+    "react-router-dom": "^7.18.3",
+    "recharts": "^3.10.1",
+    "typescript": "^7.0.2"
   },
   "devDependencies": {
-    "@types/node": "^26.0.0",
-    "terser": "^5.48.0",
-    "vite": "^8.0.16"
+    "@types/node": "^26.4.0",
+    "terser": "^5.51.2",
+    "vite": "^8.2.2"
   },
   "scripts": {
     "dev": "vite",
@@ -35,6 +35,35 @@
     "preview": "vite preview",
     "lint": "eslint src --ext ts,tsx",
     "test": "vitest",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "check:chaindrop": "node ./scripts/check-chaindrop.mjs"
+  },
+  "overrides": {
+    "keyv@6.0.0": "5.6.0",
+    "flat-cache@6.1.24": "6.1.23",
+    "file-entry-cache@11.1.6": "11.1.5",
+    "cacheable-request@13.0.20": "13.0.19",
+    "cacheable@2.5.1": "2.5.0",
+    "@cacheable/memory@2.2.1": "2.2.0",
+    "cache-manager@7.2.10": "7.2.9",
+    "@cacheable/node-cache@3.1.2": "3.1.1",
+    "@cacheable/utils@2.5.1": "2.5.0",
+    "@cacheable/net@2.1.1": "2.1.0",
+    "ecto@5.0.1": "5.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "keyv@6.0.0": "5.6.0",
+      "flat-cache@6.1.24": "6.1.23",
+      "file-entry-cache@11.1.6": "11.1.5",
+      "cacheable-request@13.0.20": "13.0.19",
+      "cacheable@2.5.1": "2.5.0",
+      "@cacheable/memory@2.2.1": "2.2.0",
+      "cache-manager@7.2.10": "7.2.9",
+      "@cacheable/node-cache@3.1.2": "3.1.1",
+      "@cacheable/utils@2.5.1": "2.5.0",
+      "@cacheable/net@2.1.1": "2.1.0",
+      "ecto@5.0.1": "5.0.0"
+    }
   }
 }

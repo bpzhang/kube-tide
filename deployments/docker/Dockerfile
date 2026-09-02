@@ -8,7 +8,7 @@ RUN pnpm install --frozen-lockfile
 COPY web/ ./
 RUN pnpm build
 
-FROM golang:1.26-alpine AS backend
+FROM golang:1.27-alpine AS backend
 WORKDIR /src
 RUN apk add --no-cache ca-certificates git
 COPY go.mod go.sum ./
