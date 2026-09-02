@@ -103,15 +103,19 @@ upgrade_go() {
 }
 
 upgrade_web() {
-	require_cmd pnpm
+	require_cmd corepack
 
 	if [[ ! -f "${WEB_DIR}/package.json" ]]; then
 		echo "Error: web/package.json not found" >&2
 		exit 1
 	fi
 
-	echo "==> Upgrading web dependencies to latest..."
+	echo "==> Enabling corepack pnpm from packageManager..."
+	corepack enable
 	cd "$WEB_DIR"
+	corepack prepare --activate
+
+	echo "==> Upgrading web dependencies to latest..."
 	pnpm update --latest
 	echo "==> Web dependencies upgraded."
 }

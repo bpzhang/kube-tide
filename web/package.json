@@ -38,32 +38,5 @@
     "type-check": "tsc --noEmit",
     "check:chaindrop": "node ./scripts/check-chaindrop.mjs"
   },
-  "overrides": {
-    "keyv@6.0.0": "5.6.0",
-    "flat-cache@6.1.24": "6.1.23",
-    "file-entry-cache@11.1.6": "11.1.5",
-    "cacheable-request@13.0.20": "13.0.19",
-    "cacheable@2.5.1": "2.5.0",
-    "@cacheable/memory@2.2.1": "2.2.0",
-    "cache-manager@7.2.10": "7.2.9",
-    "@cacheable/node-cache@3.1.2": "3.1.1",
-    "@cacheable/utils@2.5.1": "2.5.0",
-    "@cacheable/net@2.1.1": "2.1.0",
-    "ecto@5.0.1": "5.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "keyv@6.0.0": "5.6.0",
-      "flat-cache@6.1.24": "6.1.23",
-      "file-entry-cache@11.1.6": "11.1.5",
-      "cacheable-request@13.0.20": "13.0.19",
-      "cacheable@2.5.1": "2.5.0",
-      "@cacheable/memory@2.2.1": "2.2.0",
-      "cache-manager@7.2.10": "7.2.9",
-      "@cacheable/node-cache@3.1.2": "3.1.1",
-      "@cacheable/utils@2.5.1": "2.5.0",
-      "@cacheable/net@2.1.1": "2.1.0",
-      "ecto@5.0.1": "5.0.0"
-    }
-  }
+  "packageManager": "pnpm@12.2.1+sha512.f55ca68aacb9eb5ab69c66f828a98af89a32286703aef1f8da131ca7eab4d677f34bfa85e186467a919c0799df8b6f4aa240f7dc2919b33b3273190104162616"
 }

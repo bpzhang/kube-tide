@@ -17,9 +17,16 @@ DOCKERFILE=deployments/docker/Dockerfile
 .PHONY: all
 all: build
 
+# 按 web/package.json 的 packageManager 启用对应 pnpm
+.PHONY: _ensure-pnpm
+_ensure-pnpm:
+	@command -v corepack >/dev/null || { echo "需要 Node.js（含 corepack）"; exit 1; }
+	@corepack enable
+	@cd $(WEB_DIR) && corepack prepare --activate
+
 # 内部步骤：构建前端并复制到 embed 目录
 .PHONY: _prepare-web
-_prepare-web:
+_prepare-web: _ensure-pnpm
 	@echo "开始前端构建..."
 	cd $(WEB_DIR) && $(PNPM) install && $(PNPM) build
 	mkdir -p $(WEB_DIST_DIR)
@@ -41,6 +48,7 @@ run: build
 	@echo "启动测试环境（前端热更新）..."
 	@echo "前端地址: http://127.0.0.1:5173"
 	@echo "后端地址: http://127.0.0.1:8080"
+	@$(MAKE) _ensure-pnpm
 	@set -e; \
 	cd $(WEB_DIR); $(PNPM) install >/dev/null; $(PNPM) dev --host 0.0.0.0 --port 5173 & \
 	FRONT_PID=$$!; \
